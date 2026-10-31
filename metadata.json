@@ -1,0 +1,6 @@
+{
+  "name": "Sociedade Bosonarista",
+  "description": "Rede social brasileira voltada à comunidade bolsonarista, com publicações, debates políticos, perfis personalizados, divulgação de redes sociais, notícias e grupos de discussão.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
