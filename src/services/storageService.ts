@@ -1068,6 +1068,66 @@ export const storageService = {
     return { success: true, user };
   },
 
+  async loginWithSocial(socialData: {
+    name: string;
+    email: string;
+    avatar?: string;
+    provider?: string;
+    providerId?: string;
+  }): Promise<{ success: boolean; error?: string; user?: User }> {
+    try {
+      const response = await fetch('/api/auth/social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(socialData)
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success || !data.user) {
+        throw new Error(data.error || 'Falha ao autenticar com rede social no servidor.');
+      }
+
+      const users = this.getUsers();
+      const existingIdx = users.findIndex(u => u.id === data.user.id || (u.email && u.email.toLowerCase() === data.user.email.toLowerCase()));
+      if (existingIdx >= 0) {
+        users[existingIdx] = { ...users[existingIdx], ...data.user };
+      } else {
+        users.push(data.user);
+      }
+      setStorage(STORAGE_KEYS.USERS, users);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, data.user.id);
+
+      return { success: true, user: data.user };
+    } catch (err: any) {
+      console.warn('Fallback local para login social:', err?.message);
+      const users = this.getUsers();
+      const cleanEmail = (socialData.email || '').toLowerCase();
+      let user = users.find(u => u.email && u.email.toLowerCase() === cleanEmail);
+      if (!user) {
+        user = {
+          id: 'usr_' + Math.random().toString(36).substring(2, 9),
+          name: socialData.name,
+          username: (socialData.name || 'patriota').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 14) + '_' + Math.floor(100 + Math.random() * 900),
+          email: socialData.email,
+          avatar: socialData.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(socialData.name)}`,
+          role: 'user',
+          status: 'active',
+          rank: 'soldado',
+          honorPoints: 100,
+          createdAt: new Date().toISOString(),
+          followersCount: 0,
+          followingCount: 0,
+          postsCount: 0,
+          socialLinks: {},
+          verified: false
+        };
+        users.push(user);
+        setStorage(STORAGE_KEYS.USERS, users);
+      }
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
+      return { success: true, user };
+    }
+  },
+
   logout(): void {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
   },
