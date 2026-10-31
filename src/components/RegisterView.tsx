@@ -135,33 +135,36 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
   };
 
   const handleSocialRegister = async (provider: string) => {
+    const emailToUse = email.trim().toLowerCase();
+    if (!emailToUse || !emailToUse.includes('@') || !emailToUse.includes('.')) {
+      setError(`Por favor, preencha o seu e-mail no campo "E-mail Válido" abaixo antes de continuar com ${provider}.`);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
-      const emailPrompt = provider === 'Google' 
-        ? 'biomedico97@gmail.com' 
-        : `patriota_${provider.toLowerCase()}@email.com`;
-
       // Check if already registered
-      const check = await storageService.checkMemberRegistered(emailPrompt);
+      const check = await storageService.checkMemberRegistered(emailToUse);
       if (check.registered && check.user) {
-        await storageService.loginWithRegisteredEmail(check.user.email || emailPrompt);
+        await storageService.loginWithRegisteredEmail(check.user.email || emailToUse);
         setIsLoading(false);
         showToast(`Bem-vindo de volta, ${check.user.name}! Reconhecido como Membro Oficial via ${provider}!`, 'success');
         onSuccess();
         return;
       }
 
+      const userName = name.trim() || emailToUse.split('@')[0];
       const result = await storageService.loginWithSocial({
-        name: `Patriota ${provider}`,
-        email: emailPrompt,
-        socialHandle: `@patriota_${provider.toLowerCase()}`,
+        name: userName,
+        email: emailToUse,
+        socialHandle: username.trim() ? `@${username.trim()}` : undefined,
         provider: provider.toLowerCase(),
-        providerId: `${provider.toLowerCase()}_${emailPrompt.replace(/[^a-zA-Z0-9]/g, '_')}`
+        providerId: `${provider.toLowerCase()}_${emailToUse.replace(/[^a-zA-Z0-9]/g, '_')}`
       });
       setIsLoading(false);
       if (result.success && result.user) {
-        showToast(`Cadastro via ${provider} concluído com sucesso no Neon PostgreSQL!`, 'success');
+        showToast(`Cadastro via ${provider} concluído com sucesso no Neon com o e-mail ${emailToUse}!`, 'success');
         onSuccess();
       } else {
         setError(result.error || 'Erro ao cadastrar com rede social.');

@@ -207,17 +207,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const checkEmailStatus = async (emailToCheck: string) => {
-    if (!emailToCheck || !emailToCheck.includes('@')) {
+    const clean = (emailToCheck || '').trim().toLowerCase();
+    if (!clean || !clean.includes('@') || !clean.includes('.') || clean.length < 5) {
       setRegisteredMember(null);
       return;
     }
     setCheckingEmail(true);
     try {
-      const res = await storageService.checkMemberRegistered(emailToCheck);
+      const res = await storageService.checkMemberRegistered(clean);
       if (res.registered && res.user) {
         setRegisteredMember(res.user);
-        if (res.user.name) setSocialNameInput(res.user.name);
-        if (res.user.username) setSocialHandleInput('@' + res.user.username);
+        if (res.user.name && !socialNameInput.trim()) {
+          setSocialNameInput(res.user.name);
+        }
+        if (res.user.username && !socialHandleInput.trim()) {
+          setSocialHandleInput('@' + res.user.username);
+        }
       } else {
         setRegisteredMember(null);
       }
@@ -233,63 +238,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   ) => {
     setCurrentSocialProvider(provider);
     setError(null);
-    let defaultName = '';
-    let defaultEmail = '';
-    let defaultHandle = '';
-
-    if (provider === 'Google') {
-      defaultName = 'Kaliton Leite';
-      defaultEmail = 'biomedico97@gmail.com';
-      defaultHandle = '@biomedico97';
-    } else if (provider === 'Instagram') {
-      defaultName = 'Patriota Instagram';
-      defaultHandle = '@patriota_oficial';
-      defaultEmail = 'patriota.insta@gmail.com';
-    } else if (provider === 'WhatsApp') {
-      defaultName = 'Cidadão WhatsApp';
-      defaultHandle = '+55 61 99999-2026';
-      defaultEmail = 'cidadao.zap@gmail.com';
-    } else if (provider === 'Facebook') {
-      defaultName = 'Cidadão Patriota';
-      defaultEmail = 'cidadao@facebook.com';
-      defaultHandle = 'cidadao.patriota.brasil';
-    } else if (provider === 'X') {
-      defaultName = 'Voz da Liberdade';
-      defaultHandle = '@liberdade_br';
-      defaultEmail = 'liberdade@x.com';
-    } else if (provider === 'Telegram') {
-      defaultName = 'Patriota Telegram';
-      defaultHandle = '@patriota_canal';
-      defaultEmail = 'patriota.tme@gmail.com';
-    } else if (provider === 'TikTok') {
-      defaultName = 'Patriota TikToker';
-      defaultHandle = '@patriota_videos';
-      defaultEmail = 'patriota.tiktok@gmail.com';
-    } else {
-      defaultName = 'Membro Apple';
-      defaultEmail = 'membro@privaterelay.appleid.com';
-      defaultHandle = 'apple_membro';
-    }
-
-    setSocialNameInput(defaultName);
-    setSocialEmailInput(defaultEmail);
-    setSocialHandleInput(defaultHandle);
+    // Start with completely blank inputs so user enters their real data
+    setSocialNameInput('');
+    setSocialEmailInput('');
+    setSocialHandleInput('');
+    setRegisteredMember(null);
+    setCheckingEmail(false);
     setSocialPromptOpen(true);
-    checkEmailStatus(defaultEmail);
   };
 
   const handleExecuteSocialLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!socialNameInput.trim()) {
-      setError('Por favor preencha seu nome.');
+    const cleanEmail = socialEmailInput.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      setError('O e-mail é obrigatório para cadastrar ou entrar. Informe um e-mail válido.');
       return;
     }
+
+    const cleanName = socialNameInput.trim();
+    if (!cleanName && !registeredMember) {
+      setError('Por favor, informe seu nome completo.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
       // If already registered member in Neon DB, log in directly without re-registration!
       if (registeredMember) {
-        const loginRes = await storageService.loginWithRegisteredEmail(registeredMember.email || socialEmailInput.trim());
+        const loginRes = await storageService.loginWithRegisteredEmail(registeredMember.email || cleanEmail);
         setIsLoading(false);
         if (loginRes.success && loginRes.user) {
           showToast(`Bem-vindo de volta, ${loginRes.user.name}! Conectado como Membro Oficial via ${currentSocialProvider}!`, 'success');
@@ -301,15 +278,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       const result = await storageService.loginWithSocial({
-        name: socialNameInput.trim(),
-        email: socialEmailInput.trim() || undefined,
+        name: cleanName || cleanEmail.split('@')[0],
+        email: cleanEmail,
         socialHandle: socialHandleInput.trim() || undefined,
         provider: currentSocialProvider.toLowerCase(),
-        providerId: `${currentSocialProvider.toLowerCase()}_${(socialEmailInput.trim() || socialHandleInput.trim() || socialNameInput.trim()).replace(/[^a-zA-Z0-9]/g, '_')}`
+        providerId: `${currentSocialProvider.toLowerCase()}_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`
       });
       setIsLoading(false);
       if (result.success && result.user) {
-        showToast(`Bem-vindo, ${result.user.name}! Conectado via ${currentSocialProvider} no Neon DB!`, 'success');
+        showToast(`Bem-vindo, ${result.user.name}! Cadastro de membro realizado com sucesso com o e-mail ${cleanEmail}!`, 'success');
         setSocialPromptOpen(false);
         onSuccess();
         onClose();
@@ -525,56 +502,64 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       <strong>E-mail:</strong> <span className="font-mono text-[#E8CC76] font-bold">{registeredMember.email}</span>
                     </div>
                     <div className="text-[11px] text-[#34A853] font-bold pt-1 flex items-center gap-1">
-                      <span>✓ Sua conta existe e está confirmada! Não precisa cadastrar de novo. Clique abaixo:</span>
+                      <span>✓ Sua conta existe e está confirmada! Não precisa cadastrar de novo. Clique no botão dourado abaixo para entrar:</span>
                     </div>
                   </div>
-                ) : (
+                ) : socialEmailInput.trim() ? (
                   <div className="p-2.5 rounded-xl bg-[#15291F] border border-[#263B30] text-[11px] text-[#A5B2A9] flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                    <span>Novo Membro: Confirme seus dados para criar sua conta oficial.</span>
+                    <span>Novo Membro: Preencha seu nome para finalizar seu cadastro com este e-mail.</span>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-[#0b1712] border border-[#263B30] text-[11px] text-[#E8CC76] flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>Digite seu e-mail abaixo para verificar seu acesso ou criar sua conta.</span>
                   </div>
                 )}
 
+                {/* EMAIL FIELD (PRIMARY & REQUIRED) */}
                 <div>
                   <label className="block text-xs font-semibold text-[#A5B2A9] mb-1">
-                    Nome Completo ou Apelido Patriota *
+                    Seu E-mail * (Obrigatório)
                   </label>
                   <input
-                    type="text"
+                    type="email"
                     required
-                    value={socialNameInput}
-                    onChange={(e) => setSocialNameInput(e.target.value)}
-                    placeholder="Seu Nome Completo"
-                    className="w-full bg-[#15291F] text-xs text-[#F5F5F0] p-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
+                    value={socialEmailInput}
+                    onChange={(e) => {
+                      setSocialEmailInput(e.target.value);
+                      checkEmailStatus(e.target.value);
+                    }}
+                    placeholder="exemplo: seu_email@gmail.com"
+                    className="w-full bg-[#15291F] text-xs text-[#F5F5F0] p-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none font-medium"
                   />
                 </div>
 
+                {/* NAME & HANDLE */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
                     <label className="block text-xs font-semibold text-[#A5B2A9] mb-1">
-                      {currentSocialProvider === 'WhatsApp' ? 'Número WhatsApp' : `@Usuário do ${currentSocialProvider}`}
+                      Nome Completo *
                     </label>
                     <input
                       type="text"
-                      value={socialHandleInput}
-                      onChange={(e) => setSocialHandleInput(e.target.value)}
-                      placeholder={currentSocialProvider === 'WhatsApp' ? '+55 61 99999-0000' : '@seu_usuario'}
+                      required={!registeredMember}
+                      value={socialNameInput}
+                      onChange={(e) => setSocialNameInput(e.target.value)}
+                      placeholder="Seu Nome Completo"
                       className="w-full bg-[#15291F] text-xs text-[#F5F5F0] p-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-[#A5B2A9] mb-1">
-                      E-mail de Contato
+                      {currentSocialProvider === 'WhatsApp' ? 'WhatsApp' : `@Usuário (${currentSocialProvider})`}
                     </label>
                     <input
-                      type="email"
-                      value={socialEmailInput}
-                      onChange={(e) => {
-                        setSocialEmailInput(e.target.value);
-                        checkEmailStatus(e.target.value);
-                      }}
-                      placeholder="seu.email@exemplo.com"
+                      type="text"
+                      value={socialHandleInput}
+                      onChange={(e) => setSocialHandleInput(e.target.value)}
+                      placeholder={currentSocialProvider === 'WhatsApp' ? '+55 61 99999-0000' : '@seu_usuario'}
                       className="w-full bg-[#15291F] text-xs text-[#F5F5F0] p-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
                     />
                   </div>

@@ -1183,8 +1183,12 @@ export const storageService = {
       return { success: true, user: data.user };
     } catch (err: any) {
       console.warn('Fallback local para login social:', err?.message);
-      const users = this.getUsers();
       const cleanEmail = (socialData.email || '').toLowerCase().trim();
+      if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+        return { success: false, error: 'E-mail válido é obrigatório para cadastrar como membro.' };
+      }
+
+      const users = this.getUsers();
       const cleanProviderId = socialData.providerId || '';
 
       // Try to find by providerId first (handles same provider, same account)
@@ -1198,7 +1202,7 @@ export const storageService = {
       }
 
       if (!user) {
-        // New account — create fresh
+        // New account — create fresh with user's REAL email
         const baseUsername = (socialData.name || 'patriota')
           .toLowerCase()
           .normalize('NFD')
@@ -1210,7 +1214,7 @@ export const storageService = {
           id: 'usr_' + Date.now().toString(36),
           name: socialData.name,
           username: baseUsername + '_' + uniqueSuffix,
-          email: socialData.email || `${baseUsername}_${uniqueSuffix}@${(socialData.provider || 'social').toLowerCase()}.local`,
+          email: cleanEmail,
           avatar: socialData.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(socialData.name)}`,
           role: 'user',
           status: 'active',

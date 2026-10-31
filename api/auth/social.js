@@ -25,15 +25,15 @@ export default async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const { name, email: rawEmail, cpf, password, avatar, provider = 'google', providerId, socialHandle, socialLinks } = body;
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Nome do usuário é obrigatório.' });
     }
 
-    // Gerar e-mail padrão caso entre com rede social que use apenas @usuario ou telefone
-    const cleanHandle = (socialHandle || name).toLowerCase().replace(/[^a-z0-9]/g, '');
-    const email = rawEmail && rawEmail.includes('@') 
-      ? rawEmail.trim().toLowerCase() 
-      : `${cleanHandle || 'patriota'}_${Math.floor(1000 + Math.random() * 9000)}@${provider.toLowerCase()}.social`;
+    const cleanEmail = rawEmail && typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      return res.status(400).json({ error: 'E-mail válido é obrigatório para cadastrar como membro.' });
+    }
+    const email = cleanEmail;
 
     // Montar objeto de links sociais
     const userSocialLinks = {

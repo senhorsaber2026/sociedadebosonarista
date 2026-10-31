@@ -30,15 +30,17 @@ export default defineConfig(({ mode }) => {
                   const parsed = JSON.parse(body || '{}');
                   const { name, email: rawEmail, cpf, password, avatar, provider = 'google', providerId, socialHandle, socialLinks } = parsed;
 
-                  if (!name) {
+                  if (!name || !name.trim()) {
                     res.statusCode = 400;
                     return res.end(JSON.stringify({ error: 'Nome do usuário é obrigatório' }));
                   }
 
-                  const cleanHandle = (socialHandle || name).toLowerCase().replace(/[^a-z0-9]/g, '');
-                  const email = rawEmail && rawEmail.includes('@') 
-                    ? rawEmail.trim().toLowerCase() 
-                    : `${cleanHandle || 'patriota'}_${Math.floor(1000 + Math.random() * 9000)}@${provider.toLowerCase()}.social`;
+                  const cleanEmail = rawEmail && typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
+                  if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+                    res.statusCode = 400;
+                    return res.end(JSON.stringify({ error: 'E-mail válido é obrigatório para cadastrar como membro.' }));
+                  }
+                  const email = cleanEmail;
 
                   const userSocialLinks = {
                     ...(socialLinks || {}),
