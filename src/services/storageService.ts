@@ -1070,10 +1070,12 @@ export const storageService = {
 
   async loginWithSocial(socialData: {
     name: string;
-    email: string;
+    email?: string;
     avatar?: string;
     provider?: string;
     providerId?: string;
+    socialHandle?: string;
+    socialLinks?: Record<string, string>;
   }): Promise<{ success: boolean; error?: string; user?: User }> {
     try {
       const response = await fetch('/api/auth/social', {

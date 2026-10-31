@@ -23,11 +23,23 @@ export default async function handler(req, res) {
 
     const sql = neon(databaseUrl);
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const { name, email, avatar, provider = 'google', providerId } = body;
+    const { name, email: rawEmail, avatar, provider = 'google', providerId, socialHandle, socialLinks } = body;
 
-    if (!email || !name) {
-      return res.status(400).json({ error: 'Nome e e-mail são obrigatórios.' });
+    if (!name) {
+      return res.status(400).json({ error: 'Nome do usuário é obrigatório.' });
     }
+
+    // Gerar e-mail padrão caso entre com rede social que use apenas @usuario ou telefone
+    const cleanHandle = (socialHandle || name).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const email = rawEmail && rawEmail.includes('@') 
+      ? rawEmail.trim().toLowerCase() 
+      : `${cleanHandle || 'patriota'}_${Math.floor(1000 + Math.random() * 9000)}@${provider.toLowerCase()}.social`;
+
+    // Montar objeto de links sociais
+    const userSocialLinks = {
+      ...(socialLinks || {}),
+      ...(socialHandle ? { [provider.toLowerCase()]: socialHandle } : {})
+    };
 
     // Verificar se o usuário já existe por email ou provider_id
     const existing = await sql`
@@ -56,7 +68,7 @@ export default async function handler(req, res) {
           followersCount: 0,
           followingCount: 0,
           postsCount: 0,
-          socialLinks: u.social_links || {},
+          socialLinks: u.social_links || userSocialLinks,
           verified: !!u.verified
         }
       });
@@ -64,7 +76,7 @@ export default async function handler(req, res) {
 
     // Gerar novo ID e username amigável
     const id = 'usr_' + Math.random().toString(36).substring(2, 10);
-    const baseUsername = (name || 'patriota')
+    const baseUsername = (socialHandle || name || 'patriota')
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -79,7 +91,7 @@ export default async function handler(req, res) {
         honor_points, auth_provider, provider_id, social_links, verified
       ) VALUES (
         ${id}, ${name}, ${username}, ${email}, ${avatarUrl}, 'user', 'active', 'soldado',
-        100, ${provider}, ${providerId || id}, '{}'::jsonb, false
+        100, ${provider}, ${providerId || id}, ${JSON.stringify(userSocialLinks)}::jsonb, false
       )
       RETURNING *
     `;

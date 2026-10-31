@@ -28,12 +28,22 @@ export default defineConfig(({ mode }) => {
                   }
                   const sql = neon(databaseUrl);
                   const parsed = JSON.parse(body || '{}');
-                  const { name, email, avatar, provider = 'google', providerId } = parsed;
+                  const { name, email: rawEmail, avatar, provider = 'google', providerId, socialHandle, socialLinks } = parsed;
 
-                  if (!email || !name) {
+                  if (!name) {
                     res.statusCode = 400;
-                    return res.end(JSON.stringify({ error: 'Nome e email são obrigatórios' }));
+                    return res.end(JSON.stringify({ error: 'Nome do usuário é obrigatório' }));
                   }
+
+                  const cleanHandle = (socialHandle || name).toLowerCase().replace(/[^a-z0-9]/g, '');
+                  const email = rawEmail && rawEmail.includes('@') 
+                    ? rawEmail.trim().toLowerCase() 
+                    : `${cleanHandle || 'patriota'}_${Math.floor(1000 + Math.random() * 9000)}@${provider.toLowerCase()}.social`;
+
+                  const userSocialLinks = {
+                    ...(socialLinks || {}),
+                    ...(socialHandle ? { [provider.toLowerCase()]: socialHandle } : {})
+                  };
 
                   const existing = await sql`
                     SELECT * FROM users 
@@ -62,14 +72,14 @@ export default defineConfig(({ mode }) => {
                         followersCount: 0,
                         followingCount: 0,
                         postsCount: 0,
-                        socialLinks: u.social_links || {},
+                        socialLinks: u.social_links || userSocialLinks,
                         verified: !!u.verified
                       }
                     }));
                   }
 
                   const id = 'usr_' + Math.random().toString(36).substring(2, 10);
-                  const baseUsername = (name || 'patriota')
+                  const baseUsername = (socialHandle || name || 'patriota')
                     .toLowerCase()
                     .normalize('NFD')
                     .replace(/[\u0300-\u036f]/g, '')
@@ -84,7 +94,7 @@ export default defineConfig(({ mode }) => {
                       honor_points, auth_provider, provider_id, social_links, verified
                     ) VALUES (
                       ${id}, ${name}, ${username}, ${email}, ${avatarUrl}, 'user', 'active', 'soldado',
-                      100, ${provider}, ${providerId || id}, '{}'::jsonb, false
+                      100, ${provider}, ${providerId || id}, ${JSON.stringify(userSocialLinks)}::jsonb, false
                     )
                     RETURNING *
                   `;
