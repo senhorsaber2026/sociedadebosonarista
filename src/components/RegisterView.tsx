@@ -141,6 +141,17 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
       const emailPrompt = provider === 'Google' 
         ? 'biomedico97@gmail.com' 
         : `patriota_${provider.toLowerCase()}@email.com`;
+
+      // Check if already registered
+      const check = await storageService.checkMemberRegistered(emailPrompt);
+      if (check.registered && check.user) {
+        await storageService.loginWithRegisteredEmail(check.user.email || emailPrompt);
+        setIsLoading(false);
+        showToast(`Bem-vindo de volta, ${check.user.name}! Reconhecido como Membro Oficial via ${provider}!`, 'success');
+        onSuccess();
+        return;
+      }
+
       const result = await storageService.loginWithSocial({
         name: `Patriota ${provider}`,
         email: emailPrompt,
@@ -271,6 +282,49 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ACTIVE MEMBER NOTICE IF ALREADY LOGGED IN */}
+      {(() => {
+        const currentUser = storageService.getCurrentUser();
+        if (!currentUser) return null;
+        return (
+          <div className="p-5 rounded-3xl bg-[#174D32] border-2 border-[#D4AF37] shadow-xl text-left space-y-2 animate-fade-in">
+            <div className="flex items-center gap-2 text-sm font-black text-[#E8CC76]">
+              <CheckCircle2 className="w-5 h-5 text-[#D4AF37]" />
+              <span>VOCÊ JÁ POSSUI CADASTRO DE MEMBRO ATIVO!</span>
+            </div>
+            <div className="text-xs text-[#F5F5F0]">
+              Conectado atualmente como: <strong>{currentUser.name}</strong> (@{currentUser.username})
+            </div>
+            {currentUser.email && (
+              <div className="text-xs text-[#A5B2A9]">
+                E-mail oficial confirmado: <span className="font-mono text-[#E8CC76] font-bold">{currentUser.email}</span>
+                <span className="ml-2 text-[10px] text-[#34A853] bg-[#07140F] px-1.5 py-0.5 rounded font-bold">✓ NEON DB</span>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onSuccess}
+                className="px-4 py-2 rounded-xl bg-[#0b1712] hover:bg-[#15291F] text-[#E8CC76] text-xs font-bold border border-[#D4AF37]/50 transition cursor-pointer"
+              >
+                Acessar Plataforma / Início
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  storageService.logout();
+                  showToast('Sessão encerrada com sucesso.');
+                  window.location.reload();
+                }}
+                className="px-4 py-2 rounded-xl bg-[#2a1414] hover:bg-[#3d1a1a] text-red-400 text-xs font-bold border border-red-500/40 transition cursor-pointer"
+              >
+                Encerrar Sessão / Trocar Conta
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* REGISTRATION FORM CARD */}
       <div className="p-6 sm:p-8 rounded-3xl bg-[#102019] border border-[#263B30] shadow-xl">

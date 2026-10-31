@@ -19,7 +19,9 @@ import {
   Newspaper,
   Award,
   ShieldCheck,
-  PenLine
+  PenLine,
+  Mail,
+  CheckCircle2
 } from 'lucide-react';
 import { User, NotificationItem } from '../types';
 import { storageService } from '../services/storageService';
@@ -463,9 +465,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                             )}
                           </div>
                           <div className="text-[11px] text-[#A5B2A9] truncate">@{currentUser.username}</div>
+                          {currentUser.email && (
+                            <div className="mt-1 flex items-center gap-1 text-[10px] text-[#E8CC76] bg-[#07140F] px-1.5 py-0.5 rounded border border-[#D4AF37]/30 truncate" title={currentUser.email}>
+                              <Mail className="w-3 h-3 text-[#D4AF37] shrink-0" />
+                              <span className="truncate font-mono">{currentUser.email}</span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1.5 mt-1">
                             <RankBadge rank={currentUser.rank} size="xs" />
-                            <span className="text-[10px] text-[#D4AF37] font-semibold">
+                            <span className="text-[10px] text-[#34A853] font-bold flex items-center gap-0.5">
+                              <CheckCircle2 className="w-2.5 h-2.5" />
+                              Cadastrado
+                            </span>
+                            <span className="text-[10px] text-[#D4AF37] font-semibold ml-auto">
                               {currentUser.honorPoints || 0} pts
                             </span>
                           </div>

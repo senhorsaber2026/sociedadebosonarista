@@ -132,6 +132,79 @@ export default defineConfig(({ mode }) => {
               });
               return;
             }
+
+            if (req.url?.startsWith('/api/auth/check')) {
+              const urlObj = new URL(req.url, 'http://localhost');
+              const emailParam = urlObj.searchParams.get('email') || urlObj.searchParams.get('identifier') || '';
+
+              const handleCheck = async (identifier: string) => {
+                res.setHeader('Content-Type', 'application/json');
+                try {
+                  if (!databaseUrl) {
+                    res.statusCode = 500;
+                    return res.end(JSON.stringify({ error: 'DATABASE_URL não configurada' }));
+                  }
+                  const sql = neon(databaseUrl);
+                  const clean = identifier.trim().toLowerCase();
+                  if (!clean) {
+                    res.statusCode = 400;
+                    return res.end(JSON.stringify({ error: 'Identificador obrigatório' }));
+                  }
+                  const existing = await sql`
+                    SELECT id, name, username, email, cpf, avatar, bio, role, status, rank, honor_points, auth_provider, verified, created_at
+                    FROM users 
+                    WHERE LOWER(email) = ${clean}
+                       OR LOWER(username) = ${clean.replace('@', '')}
+                    LIMIT 1
+                  `;
+                  if (existing && existing.length > 0) {
+                    const u = existing[0];
+                    res.statusCode = 200;
+                    return res.end(JSON.stringify({
+                      registered: true,
+                      user: {
+                        id: u.id,
+                        name: u.name,
+                        username: u.username,
+                        email: u.email,
+                        cpf: u.cpf,
+                        avatar: u.avatar,
+                        bio: u.bio || '',
+                        role: u.role || 'user',
+                        status: u.status || 'active',
+                        rank: u.rank || 'soldado',
+                        honorPoints: Number(u.honor_points) || 50,
+                        authProvider: u.auth_provider,
+                        createdAt: u.created_at,
+                        verified: !!u.verified
+                      }
+                    }));
+                  }
+                  res.statusCode = 200;
+                  return res.end(JSON.stringify({ registered: false }));
+                } catch (err: any) {
+                  res.statusCode = 500;
+                  return res.end(JSON.stringify({ error: err.message || 'Erro no servidor' }));
+                }
+              };
+
+              if (req.method === 'POST') {
+                let body = '';
+                req.on('data', chunk => { body += chunk; });
+                req.on('end', () => {
+                  try {
+                    const parsed = JSON.parse(body || '{}');
+                    handleCheck(parsed.email || parsed.identifier || '');
+                  } catch {
+                    handleCheck('');
+                  }
+                });
+                return;
+              } else {
+                handleCheck(emailParam);
+                return;
+              }
+            }
             next();
           });
         }

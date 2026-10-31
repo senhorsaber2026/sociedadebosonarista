@@ -17,7 +17,8 @@ import {
   Bookmark,
   Heart,
   Award,
-  MessageSquare
+  MessageSquare,
+  Mail
 } from 'lucide-react';
 import { User, Post, DebateTopic } from '../types';
 import { storageService } from '../services/storageService';
@@ -254,6 +255,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
             {/* Meta tags & Location */}
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-[#A5B2A9] pt-2">
+              {profileUser.email && (
+                <span className="flex items-center gap-1.5 bg-[#15291F] px-2.5 py-1 rounded-xl border border-[#D4AF37]/30 text-[#E8CC76] font-mono">
+                  <Mail className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>{profileUser.email}</span>
+                  <span className="text-[10px] bg-[#07140F] text-[#34A853] px-1.5 py-0.5 rounded font-sans font-bold flex items-center gap-0.5">
+                    <CheckCircle2 className="w-3 h-3" />
+                    CADASTRADO
+                  </span>
+                </span>
+              )}
+
               {profileUser.location && (
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" />

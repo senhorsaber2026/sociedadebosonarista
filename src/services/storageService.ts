@@ -1049,18 +1049,19 @@ export const storageService = {
   login(identifier: string, password?: string): { success: boolean; error?: string; user?: User } {
     const users = this.getUsers();
     const rawTrimmed = identifier.trim();
-    const clean = rawTrimmed.toLowerCase().replace('@', '');
+    const clean = rawTrimmed.toLowerCase();
+    const cleanNoAt = clean.startsWith('@') ? clean.slice(1) : clean;
     const cleanDigits = rawTrimmed.replace(/\D/g, '');
 
     const user = users.find(u => {
       if (u.email && u.email.toLowerCase() === clean) return true;
-      if (u.username && u.username.toLowerCase() === clean) return true;
+      if (u.username && (u.username.toLowerCase() === clean || u.username.toLowerCase() === cleanNoAt)) return true;
       if (cleanDigits.length === 11 && u.cpf && u.cpf.replace(/\D/g, '') === cleanDigits) return true;
       return false;
     });
 
     if (!user) {
-      return { success: false, error: 'Credenciais inválidas. Verifique seu CPF, e-mail ou nome de usuário.' };
+      return { success: false, error: 'Credenciais não encontradas. Verifique seu e-mail, CPF ou cadastre-se.' };
     }
 
     if (user.status === 'banned') {
@@ -1085,6 +1086,64 @@ export const storageService = {
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
     return { success: true, user };
   },
+
+  async checkMemberRegistered(identifier: string): Promise<{ registered: boolean; user?: User }> {
+    const clean = identifier.trim().toLowerCase();
+    if (!clean) return { registered: false };
+
+    // 1. Check local users first
+    const users = this.getUsers();
+    const cleanNoAt = clean.startsWith('@') ? clean.slice(1) : clean;
+    const localUser = users.find(u => 
+      (u.email && u.email.toLowerCase() === clean) ||
+      (u.username && (u.username.toLowerCase() === clean || u.username.toLowerCase() === cleanNoAt))
+    );
+
+    if (localUser) {
+      return { registered: true, user: localUser };
+    }
+
+    // 2. Check Neon DB via server API
+    try {
+      const res = await fetch(`/api/auth/check?email=${encodeURIComponent(clean)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.registered && data.user) {
+          // Sync with local memory
+          const existingIdx = users.findIndex(u => u.id === data.user.id || (u.email && u.email.toLowerCase() === clean));
+          if (existingIdx >= 0) {
+            users[existingIdx] = { ...users[existingIdx], ...data.user };
+          } else {
+            users.push(data.user);
+          }
+          setStorage(STORAGE_KEYS.USERS, users);
+          return { registered: true, user: data.user };
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao checar status de membro no Neon:', e);
+    }
+
+    return { registered: false };
+  },
+
+  async loginWithRegisteredEmail(email: string): Promise<{ success: boolean; error?: string; user?: User }> {
+    const check = await this.checkMemberRegistered(email);
+    if (check.registered && check.user) {
+      const users = this.getUsers();
+      const existingIdx = users.findIndex(u => u.id === check.user!.id);
+      if (existingIdx >= 0) {
+        users[existingIdx] = { ...users[existingIdx], ...check.user };
+      } else {
+        users.push(check.user);
+      }
+      setStorage(STORAGE_KEYS.USERS, users);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, check.user.id);
+      return { success: true, user: check.user };
+    }
+    return { success: false, error: 'Membro não encontrado com este e-mail.' };
+  },
+
 
   async loginWithSocial(socialData: {
     name: string;
