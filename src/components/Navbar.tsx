@@ -593,7 +593,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#15291F] text-[#E8CC76] transition text-left font-bold text-xs cursor-pointer"
                         >
                           <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
-                          <span>Fazer Meu Cadastro Real</span>
+                          <span>Fazer Meu Cadastro de Membro</span>
                         </button>
                         <button
                           onClick={handleLogout}
@@ -615,7 +615,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 title="Cadastrar uma nova conta com sua rede social ou CPF"
               >
                 <ShieldCheck className="w-4 h-4 text-[#07140F]" />
-                <span className="hidden sm:inline">Cadastro Real</span>
+                <span className="hidden sm:inline">Cadastro de Membro</span>
                 <span className="sm:hidden">Cadastrar</span>
               </button>
             </>
@@ -633,7 +633,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 title="Cadastre-se com Rede Social (Google, Instagram, WhatsApp, etc.) ou CPF"
               >
                 <ShieldCheck className="w-4 h-4 text-[#07140F]" />
-                <span className="uppercase tracking-wider">CADASTRAR-SE</span>
+                <span className="uppercase tracking-wider">CADASTRO DE MEMBRO</span>
               </button>
             </div>
           )}
@@ -671,7 +671,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-black text-xs flex items-center justify-center gap-2 shadow-md uppercase tracking-wider mb-2 cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-[#07140F]" />
-            <span>Cadastrar Conta (Redes ou CPF)</span>
+            <span>Cadastro de Membro (Redes ou CPF)</span>
           </button>
 
           <button

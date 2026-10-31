@@ -136,7 +136,7 @@ export const CenterHeroBanner: React.FC<CenterHeroBannerProps> = ({
             title="Cadastrar com Google, WhatsApp, Instagram ou CPF"
           >
             <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
-            <span>Fazer Cadastro Real</span>
+            <span>Fazer Cadastro de Membro</span>
           </button>
         </div>
       </div>

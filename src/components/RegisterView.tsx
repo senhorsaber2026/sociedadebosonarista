@@ -263,7 +263,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
               <span>Alistamento Cívico Oficial</span>
             </div>
             <h1 className="font-serif-patriotic text-2xl sm:text-3xl font-bold text-[#F5F5F0]">
-              Área de Cadastro de Usuário
+              Cadastro de Membro
             </h1>
             <p className="text-xs sm:text-sm text-[#A5B2A9] mt-1 leading-relaxed">
               Cadastre-se na <strong>Sociedade Bosonarista</strong> utilizando o seu <strong>CPF</strong>. Todo novo cidadão ingressa com a honrosa patente de <strong>Soldado</strong>.
