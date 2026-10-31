@@ -52,6 +52,24 @@ export default async function handler(req, res) {
 
     if (existing && existing.length > 0) {
       const u = existing[0];
+
+      // Verificação obrigatória de senha
+      const trimmedPass = (password || '').toString().trim();
+      if (u.password_hash) {
+        if (!trimmedPass) {
+          return res.status(401).json({ error: 'Senha obrigatória. Digite a senha cadastrada para este e-mail.' });
+        }
+        if (trimmedPass !== u.password_hash) {
+          return res.status(401).json({ error: 'Senha incorreta para este e-mail. Acesso negado.' });
+        }
+      } else {
+        // Conta existente ainda sem senha: se fornecida senha válida, cadastra a senha agora
+        if (!trimmedPass || trimmedPass.length < 4) {
+          return res.status(400).json({ error: 'Para sua segurança, defina uma senha de acesso (mínimo 4 caracteres) para entrar.' });
+        }
+        await sql`UPDATE users SET password_hash = ${trimmedPass} WHERE id = ${u.id}`;
+      }
+
       return res.status(200).json({
         success: true,
         user: {
@@ -76,6 +94,12 @@ export default async function handler(req, res) {
       });
     }
 
+    // Cadastro novo: senha é estritamente obrigatória!
+    const trimmedPass = (password || '').toString().trim();
+    if (!trimmedPass || trimmedPass.length < 4) {
+      return res.status(400).json({ error: 'Crie uma senha de acesso com no mínimo 4 caracteres para proteger sua conta.' });
+    }
+
     // Gerar novo ID e username amigável
     const id = 'usr_' + Math.random().toString(36).substring(2, 10);
     const baseUsername = (socialHandle || name || 'patriota')
@@ -92,7 +116,7 @@ export default async function handler(req, res) {
         id, name, username, email, cpf, password_hash, avatar, role, status, rank, 
         honor_points, auth_provider, provider_id, social_links, verified
       ) VALUES (
-        ${id}, ${name}, ${username}, ${email}, ${cpf || null}, ${password || null}, ${avatarUrl}, 'user', 'active', 'soldado',
+        ${id}, ${name}, ${username}, ${email}, ${cpf || null}, ${trimmedPass}, ${avatarUrl}, 'user', 'active', 'soldado',
         100, ${provider}, ${providerId || id}, ${JSON.stringify(userSocialLinks)}::jsonb, false
       )
       RETURNING *

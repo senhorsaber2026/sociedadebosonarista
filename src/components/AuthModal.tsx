@@ -61,6 +61,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     'Google' | 'Instagram' | 'WhatsApp' | 'Facebook' | 'X' | 'Telegram' | 'TikTok' | 'Apple'
   >('Google');
   const [socialEmailInput, setSocialEmailInput] = useState('');
+  const [socialPasswordInput, setSocialPasswordInput] = useState('');
   const [socialNameInput, setSocialNameInput] = useState('');
   const [socialHandleInput, setSocialHandleInput] = useState('');
   const [registeredMember, setRegisteredMember] = useState<User | null>(null);
@@ -102,29 +103,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     setError(null);
     const identifier = loginIdentifier.trim();
+    const pass = loginPassword.trim();
     if (!identifier) {
       setError('Preencha seu CPF, e-mail ou nome de usuário.');
+      return;
+    }
+    if (!pass) {
+      setError('A senha de acesso é obrigatória para entrar.');
       return;
     }
 
     setIsLoading(true);
 
-    // 1. Try local credentials login if password provided
-    let result = loginPassword ? storageService.login(identifier, loginPassword) : { success: false, error: '' };
+    // 1. Tenta login local primeiro
+    let result = storageService.login(identifier, pass);
 
-    // 2. If local fails or password was not provided, check Neon DB
+    // 2. Se não encontrou no local, valida com o servidor Neon DB
     if (!result.success) {
-      const check = await storageService.checkMemberRegistered(identifier);
-      if (check.registered && check.user) {
-        if (loginPassword && check.user.password && check.user.password !== loginPassword) {
-          setError('Senha incorreta.');
-          setIsLoading(false);
-          return;
-        }
-        const loginRes = await storageService.loginWithRegisteredEmail(check.user.email || identifier);
-        if (loginRes.success && loginRes.user) {
-          result = loginRes;
-        }
+      const serverLogin = await storageService.loginWithRegisteredEmail(identifier, pass);
+      if (serverLogin.success && serverLogin.user) {
+        result = serverLogin;
+      } else {
+        result = { success: false, error: serverLogin.error || 'Senha incorreta para esta conta.' };
       }
     }
     setIsLoading(false);
@@ -134,7 +134,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onSuccess();
       onClose();
     } else {
-      setError('Credenciais não encontradas. Verifique seu e-mail/CPF ou realize seu Cadastro de Membro.');
+      setError(result.error || 'Senha incorreta ou usuário não encontrado.');
     }
   };
 
@@ -241,6 +241,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     // Start with completely blank inputs so user enters their real data
     setSocialNameInput('');
     setSocialEmailInput('');
+    setSocialPasswordInput('');
     setSocialHandleInput('');
     setRegisteredMember(null);
     setCheckingEmail(false);
@@ -255,6 +256,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
+    const cleanPass = socialPasswordInput.trim();
+    if (!cleanPass || cleanPass.length < 4) {
+      setError(registeredMember
+        ? 'A senha de acesso é obrigatória. Digite sua senha cadastrada.'
+        : 'Crie uma senha de acesso com no mínimo 4 caracteres para proteger sua conta.');
+      return;
+    }
+
     const cleanName = socialNameInput.trim();
     if (!cleanName && !registeredMember) {
       setError('Por favor, informe seu nome completo.');
@@ -264,29 +273,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsLoading(true);
     setError(null);
     try {
-      // If already registered member in Neon DB, log in directly without re-registration!
+      // If already registered member in Neon DB, verify password before logging in!
       if (registeredMember) {
-        const loginRes = await storageService.loginWithRegisteredEmail(registeredMember.email || cleanEmail);
+        const loginRes = await storageService.loginWithRegisteredEmail(registeredMember.email || cleanEmail, cleanPass);
         setIsLoading(false);
         if (loginRes.success && loginRes.user) {
-          showToast(`Bem-vindo de volta, ${loginRes.user.name}! Conectado como Membro Oficial via ${currentSocialProvider}!`, 'success');
+          showToast(`Bem-vindo de volta, ${loginRes.user.name}! Conectado com sucesso com sua senha!`, 'success');
           setSocialPromptOpen(false);
           onSuccess();
           onClose();
           return;
+        } else {
+          setError(loginRes.error || 'Senha incorreta para esta conta. Acesso negado.');
+          return;
         }
       }
 
+      // New registration with password
       const result = await storageService.loginWithSocial({
         name: cleanName || cleanEmail.split('@')[0],
         email: cleanEmail,
+        password: cleanPass,
         socialHandle: socialHandleInput.trim() || undefined,
         provider: currentSocialProvider.toLowerCase(),
         providerId: `${currentSocialProvider.toLowerCase()}_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`
       });
       setIsLoading(false);
       if (result.success && result.user) {
-        showToast(`Bem-vindo, ${result.user.name}! Cadastro de membro realizado com sucesso com o e-mail ${cleanEmail}!`, 'success');
+        showToast(`Bem-vindo, ${result.user.name}! Cadastro protegido com senha e salvo no Neon DB!`, 'success');
         setSocialPromptOpen(false);
         onSuccess();
         onClose();
@@ -535,6 +549,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   />
                 </div>
 
+                {/* PASSWORD FIELD (REQUIRED FOR SECURITY) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-[#A5B2A9]">
+                      {registeredMember ? 'Senha de Acesso da Conta *' : 'Crie sua Senha de Acesso *'}
+                    </label>
+                    <span className="text-[10px] text-[#D4AF37]">
+                      {registeredMember ? 'Confirma sua identidade' : 'Mínimo 4 caracteres'}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A5B2A9]" />
+                    <input
+                      type="password"
+                      required
+                      value={socialPasswordInput}
+                      onChange={(e) => setSocialPasswordInput(e.target.value)}
+                      placeholder={registeredMember ? 'Digite a senha da sua conta para entrar' : 'Crie uma senha de acesso'}
+                      className="w-full bg-[#15291F] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] pl-9 pr-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none font-medium"
+                    />
+                  </div>
+                  <p className="text-[10px] text-[#A5B2A9] mt-1 flex items-center gap-1">
+                    <span>🔒</span>
+                    <span>Segurança ativa: Ninguém entra na sua conta sem digitar a sua senha.</span>
+                  </p>
+                </div>
+
                 {/* NAME & HANDLE */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
@@ -576,9 +617,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-2 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-black text-xs shadow-md hover:brightness-110 transition disabled:opacity-50 cursor-pointer uppercase tracking-wider"
+                    className="flex-2 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-black text-xs shadow-md hover:brightness-110 transition disabled:opacity-50 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-1.5"
                   >
-                    {isLoading ? 'Conectando ao Neon...' : registeredMember ? `⚡ Entrar como ${registeredMember.name}` : `Concluir Cadastro com ${currentSocialProvider}`}
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>{isLoading ? 'Verificando...' : registeredMember ? `Entrar com Senha` : `Concluir Cadastro Seguro`}</span>
                   </button>
                 </div>
               </form>
@@ -730,20 +772,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-xs font-semibold text-[#A5B2A9]">
-                        Senha de Acesso {loginIdentifier.includes('@') && <span className="text-[#34A853] font-normal">(Opcional se via Google)</span>}
+                        Senha de Acesso *
                       </label>
                       <span className="text-[10px] text-[#D4AF37]">
-                        {loginIdentifier.includes('@') ? 'Pressione Entrar direto' : '1º acesso: 4 dígitos do CPF'}
+                        Obrigatória
                       </span>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A5B2A9]" />
                       <input
                         type="password"
-                        required={!loginIdentifier.includes('@')}
+                        required
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder={loginIdentifier.includes('@') ? 'Deixe em branco se entrou com Google' : '••••••••'}
+                        placeholder="Digite a senha da sua conta"
                         className="w-full bg-[#15291F] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] pl-9 pr-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
                       />
                     </div>

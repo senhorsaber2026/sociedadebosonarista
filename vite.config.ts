@@ -57,6 +57,25 @@ export default defineConfig(({ mode }) => {
 
                   if (existing && existing.length > 0) {
                     const u = existing[0];
+                    const trimmedPass = (password || '').toString().trim();
+
+                    if (u.password_hash) {
+                      if (!trimmedPass) {
+                        res.statusCode = 401;
+                        return res.end(JSON.stringify({ error: 'Senha obrigatória. Digite a senha cadastrada para este e-mail.' }));
+                      }
+                      if (trimmedPass !== u.password_hash) {
+                        res.statusCode = 401;
+                        return res.end(JSON.stringify({ error: 'Senha incorreta para este e-mail. Acesso negado.' }));
+                      }
+                    } else {
+                      if (!trimmedPass || trimmedPass.length < 4) {
+                        res.statusCode = 400;
+                        return res.end(JSON.stringify({ error: 'Para sua segurança, defina uma senha de acesso (mínimo 4 caracteres) para entrar.' }));
+                      }
+                      await sql`UPDATE users SET password_hash = ${trimmedPass} WHERE id = ${u.id}`;
+                    }
+
                     res.statusCode = 200;
                     return res.end(JSON.stringify({
                       success: true,
@@ -82,6 +101,13 @@ export default defineConfig(({ mode }) => {
                     }));
                   }
 
+                  // Novo cadastro: senha obrigatória
+                  const trimmedPass = (password || '').toString().trim();
+                  if (!trimmedPass || trimmedPass.length < 4) {
+                    res.statusCode = 400;
+                    return res.end(JSON.stringify({ error: 'Crie uma senha de acesso com no mínimo 4 caracteres para proteger sua conta.' }));
+                  }
+
                   const id = 'usr_' + Math.random().toString(36).substring(2, 10);
                   const baseUsername = (socialHandle || name || 'patriota')
                     .toLowerCase()
@@ -97,7 +123,7 @@ export default defineConfig(({ mode }) => {
                       id, name, username, email, cpf, password_hash, avatar, role, status, rank, 
                       honor_points, auth_provider, provider_id, social_links, verified
                     ) VALUES (
-                      ${id}, ${name}, ${username}, ${email}, ${cpf || null}, ${password || null}, ${avatarUrl}, 'user', 'active', 'soldado',
+                      ${id}, ${name}, ${username}, ${email}, ${cpf || null}, ${trimmedPass}, ${avatarUrl}, 'user', 'active', 'soldado',
                       100, ${provider}, ${providerId || id}, ${JSON.stringify(userSocialLinks)}::jsonb, false
                     )
                     RETURNING *

@@ -1127,27 +1127,46 @@ export const storageService = {
     return { registered: false };
   },
 
-  async loginWithRegisteredEmail(email: string): Promise<{ success: boolean; error?: string; user?: User }> {
-    const check = await this.checkMemberRegistered(email);
-    if (check.registered && check.user) {
+  async loginWithRegisteredEmail(email: string, password?: string): Promise<{ success: boolean; error?: string; user?: User }> {
+    const trimmedPass = (password || '').trim();
+    if (!trimmedPass) {
+      return { success: false, error: 'A senha de acesso é obrigatória para entrar.' };
+    }
+
+    try {
+      const response = await fetch('/api/auth/social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          name: email.trim().split('@')[0],
+          password: trimmedPass
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success || !data.user) {
+        return { success: false, error: data.error || 'Senha incorreta para este e-mail. Acesso negado.' };
+      }
+
       const users = this.getUsers();
-      const existingIdx = users.findIndex(u => u.id === check.user!.id);
+      const existingIdx = users.findIndex(u => u.id === data.user.id || (u.email && u.email.toLowerCase() === email.toLowerCase()));
       if (existingIdx >= 0) {
-        users[existingIdx] = { ...users[existingIdx], ...check.user };
+        users[existingIdx] = { ...users[existingIdx], ...data.user };
       } else {
-        users.push(check.user);
+        users.push(data.user);
       }
       setStorage(STORAGE_KEYS.USERS, users);
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, check.user.id);
-      return { success: true, user: check.user };
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, data.user.id);
+      return { success: true, user: data.user };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Falha ao validar credenciais no servidor.' };
     }
-    return { success: false, error: 'Membro não encontrado com este e-mail.' };
   },
-
 
   async loginWithSocial(socialData: {
     name: string;
-    email?: string;
+    email: string;
+    password?: string;
     avatar?: string;
     provider?: string;
     providerId?: string;
