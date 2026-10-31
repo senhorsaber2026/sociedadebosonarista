@@ -48,6 +48,7 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
   // Início, Meu perfil, Explorar, Notícias, Debates, Grupos, Amigos (12), Mensagens, Salvos, Configurações
   const navItems = [
     { id: 'home', label: 'Início', icon: Home },
+    { id: 'register', label: 'Cadastro Real', icon: ShieldCheck, badge: 'REAL', isPill: false },
     { id: 'profile', label: 'Meu Perfil', icon: UserIcon, authRequired: true, param: currentUser?.username },
     { id: 'explore', label: 'Explorar', icon: Compass },
     { id: 'news', label: 'Notícias', icon: Newspaper },

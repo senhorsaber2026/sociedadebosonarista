@@ -808,9 +808,10 @@ export const storageService = {
     getStorage(STORAGE_KEYS.AUDIT_LOGS, DEFAULT_AUDIT_LOGS);
     getStorage(STORAGE_KEYS.STORIES, DEFAULT_STORIES);
     
-    // Default logged in user is Kaliton Leite for high-fidelity experience matching the mock
-    if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID)) {
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, 'usr_kaliton');
+    // Real mode: do not force mock auto-login. If previously on mock usr_kaliton, clear so visitor sees real register & login
+    const currentStored = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
+    if (currentStored === 'usr_kaliton') {
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
     }
   },
 
@@ -950,6 +951,20 @@ export const storageService = {
     users.push(newUser);
     setStorage(STORAGE_KEYS.USERS, users);
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
+
+    // Sync to Neon PostgreSQL
+    fetch('/api/auth/social', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: data.name.trim(),
+        username: cleanUsername,
+        email: cleanEmail,
+        cpf: formattedCpf,
+        password: finalPassword,
+        provider: 'cpf'
+      })
+    }).catch(err => console.warn('Sync CPF to Neon warning:', err));
 
     // Welcome Notification detailing initial rank & temp password
     this.createNotification({

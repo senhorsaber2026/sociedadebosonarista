@@ -120,14 +120,25 @@ export const CenterHeroBanner: React.FC<CenterHeroBannerProps> = ({
           {active.subtitle}
         </p>
 
-        {/* GOLDEN ACTION BUTTON */}
-        <button
-          onClick={active.action}
-          className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#E5AC24] via-[#F3C448] to-[#D4AF37] hover:brightness-110 text-[#07140F] font-extrabold text-xs sm:text-sm shadow-[0_4px_16px_rgba(229,172,36,0.35)] transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-        >
-          <Users className="w-4 h-4 fill-current" />
-          <span>{active.ctaText}</span>
-        </button>
+        {/* ACTION BUTTONS */}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <button
+            onClick={active.action}
+            className="inline-flex items-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#E5AC24] via-[#F3C448] to-[#D4AF37] hover:brightness-110 text-[#07140F] font-extrabold text-xs sm:text-sm shadow-[0_4px_16px_rgba(229,172,36,0.35)] transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+          >
+            <Users className="w-4 h-4 fill-current" />
+            <span>{active.ctaText}</span>
+          </button>
+
+          <button
+            onClick={() => onOpenAuth ? onOpenAuth('register') : onNavigate('register')}
+            className="inline-flex items-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-[#07140F]/85 hover:bg-[#15291F] text-[#E8CC76] border border-[#D4AF37]/70 hover:border-[#D4AF37] font-extrabold text-xs sm:text-sm shadow-md transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+            title="Cadastrar com Google, WhatsApp, Instagram ou CPF"
+          >
+            <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
+            <span>Fazer Cadastro Real</span>
+          </button>
+        </div>
       </div>
 
       {/* CAROUSEL PAGINATION DOTS */}

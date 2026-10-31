@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
                   }
                   const sql = neon(databaseUrl);
                   const parsed = JSON.parse(body || '{}');
-                  const { name, email: rawEmail, avatar, provider = 'google', providerId, socialHandle, socialLinks } = parsed;
+                  const { name, email: rawEmail, cpf, password, avatar, provider = 'google', providerId, socialHandle, socialLinks } = parsed;
 
                   if (!name) {
                     res.statusCode = 400;
@@ -47,7 +47,9 @@ export default defineConfig(({ mode }) => {
 
                   const existing = await sql`
                     SELECT * FROM users 
-                    WHERE email = ${email} OR (provider_id = ${providerId || ''} AND auth_provider = ${provider})
+                    WHERE email = ${email} 
+                       OR (cpf IS NOT NULL AND cpf = ${cpf || ''})
+                       OR (provider_id = ${providerId || ''} AND auth_provider = ${provider})
                     LIMIT 1
                   `;
 
@@ -90,10 +92,10 @@ export default defineConfig(({ mode }) => {
 
                   const inserted = await sql`
                     INSERT INTO users (
-                      id, name, username, email, avatar, role, status, rank, 
+                      id, name, username, email, cpf, password_hash, avatar, role, status, rank, 
                       honor_points, auth_provider, provider_id, social_links, verified
                     ) VALUES (
-                      ${id}, ${name}, ${username}, ${email}, ${avatarUrl}, 'user', 'active', 'soldado',
+                      ${id}, ${name}, ${username}, ${email}, ${cpf || null}, ${password || null}, ${avatarUrl}, 'user', 'active', 'soldado',
                       100, ${provider}, ${providerId || id}, ${JSON.stringify(userSocialLinks)}::jsonb, false
                     )
                     RETURNING *

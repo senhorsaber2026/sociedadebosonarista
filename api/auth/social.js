@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
     const sql = neon(databaseUrl);
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const { name, email: rawEmail, avatar, provider = 'google', providerId, socialHandle, socialLinks } = body;
+    const { name, email: rawEmail, cpf, password, avatar, provider = 'google', providerId, socialHandle, socialLinks } = body;
 
     if (!name) {
       return res.status(400).json({ error: 'Nome do usuário é obrigatório.' });
@@ -41,10 +41,12 @@ export default async function handler(req, res) {
       ...(socialHandle ? { [provider.toLowerCase()]: socialHandle } : {})
     };
 
-    // Verificar se o usuário já existe por email ou provider_id
+    // Verificar se o usuário já existe por email, cpf ou provider_id
     const existing = await sql`
       SELECT * FROM users 
-      WHERE email = ${email} OR (provider_id = ${providerId || ''} AND auth_provider = ${provider})
+      WHERE email = ${email} 
+         OR (cpf IS NOT NULL AND cpf = ${cpf || ''})
+         OR (provider_id = ${providerId || ''} AND auth_provider = ${provider})
       LIMIT 1
     `;
 
@@ -87,10 +89,10 @@ export default async function handler(req, res) {
 
     const inserted = await sql`
       INSERT INTO users (
-        id, name, username, email, avatar, role, status, rank, 
+        id, name, username, email, cpf, password_hash, avatar, role, status, rank, 
         honor_points, auth_provider, provider_id, social_links, verified
       ) VALUES (
-        ${id}, ${name}, ${username}, ${email}, ${avatarUrl}, 'user', 'active', 'soldado',
+        ${id}, ${name}, ${username}, ${email}, ${cpf || null}, ${password || null}, ${avatarUrl}, 'user', 'active', 'soldado',
         100, ${provider}, ${providerId || id}, ${JSON.stringify(userSocialLinks)}::jsonb, false
       )
       RETURNING *

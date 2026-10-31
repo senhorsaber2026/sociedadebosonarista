@@ -587,35 +587,53 @@ export const Navbar: React.FC<NavbarProps> = ({
                         </button>
                       </div>
 
-                      <div className="pt-1 mt-1 border-t border-[#263B30]">
+                      <div className="pt-1 mt-1 border-t border-[#263B30] space-y-1">
+                        <button
+                          onClick={() => { setShowUserMenu(false); onOpenAuth('register'); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#15291F] text-[#E8CC76] transition text-left font-bold text-xs cursor-pointer"
+                        >
+                          <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
+                          <span>Fazer Meu Cadastro Real</span>
+                        </button>
                         <button
                           onClick={handleLogout}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#2b1414] text-[#D94B4B] transition text-left font-medium"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#2b1414] text-[#D94B4B] transition text-left font-medium cursor-pointer"
                         >
                           <LogOut className="w-4 h-4" />
-                          Encerrar Sessão
+                          Encerrar Sessão (Sair)
                         </button>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
+
+              {/* Prominent new registration button even when logged in */}
+              <button
+                onClick={() => onOpenAuth('register')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E8CC76] text-[#07140F] hover:brightness-110 text-xs font-black shadow-[0_0_12px_rgba(212,175,55,0.35)] transition cursor-pointer"
+                title="Cadastrar uma nova conta com sua rede social ou CPF"
+              >
+                <ShieldCheck className="w-4 h-4 text-[#07140F]" />
+                <span className="hidden sm:inline">Cadastro Real</span>
+                <span className="sm:hidden">Cadastrar</span>
+              </button>
             </>
           ) : (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onOpenAuth('login')}
-                className="px-3 py-1.5 rounded-xl border border-[#263B30] hover:border-[#D4AF37] text-xs font-semibold text-[#F5F5F0] transition cursor-pointer"
+                className="px-3.5 py-2 rounded-xl border border-[#263B30] hover:border-[#D4AF37] text-xs font-bold text-[#F5F5F0] hover:bg-[#15291F] transition cursor-pointer"
               >
                 Entrar
               </button>
               <button
-                onClick={() => onNavigate('register')}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] hover:brightness-110 text-[#07140F] text-xs font-bold shadow-md transition cursor-pointer"
-                title="Cadastre-se com seu CPF e receba sua patente"
+                onClick={() => onOpenAuth('register')}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] via-[#E8CC76] to-[#AA8325] hover:brightness-110 text-[#07140F] text-xs font-black shadow-[0_0_20px_rgba(212,175,55,0.4)] transition cursor-pointer transform hover:scale-105"
+                title="Cadastre-se com Rede Social (Google, Instagram, WhatsApp, etc.) ou CPF"
               >
                 <ShieldCheck className="w-4 h-4 text-[#07140F]" />
-                <span>Cadastrar com CPF</span>
+                <span className="uppercase tracking-wider">CADASTRAR-SE</span>
               </button>
             </div>
           )}
@@ -647,6 +665,15 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Mobile Dropdown Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-[#102019] border-b border-[#263B30] px-4 py-3 space-y-2 animate-fade-in text-sm">
+          {/* Mobile Registration Prominent Button */}
+          <button
+            onClick={() => { onOpenAuth('register'); setMobileMenuOpen(false); }}
+            className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-black text-xs flex items-center justify-center gap-2 shadow-md uppercase tracking-wider mb-2 cursor-pointer"
+          >
+            <ShieldCheck className="w-4 h-4 text-[#07140F]" />
+            <span>Cadastrar Conta (Redes ou CPF)</span>
+          </button>
+
           <button
             onClick={() => { onNavigate('home'); setMobileMenuOpen(false); }}
             className={`w-full text-left py-2 px-3 rounded-lg ${currentView === 'home' ? 'bg-[#174D32] text-[#E8CC76] font-bold' : 'text-[#F5F5F0]'}`}

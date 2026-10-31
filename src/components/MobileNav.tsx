@@ -60,7 +60,17 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         <span className="text-[10px] font-semibold">Debates</span>
       </button>
 
-      {currentUser ? (
+      <button
+        onClick={() => onNavigate('register')}
+        className={`flex flex-col items-center gap-1 transition ${
+          currentView === 'register' ? 'text-[#D4AF37]' : 'text-[#A5B2A9]'
+        }`}
+      >
+        <ShieldCheck className="w-5 h-5 text-[#D4AF37]" />
+        <span className="text-[10px] font-semibold text-[#E8CC76]">Cadastro</span>
+      </button>
+
+      {currentUser && (
         <button
           onClick={() => onNavigate('profile', currentUser.username)}
           className={`flex flex-col items-center gap-1 transition ${
@@ -69,16 +79,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         >
           <UserIcon className="w-5 h-5" />
           <span className="text-[10px] font-semibold">Perfil</span>
-        </button>
-      ) : (
-        <button
-          onClick={() => onNavigate('register')}
-          className={`flex flex-col items-center gap-1 transition ${
-            currentView === 'register' ? 'text-[#D4AF37]' : 'text-[#A5B2A9]'
-          }`}
-        >
-          <ShieldCheck className="w-5 h-5 text-[#D4AF37]" />
-          <span className="text-[10px] font-semibold text-[#E8CC76]">Cadastrar</span>
         </button>
       )}
     </nav>
