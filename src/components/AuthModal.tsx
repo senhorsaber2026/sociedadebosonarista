@@ -362,6 +362,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               >
                 Cadastrar com CPF
               </button>
+              <button
+                onClick={() => {
+                  storageService.logout();
+                  setError(null);
+                  setSocialPromptOpen(false);
+                  setTab('login');
+                  showToast('Sessão encerrada. Agora você pode entrar com outra conta.');
+                }}
+                className="flex-1 py-2 rounded-lg transition cursor-pointer text-[#D94B4B] hover:bg-[#2a1414] hover:text-red-400"
+                title="Encerrar sessão atual e entrar com outra conta (ex: outro Google)"
+              >
+                Trocar Conta
+              </button>
             </div>
 
             {error && (

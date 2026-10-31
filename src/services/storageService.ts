@@ -808,9 +808,11 @@ export const storageService = {
     getStorage(STORAGE_KEYS.AUDIT_LOGS, DEFAULT_AUDIT_LOGS);
     getStorage(STORAGE_KEYS.STORIES, DEFAULT_STORIES);
     
-    // Real mode: do not force mock auto-login. If previously on mock usr_kaliton, clear so visitor sees real register & login
+    // Real mode: clear any mock/demo user sessions so visitors always land logged-out
+    // and must authenticate with a real account (social or CPF)
+    const MOCK_IDS = ['usr_kaliton', 'usr_admin', 'usr_silva', 'usr_helena', 'usr_rodrigo'];
     const currentStored = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-    if (currentStored === 'usr_kaliton') {
+    if (currentStored && MOCK_IDS.includes(currentStored)) {
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
     }
   },
@@ -863,8 +865,9 @@ export const storageService = {
   getCurrentUser(): User | null {
     const users = this.getUsers();
     const currentId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-    if (!currentId) return users[1] || users[0] || null;
-    return users.find(u => u.id === currentId) || users[1] || null;
+    // Real mode: only return a user if there is an explicit stored session ID
+    if (!currentId) return null;
+    return users.find(u => u.id === currentId) || null;
   },
 
   setCurrentUser(userId: string): User | null {
@@ -1104,27 +1107,51 @@ export const storageService = {
       }
 
       const users = this.getUsers();
-      const existingIdx = users.findIndex(u => u.id === data.user.id || (u.email && u.email.toLowerCase() === data.user.email.toLowerCase()));
+      // Match by providerId first (most specific), then by email
+      const existingIdx = users.findIndex(u =>
+        (socialData.providerId && u.socialLinks?.providerId === socialData.providerId) ||
+        (data.user.email && u.email && u.email.toLowerCase() === data.user.email.toLowerCase())
+      );
       if (existingIdx >= 0) {
         users[existingIdx] = { ...users[existingIdx], ...data.user };
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, users[existingIdx].id);
       } else {
         users.push(data.user);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, data.user.id);
       }
       setStorage(STORAGE_KEYS.USERS, users);
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, data.user.id);
 
       return { success: true, user: data.user };
     } catch (err: any) {
       console.warn('Fallback local para login social:', err?.message);
       const users = this.getUsers();
-      const cleanEmail = (socialData.email || '').toLowerCase();
-      let user = users.find(u => u.email && u.email.toLowerCase() === cleanEmail);
+      const cleanEmail = (socialData.email || '').toLowerCase().trim();
+      const cleanProviderId = socialData.providerId || '';
+
+      // Try to find by providerId first (handles same provider, same account)
+      let user = cleanProviderId
+        ? users.find(u => u.socialLinks?.providerId === cleanProviderId)
+        : undefined;
+
+      // Then try by email (exact match only)
+      if (!user && cleanEmail) {
+        user = users.find(u => u.email && u.email.toLowerCase() === cleanEmail);
+      }
+
       if (!user) {
+        // New account — create fresh
+        const baseUsername = (socialData.name || 'patriota')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]/g, '_')
+          .slice(0, 14);
+        const uniqueSuffix = Math.floor(100 + Math.random() * 9000);
         user = {
-          id: 'usr_' + Math.random().toString(36).substring(2, 9),
+          id: 'usr_' + Date.now().toString(36),
           name: socialData.name,
-          username: (socialData.name || 'patriota').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 14) + '_' + Math.floor(100 + Math.random() * 900),
-          email: socialData.email,
+          username: baseUsername + '_' + uniqueSuffix,
+          email: socialData.email || `${baseUsername}_${uniqueSuffix}@${(socialData.provider || 'social').toLowerCase()}.local`,
           avatar: socialData.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(socialData.name)}`,
           role: 'user',
           status: 'active',
@@ -1134,12 +1161,18 @@ export const storageService = {
           followersCount: 0,
           followingCount: 0,
           postsCount: 0,
-          socialLinks: {},
+          socialLinks: { providerId: cleanProviderId },
           verified: false
         };
         users.push(user);
         setStorage(STORAGE_KEYS.USERS, users);
+      } else {
+        // Update name/avatar if re-logging in
+        user.name = socialData.name || user.name;
+        if (socialData.avatar) user.avatar = socialData.avatar;
+        setStorage(STORAGE_KEYS.USERS, users);
       }
+
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
       return { success: true, user };
     }
