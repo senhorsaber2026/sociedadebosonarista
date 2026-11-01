@@ -704,52 +704,52 @@ export const MemorialView: React.FC<{
         </div>
 
         {/* TOP TAB NAVIGATION BAR */}
-        <div className="relative z-10 border-t border-[#263B30] bg-[#07140F]/90 backdrop-blur-md px-3 py-2 flex items-center justify-center gap-1 sm:gap-3 overflow-x-auto">
+        <div className="relative z-10 border-t border-[#263B30] bg-[#07140F]/90 backdrop-blur-md px-2 py-2 flex items-center gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           <button
             onClick={() => setActiveTab('olavo')}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
               activeTab === 'olavo'
                 ? 'bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] shadow-lg shadow-[#D4AF37]/20'
                 : 'text-[#A5B2A9] hover:text-[#F5F5F0] hover:bg-[#15291F]'
             }`}
           >
-            <Sparkles className="w-4 h-4 fill-current" />
-            <span>Olavo de Carvalho (Destaque)</span>
+            <Sparkles className="w-3.5 h-3.5 fill-current shrink-0" />
+            <span>Olavo de Carvalho</span>
           </button>
 
           <button
             onClick={() => setActiveTab('pantheon')}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
               activeTab === 'pantheon'
                 ? 'bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] shadow-lg shadow-[#D4AF37]/20'
                 : 'text-[#A5B2A9] hover:text-[#F5F5F0] hover:bg-[#15291F]'
             }`}
           >
-            <Landmark className="w-4 h-4" />
+            <Landmark className="w-3.5 h-3.5 shrink-0" />
             <span>Panteão de Lideranças</span>
           </button>
 
           <button
             onClick={() => setActiveTab('what_is_right')}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
               activeTab === 'what_is_right'
                 ? 'bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] shadow-lg shadow-[#D4AF37]/20'
                 : 'text-[#A5B2A9] hover:text-[#F5F5F0] hover:bg-[#15291F]'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
-            <span>O Que é Ser de Direita?</span>
+            <BookOpen className="w-3.5 h-3.5 shrink-0" />
+            <span>Ser de Direita</span>
           </button>
 
           <button
             onClick={() => setActiveTab('quiz')}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
               activeTab === 'quiz'
                 ? 'bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] shadow-lg shadow-[#D4AF37]/20'
                 : 'text-[#A5B2A9] hover:text-[#F5F5F0] hover:bg-[#15291F]'
             }`}
           >
-            <Compass className="w-4 h-4" />
+            <Compass className="w-3.5 h-3.5 shrink-0" />
             <span>Bússola de Valores</span>
           </button>
         </div>
