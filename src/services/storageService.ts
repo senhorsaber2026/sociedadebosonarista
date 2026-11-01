@@ -382,12 +382,59 @@ export const storageService = {
     getStorage(STORAGE_KEYS.STORIES, DEFAULT_STORIES);
     
     // Purge simulated bot members from stored users & stories
-    const SIMULATED_IDS = ['usr_patriota22', 'usr_brasillivre', 'usr_direitaja', 'usr_silva', 'usr_helena', 'usr_rodrigo'];
+    const MOCK_NAMES_SUBSTR = [
+      'patriota br',
+      'carlos silva',
+      'fernanda lima',
+      'ricardo souza',
+      'mariana costa',
+      'andré oliveira',
+      'andre oliveira',
+      'sargento dias',
+      'beatriz santos',
+      'dra. helena moreira',
+      'helena moreira',
+      'rodrigo fagundes',
+      'coronel silva',
+      'patriota22',
+      'brasillivre',
+      'direitaja'
+    ];
+    const SIMULATED_IDS = [
+      'usr_patriota22',
+      'usr_brasillivre',
+      'usr_direitaja',
+      'usr_silva',
+      'usr_helena',
+      'usr_rodrigo',
+      'usr_carlos_silva',
+      'usr_fernanda_lima',
+      'usr_ricardo_souza',
+      'usr_mariana_costa',
+      'usr_andre_oliveira',
+      'usr_dias_es',
+      'usr_beatriz_ms',
+      'story_1',
+      'story_2',
+      'story_3',
+      'story_4',
+      'story_5',
+      'story_6',
+      'story_7',
+      'story_8',
+      'story_9'
+    ];
+
     try {
       const storedUsersRaw = localStorage.getItem(STORAGE_KEYS.USERS);
       if (storedUsersRaw) {
         const storedUsers: User[] = JSON.parse(storedUsersRaw);
-        const filtered = storedUsers.filter(u => !SIMULATED_IDS.includes(u.id));
+        const filtered = storedUsers.filter(u => {
+          if (SIMULATED_IDS.includes(u.id)) return false;
+          const uName = (u.name || '').toLowerCase();
+          if (MOCK_NAMES_SUBSTR.some(m => uName.includes(m))) return false;
+          return true;
+        });
         if (filtered.length !== storedUsers.length) {
           localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(filtered));
         }
@@ -396,7 +443,12 @@ export const storageService = {
       const storedStoriesRaw = localStorage.getItem(STORAGE_KEYS.STORIES);
       if (storedStoriesRaw) {
         const storedStories: StoryItem[] = JSON.parse(storedStoriesRaw);
-        const filteredStories = storedStories.filter(s => !SIMULATED_IDS.includes(s.userId));
+        const filteredStories = storedStories.filter(s => {
+          if (SIMULATED_IDS.includes(s.userId) || SIMULATED_IDS.includes(s.id)) return false;
+          const sName = (s.userName || '').toLowerCase();
+          if (MOCK_NAMES_SUBSTR.some(m => sName.includes(m))) return false;
+          return true;
+        });
         if (filteredStories.length !== storedStories.length) {
           localStorage.setItem(STORAGE_KEYS.STORIES, JSON.stringify(filteredStories));
         }
@@ -408,7 +460,55 @@ export const storageService = {
 
   // ---------------- STORIES ----------------
   getStories(): StoryItem[] {
-    return getStorage<StoryItem[]>(STORAGE_KEYS.STORIES, DEFAULT_STORIES);
+    const stories = getStorage<StoryItem[]>(STORAGE_KEYS.STORIES, DEFAULT_STORIES);
+    const MOCK_NAMES_SUBSTR = [
+      'patriota br',
+      'carlos silva',
+      'fernanda lima',
+      'ricardo souza',
+      'mariana costa',
+      'andré oliveira',
+      'andre oliveira',
+      'sargento dias',
+      'beatriz santos',
+      'dra. helena moreira',
+      'helena moreira',
+      'rodrigo fagundes',
+      'coronel silva',
+      'patriota22',
+      'brasillivre',
+      'direitaja'
+    ];
+    const SIMULATED_IDS = [
+      'usr_patriota22',
+      'usr_brasillivre',
+      'usr_direitaja',
+      'usr_silva',
+      'usr_helena',
+      'usr_rodrigo',
+      'usr_carlos_silva',
+      'usr_fernanda_lima',
+      'usr_ricardo_souza',
+      'story_1',
+      'story_2',
+      'story_3',
+      'story_4',
+      'story_5',
+      'story_6',
+      'story_7'
+    ];
+
+    const filtered = stories.filter(s => {
+      if (SIMULATED_IDS.includes(s.userId) || SIMULATED_IDS.includes(s.id)) return false;
+      const sName = (s.userName || '').toLowerCase();
+      if (MOCK_NAMES_SUBSTR.some(m => sName.includes(m))) return false;
+      return true;
+    });
+
+    if (filtered.length !== stories.length) {
+      setStorage(STORAGE_KEYS.STORIES, filtered);
+    }
+    return filtered;
   },
 
   addStory(story: Omit<StoryItem, 'id' | 'createdAt'>): StoryItem {
@@ -424,6 +524,15 @@ export const storageService = {
       window.dispatchEvent(new CustomEvent('sb_stories_updated', { detail: newStory }));
     }
     return newStory;
+  },
+
+  deleteStory(storyId: string): void {
+    const stories = this.getStories();
+    const updated = stories.filter(s => s.id !== storyId);
+    setStorage(STORAGE_KEYS.STORIES, updated);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sb_stories_updated'));
+    }
   },
 
   // ---------------- AUTHENTICATION & USERS ----------------

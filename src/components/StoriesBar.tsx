@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -8,12 +8,13 @@ import {
   Heart, 
   Send, 
   Sparkles, 
-  Compass,
-  Play,
-  Pause,
-  Clock,
-  Upload,
-  Image as ImageIcon
+  Compass, 
+  Play, 
+  Pause, 
+  Clock, 
+  Upload, 
+  Trash2, 
+  Film 
 } from 'lucide-react';
 import { StoryItem, User } from '../types';
 import { storageService } from '../services/storageService';
@@ -24,15 +25,28 @@ interface StoriesBarProps {
   onOpenAuth: () => void;
 }
 
+interface UserStoryGroup {
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  isVerified?: boolean;
+  badgeType?: 'verified' | 'flag' | 'star';
+  stories: StoryItem[];
+}
+
 const STORY_DURATION_MS = 5000; // 5 seconds per story
 
 export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth }) => {
   const [stories, setStories] = useState<StoryItem[]>(() => storageService.getStories());
-  const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
+  const [activeGroupIndex, setActiveGroupIndex] = useState<number | null>(null);
+  const [activeStoryIndexInGroup, setActiveStoryIndexInGroup] = useState<number>(0);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  // Add Story modal state
   const [isAddingStory, setIsAddingStory] = useState(false);
   const [storyImage, setStoryImage] = useState('');
+  const [storyMediaType, setStoryMediaType] = useState<'image' | 'video'>('image');
   const [storyCaption, setStoryCaption] = useState('');
   const [storyReply, setStoryReply] = useState('');
   const [hasLikedStory, setHasLikedStory] = useState(false);
@@ -41,7 +55,30 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
   const timerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Listen for story updates dispatched by storageService.addStory()
+  // Group stories by userId so each user has EXACTLY ONE circle
+  const storyGroups: UserStoryGroup[] = useMemo(() => {
+    const groups: UserStoryGroup[] = [];
+
+    stories.forEach(story => {
+      let g = groups.find(group => group.userId === story.userId);
+      if (!g) {
+        g = {
+          userId: story.userId,
+          userName: story.userName,
+          userAvatar: story.userAvatar,
+          isVerified: story.isVerified,
+          badgeType: story.badgeType,
+          stories: []
+        };
+        groups.push(g);
+      }
+      g.stories.push(story);
+    });
+
+    return groups;
+  }, [stories]);
+
+  // Listen for story updates
   useEffect(() => {
     const handleStoriesUpdated = () => {
       setStories(storageService.getStories());
@@ -50,7 +87,8 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
     return () => window.removeEventListener('sb_stories_updated', handleStoriesUpdated);
   }, []);
 
-  const activeStory = activeStoryIndex !== null && stories[activeStoryIndex] ? stories[activeStoryIndex] : null;
+  const currentGroup = activeGroupIndex !== null && storyGroups[activeGroupIndex] ? storyGroups[activeGroupIndex] : null;
+  const activeStory = currentGroup && currentGroup.stories[activeStoryIndexInGroup] ? currentGroup.stories[activeStoryIndexInGroup] : null;
 
   const handleScroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -59,39 +97,45 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
     }
   };
 
-  const handleNextStory = useCallback(() => {
-    setProgress(0);
-    setHasLikedStory(false);
-    setActiveStoryIndex(prev => {
-      if (prev === null) return null;
-      if (prev < stories.length - 1) {
-        return prev + 1;
-      }
-      return null; // Close after last story
-    });
-  }, [stories.length]);
-
-  const handlePrevStory = useCallback(() => {
-    setProgress(0);
-    setHasLikedStory(false);
-    setActiveStoryIndex(prev => {
-      if (prev === null) return null;
-      if (prev > 0) {
-        return prev - 1;
-      }
-      return 0;
-    });
-  }, []);
-
   const handleCloseStory = useCallback(() => {
-    setActiveStoryIndex(null);
+    setActiveGroupIndex(null);
+    setActiveStoryIndexInGroup(0);
     setProgress(0);
     setIsPaused(false);
   }, []);
 
+  const handleNextStory = useCallback(() => {
+    setProgress(0);
+    setHasLikedStory(false);
+    if (activeGroupIndex === null || !currentGroup) return;
+
+    if (activeStoryIndexInGroup < currentGroup.stories.length - 1) {
+      setActiveStoryIndexInGroup(prev => prev + 1);
+    } else if (activeGroupIndex < storyGroups.length - 1) {
+      setActiveGroupIndex(prev => (prev !== null ? prev + 1 : null));
+      setActiveStoryIndexInGroup(0);
+    } else {
+      handleCloseStory();
+    }
+  }, [activeGroupIndex, activeStoryIndexInGroup, currentGroup, storyGroups.length, handleCloseStory]);
+
+  const handlePrevStory = useCallback(() => {
+    setProgress(0);
+    setHasLikedStory(false);
+    if (activeGroupIndex === null) return;
+
+    if (activeStoryIndexInGroup > 0) {
+      setActiveStoryIndexInGroup(prev => prev - 1);
+    } else if (activeGroupIndex > 0) {
+      const prevIdx = activeGroupIndex - 1;
+      setActiveGroupIndex(prevIdx);
+      setActiveStoryIndexInGroup(storyGroups[prevIdx].stories.length - 1);
+    }
+  }, [activeGroupIndex, activeStoryIndexInGroup, storyGroups]);
+
   // 1. AUTO-PROGRESS TIMER
   useEffect(() => {
-    if (activeStoryIndex === null || isPaused) {
+    if (activeStory === null || isPaused) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
@@ -112,11 +156,11 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [activeStoryIndex, isPaused, handleNextStory]);
+  }, [activeStory, isPaused, handleNextStory]);
 
   // 2. KEYBOARD LISTENERS & BODY SCROLL LOCK
   useEffect(() => {
-    if (activeStoryIndex === null) return;
+    if (activeStory === null) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -139,20 +183,24 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = originalOverflow;
     };
-  }, [activeStoryIndex, handleCloseStory, handleNextStory, handlePrevStory]);
+  }, [activeStory, handleCloseStory, handleNextStory, handlePrevStory]);
 
   const handleStoryFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      showToast('A imagem deve ter menos de 10MB.');
+    if (file.size > 25 * 1024 * 1024) {
+      showToast('O arquivo deve ter menos de 25MB.');
       return;
     }
+
+    const isVideo = file.type.startsWith('video');
+    setStoryMediaType(isVideo ? 'video' : 'image');
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       const dataUrl = ev.target?.result as string;
       setStoryImage(dataUrl);
-      showToast('Foto do Story selecionada com sucesso!');
+      showToast(isVideo ? 'Vídeo selecionado com sucesso!' : 'Foto selecionada com sucesso!');
     };
     reader.readAsDataURL(file);
   };
@@ -173,6 +221,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       isVerified: currentUser.verified,
       badgeType: 'verified',
       mediaUrl: defaultImg,
+      mediaType: storyMediaType,
       caption: storyCaption.trim() || 'Orgulho de ser brasileiro! 🇧🇷'
     });
 
@@ -180,7 +229,17 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
     setIsAddingStory(false);
     setStoryImage('');
     setStoryCaption('');
+    setStoryMediaType('image');
     showToast('Seu Story foi publicado com sucesso!');
+  };
+
+  const handleDeleteActiveStory = () => {
+    if (!activeStory) return;
+    if (confirm('Deseja excluir este Story?')) {
+      storageService.deleteStory(activeStory.id);
+      showToast('Story excluído com sucesso.');
+      handleCloseStory();
+    }
   };
 
   const handleSendReply = (e: React.FormEvent) => {
@@ -256,42 +315,64 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
           </span>
         </div>
 
-        {/* STORIES LIST */}
-        {stories.map((story, idx) => {
+        {/* STORIES LIST - ONE CIRCLE PER USER */}
+        {storyGroups.map((group, groupIdx) => {
+          // Latest story from this user determines the circle thumbnail
+          const latestStory = group.stories[0];
+          const isVideo = latestStory?.mediaType === 'video' || latestStory?.mediaUrl?.startsWith('data:video') || latestStory?.mediaUrl?.endsWith('.mp4');
+          const storyMedia = latestStory?.mediaUrl || '/assets/images/brasil_hero_banner_1793411883121.jpg';
+
           return (
             <div
-              key={story.id}
+              key={group.userId}
               onClick={() => {
-                setActiveStoryIndex(idx);
+                setActiveGroupIndex(groupIdx);
+                setActiveStoryIndexInGroup(0);
                 setProgress(0);
                 setHasLikedStory(false);
                 setIsPaused(false);
               }}
               className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group select-none w-20"
             >
+              {/* Story Circle: Shows STORY PHOTO/VIDEO with gold ring */}
               <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-[#D4AF37] via-[#E8CC76] to-[#174D32] group-hover:scale-105 transition-transform duration-300 shadow-md">
-                <div className="w-full h-full rounded-full overflow-hidden p-0.5 bg-[#102019]">
-                  <img
-                    src={story.userAvatar}
-                    alt={story.userName}
-                    className="w-full h-full object-cover rounded-full group-hover:brightness-110 transition"
-                  />
+                <div className="w-full h-full rounded-full overflow-hidden p-0.5 bg-[#102019] relative flex items-center justify-center">
+                  {isVideo ? (
+                    <div className="w-full h-full relative rounded-full overflow-hidden bg-black flex items-center justify-center">
+                      <video
+                        src={storyMedia}
+                        className="w-full h-full object-cover"
+                        muted
+                        playsInline
+                      />
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <Film className="w-4 h-4 text-white drop-shadow" />
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={storyMedia}
+                      alt={group.userName}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+                      }}
+                      className="w-full h-full object-cover rounded-full group-hover:brightness-110 transition"
+                    />
+                  )}
                 </div>
 
-                {/* Badge (Verified or Flag) */}
-                {story.badgeType === 'flag' ? (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#174D32] border border-[#D4AF37] flex items-center justify-center text-[8px]" title="Patriota">
-                    🇧🇷
-                  </div>
-                ) : (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#2563EB] border border-white/80 flex items-center justify-center text-white" title="Verificado">
-                    <Check className="w-2.5 h-2.5 stroke-[3]" />
-                  </div>
-                )}
+                {/* Mini User Avatar Badge in the bottom-right corner */}
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full overflow-hidden border-2 border-[#102019] bg-[#102019] shadow">
+                  <img
+                    src={group.userAvatar}
+                    alt={group.userName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </div>
 
               <span className="text-[10px] sm:text-[11px] font-medium text-[#F5F5F0] text-center leading-tight line-clamp-2 w-full group-hover:text-[#E8CC76] break-words">
-                {story.userName}
+                {group.userName}
               </span>
             </div>
           );
@@ -299,11 +380,10 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       </div>
 
       {/* STORY VIEWER MODAL */}
-      {activeStory && (
+      {currentGroup && activeStory && (
         <div 
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fade-in select-none"
           onClick={(e) => {
-            // Close when clicking dark backdrop outside story card
             if (e.target === e.currentTarget) {
               handleCloseStory();
             }
@@ -315,7 +395,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
               e.stopPropagation();
               handlePrevStory();
             }}
-            disabled={activeStoryIndex === 0}
+            disabled={activeGroupIndex === 0 && activeStoryIndexInGroup === 0}
             className="hidden md:flex mr-4 w-11 h-11 rounded-full bg-[#102019]/80 border border-[#263B30] hover:border-[#D4AF37] disabled:opacity-30 disabled:hover:border-[#263B30] text-[#F5F5F0] hover:text-[#E8CC76] items-center justify-center transition cursor-pointer shadow-lg active:scale-95"
             title="Story anterior (Seta esquerda)"
           >
@@ -324,45 +404,56 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
 
           {/* MAIN STORY CONTAINER */}
           <div 
-            className="relative w-full max-w-[390px] h-[600px] max-h-[92vh] bg-[#07140F] rounded-3xl overflow-hidden border-2 border-[#D4AF37]/60 shadow-[0_0_35px_rgba(0,0,0,0.9)] flex flex-col justify-between"
+            className="relative w-full max-w-[400px] h-[640px] max-h-[92vh] bg-[#07140F] rounded-3xl overflow-hidden border-2 border-[#D4AF37]/60 shadow-[0_0_35px_rgba(0,0,0,0.9)] flex flex-col justify-between"
             onMouseDown={() => setIsPaused(true)}
             onMouseUp={() => setIsPaused(false)}
             onTouchStart={() => setIsPaused(true)}
             onTouchEnd={() => setIsPaused(false)}
           >
-            {/* Background Story Image with Fallback */}
-            <div className="absolute inset-0 z-0">
-              <img
-                src={activeStory.mediaUrl || '/src/assets/images/brasil_hero_banner_1793411883121.jpg'}
-                alt="Story"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/src/assets/images/brasil_hero_banner_1793411883121.jpg';
-                }}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#07140F] via-black/20 to-[#07140F]/90" />
+            {/* Background Story Media (Photo or Video in full clarity) */}
+            <div className="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden">
+              {activeStory.mediaType === 'video' || activeStory.mediaUrl?.startsWith('data:video') || activeStory.mediaUrl?.endsWith('.mp4') ? (
+                <video
+                  src={activeStory.mediaUrl}
+                  autoPlay
+                  playsInline
+                  controls={false}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <img
+                  src={activeStory.mediaUrl || '/assets/images/brasil_hero_banner_1793411883121.jpg'}
+                  alt="Story"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+                  }}
+                  className="w-full h-full object-contain"
+                />
+              )}
+              {/* Subtle gradient overlay to guarantee text legibility */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/70 pointer-events-none" />
             </div>
 
             {/* Top Navigation & Info Header */}
             <div className="relative z-20 p-3 pt-3">
-              {/* Segmented Progress Bars (Instagram Style) */}
+              {/* Segmented Progress Bars (one segment per story of this user) */}
               <div className="flex items-center gap-1.5 w-full mb-3">
-                {stories.map((s, idx) => (
+                {currentGroup.stories.map((s, idx) => (
                   <div 
                     key={s.id} 
                     className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setActiveStoryIndex(idx);
+                      setActiveStoryIndexInGroup(idx);
                       setProgress(0);
                     }}
                   >
                     <div 
                       className="h-full bg-gradient-to-r from-[#E5AC24] to-[#F3C448] transition-all duration-75"
                       style={{
-                        width: idx < (activeStoryIndex || 0) 
+                        width: idx < activeStoryIndexInGroup 
                           ? '100%' 
-                          : idx === activeStoryIndex 
+                          : idx === activeStoryIndexInGroup 
                             ? `${progress}%` 
                             : '0%'
                       }}
@@ -371,7 +462,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 ))}
               </div>
 
-              {/* User Avatar + Time + Pause + Close */}
+              {/* User Avatar + Name + Actions */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <img
@@ -392,12 +483,26 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                     </div>
                     <span className="text-[10px] text-white/80 drop-shadow flex items-center gap-1">
                       <Clock className="w-3 h-3 text-[#E5AC24]" />
-                      há 2 horas • Sociedade Bosonarista
+                      Recente • Sociedade Bosonarista
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  {/* Delete Button (if author or admin) */}
+                  {(currentUser?.id === activeStory.userId || currentUser?.role === 'admin') && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteActiveStory();
+                      }}
+                      className="w-8 h-8 rounded-full bg-black/60 text-white hover:text-[#D94B4B] hover:bg-black/80 flex items-center justify-center transition border border-white/20 cursor-pointer"
+                      title="Excluir este Story"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
                   {/* Pause / Resume Button */}
                   <button
                     onClick={(e) => {
@@ -433,7 +538,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                   handlePrevStory();
                 }}
                 className="w-1/3 h-full cursor-pointer flex items-center justify-start pl-2 opacity-0 hover:opacity-80 transition-opacity"
-                title="Story anterior (clique aqui ou seta esquerda)"
+                title="Story anterior"
               >
                 <div className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center border border-white/20">
                   <ChevronLeft className="w-4 h-4" />
@@ -453,7 +558,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                   handleNextStory();
                 }}
                 className="w-1/3 h-full cursor-pointer flex items-center justify-end pr-2 opacity-0 hover:opacity-80 transition-opacity"
-                title="Próximo story (clique aqui ou seta direita)"
+                title="Próximo story"
               >
                 <div className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center border border-white/20">
                   <ChevronRight className="w-4 h-4" />
@@ -462,9 +567,9 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
             </div>
 
             {/* Bottom Caption & Interactive Reply Bar */}
-            <div className="relative z-20 p-3.5 space-y-2.5 bg-gradient-to-t from-black via-black/80 to-transparent">
+            <div className="relative z-20 p-3.5 space-y-2.5 bg-gradient-to-t from-black via-black/85 to-transparent">
               {activeStory.caption && (
-                <div className="p-2.5 rounded-xl bg-black/75 backdrop-blur-md border border-[#263B30] text-xs font-semibold text-white leading-relaxed shadow">
+                <div className="p-3 rounded-2xl bg-black/80 backdrop-blur-md border border-[#D4AF37]/40 text-xs sm:text-sm font-semibold text-white leading-relaxed shadow-lg">
                   {activeStory.caption}
                 </div>
               )}
@@ -512,7 +617,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
               e.stopPropagation();
               handleNextStory();
             }}
-            disabled={activeStoryIndex === stories.length - 1}
+            disabled={activeGroupIndex === storyGroups.length - 1 && activeStoryIndexInGroup === currentGroup.stories.length - 1}
             className="hidden md:flex ml-4 w-11 h-11 rounded-full bg-[#102019]/80 border border-[#263B30] hover:border-[#D4AF37] disabled:opacity-30 disabled:hover:border-[#263B30] text-[#F5F5F0] hover:text-[#E8CC76] items-center justify-center transition cursor-pointer shadow-lg active:scale-95"
             title="Próximo story (Seta direita)"
           >
@@ -561,12 +666,12 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
               {/* Direct file upload from device */}
               <div>
                 <label className="block text-xs font-semibold text-[#A5B2A9] mb-1.5">
-                  Foto do Story (Celular ou Computador)
+                  Foto ou Vídeo do Story (Celular ou Computador)
                 </label>
                 <input
                   type="file"
                   ref={fileInputRef}
-                  accept="image/*"
+                  accept="image/*,video/*"
                   onChange={handleStoryFileUpload}
                   className="hidden"
                 />
@@ -576,25 +681,29 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                   className="w-full py-3 px-4 rounded-2xl border border-dashed border-[#D4AF37]/60 hover:border-[#D4AF37] bg-[#15291F] hover:bg-[#1b3829] text-[#E8CC76] transition flex items-center justify-center gap-2 text-xs font-bold cursor-pointer shadow-sm active:scale-98"
                 >
                   <Upload className="w-4 h-4 text-[#D4AF37]" />
-                  <span>Escolher Foto do seu Aparelho</span>
+                  <span>Escolher Foto ou Vídeo do seu Aparelho</span>
                 </button>
               </div>
 
-              {/* Selected Photo Preview */}
+              {/* Selected Photo or Video Preview */}
               {storyImage && (
-                <div className="relative rounded-2xl overflow-hidden h-36 border border-[#D4AF37]/50 bg-black/60 shadow-inner">
-                  <img src={storyImage} alt="Prévia" className="w-full h-full object-cover" />
+                <div className="relative rounded-2xl overflow-hidden h-36 border border-[#D4AF37]/50 bg-black/60 shadow-inner flex items-center justify-center">
+                  {storyMediaType === 'video' ? (
+                    <video src={storyImage} className="w-full h-full object-contain" muted autoPlay playsInline />
+                  ) : (
+                    <img src={storyImage} alt="Prévia" className="w-full h-full object-contain" />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
                   <button
                     type="button"
                     onClick={() => setStoryImage('')}
                     className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/80 hover:bg-[#D94B4B] text-white flex items-center justify-center text-xs transition cursor-pointer shadow"
-                    title="Remover foto"
+                    title="Remover mídia"
                   >
                     ✕
                   </button>
                   <span className="absolute bottom-2 left-3 text-[10px] text-[#E8CC76] font-semibold">
-                    ✓ Imagem pronta para o Story
+                    ✓ Mídia pronta para o Story
                   </span>
                 </div>
               )}
@@ -606,7 +715,10 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 <input
                   type="url"
                   value={storyImage}
-                  onChange={(e) => setStoryImage(e.target.value)}
+                  onChange={(e) => {
+                    setStoryImage(e.target.value);
+                    setStoryMediaType('image');
+                  }}
                   placeholder="https://..."
                   className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
                 />
@@ -617,21 +729,30 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 <span className="text-[11px] text-[#A5B2A9] block mb-1.5">Ou escolha uma sugestão oficial:</span>
                 <div className="grid grid-cols-3 gap-2">
                   <div
-                    onClick={() => setStoryImage('/assets/images/brasil_hero_banner_1793411883121.jpg')}
+                    onClick={() => {
+                      setStoryImage('/assets/images/brasil_hero_banner_1793411883121.jpg');
+                      setStoryMediaType('image');
+                    }}
                     className="h-16 rounded-lg overflow-hidden border border-[#263B30] hover:border-[#D4AF37] cursor-pointer group/item relative"
                   >
                     <img src="/assets/images/brasil_hero_banner_1793411883121.jpg" alt="Brasília" className="w-full h-full object-cover group-hover/item:scale-105 transition" />
                     <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] text-white text-center py-0.5">Brasília</span>
                   </div>
                   <div
-                    onClick={() => setStoryImage('/assets/images/brasil_bandeira_card_1793411895078.jpg')}
+                    onClick={() => {
+                      setStoryImage('/assets/images/brasil_bandeira_card_1793411895078.jpg');
+                      setStoryMediaType('image');
+                    }}
                     className="h-16 rounded-lg overflow-hidden border border-[#263B30] hover:border-[#D4AF37] cursor-pointer group/item relative"
                   >
                     <img src="/assets/images/brasil_bandeira_card_1793411895078.jpg" alt="Bandeira" className="w-full h-full object-cover group-hover/item:scale-105 transition" />
                     <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] text-white text-center py-0.5">Bandeira</span>
                   </div>
                   <div
-                    onClick={() => setStoryImage('/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png')}
+                    onClick={() => {
+                      setStoryImage('/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png');
+                      setStoryMediaType('image');
+                    }}
                     className="h-16 rounded-lg overflow-hidden border border-[#263B30] hover:border-[#D4AF37] cursor-pointer group/item relative"
                   >
                     <img src="/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png" alt="Emblema" className="w-full h-full object-cover group-hover/item:scale-105 transition" />

@@ -123,6 +123,7 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
           isVerified: currentUser.verified ?? false,
           badgeType: 'verified',
           mediaUrl: storyMedia,
+          mediaType: mediaUrl.trim() ? mediaType : 'image',
           caption: content.trim().slice(0, 280)
         });
       }
