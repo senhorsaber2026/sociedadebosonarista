@@ -1055,8 +1055,8 @@ export const MemorialView: React.FC<{
             </div>
           </div>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {/* Cards Grid - 2 cols max to have enough width for text */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {filteredFigures.map((fig) => (
               <div 
                 key={fig.id}
@@ -1084,10 +1084,10 @@ export const MemorialView: React.FC<{
 
                   {/* Name overlaid at bottom of image */}
                   <div className="absolute bottom-3 left-4 right-4">
-                    <h3 className="font-serif-patriotic font-bold text-lg text-[#FFF5D0] group-hover:text-[#E5AC24] transition">
+                    <h3 className="font-serif-patriotic font-bold text-lg text-[#FFF5D0] group-hover:text-[#E5AC24] transition leading-tight">
                       {fig.name}
                     </h3>
-                    <p className="text-[11px] text-[#A5B2A9] line-clamp-1">
+                    <p className="text-[11px] text-[#A5B2A9] mt-0.5 line-clamp-2">
                       {fig.title}
                     </p>
                   </div>
@@ -1096,12 +1096,12 @@ export const MemorialView: React.FC<{
                 {/* Body Content */}
                 <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                   {/* Quote Snippet */}
-                  <div className="p-2.5 rounded-xl bg-[#0B1A13] border-l-2 border-[#D4AF37] text-xs italic text-[#D8E2DC] line-clamp-2">
+                  <div className="p-2.5 rounded-xl bg-[#0B1A13] border-l-2 border-[#D4AF37] text-xs italic text-[#D8E2DC]">
                     "{fig.quote}"
                   </div>
 
                   {/* Summary */}
-                  <p className="text-xs text-[#A5B2A9] leading-relaxed line-clamp-3">
+                  <p className="text-xs text-[#A5B2A9] leading-relaxed">
                     {fig.summary}
                   </p>
 
