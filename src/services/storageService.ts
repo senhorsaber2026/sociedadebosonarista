@@ -1279,6 +1279,21 @@ export const storageService = {
     };
 
     setStorage(STORAGE_KEYS.USERS, users);
+
+    // Propagate avatar and name changes to user's posts
+    if (data.avatar || data.name) {
+      const posts = this.getPosts();
+      let changed = false;
+      posts.forEach(p => {
+        if (p.authorId === userId) {
+          if (data.avatar) p.authorAvatar = data.avatar;
+          if (data.name) p.authorName = data.name;
+          changed = true;
+        }
+      });
+      if (changed) setStorage(STORAGE_KEYS.POSTS, posts);
+    }
+
     return users[idx];
   },
 

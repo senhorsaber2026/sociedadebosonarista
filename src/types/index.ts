@@ -39,6 +39,8 @@ export interface SocialLinks {
   x?: string;
   whatsapp?: string;
   website?: string;
+  providerId?: string;
+  [key: string]: string | undefined;
 }
 
 export interface User {

@@ -18,13 +18,80 @@ import {
   Heart,
   Award,
   MessageSquare,
-  Mail
+  Mail,
+  Camera,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { User, Post, DebateTopic } from '../types';
 import { storageService } from '../services/storageService';
 import { PostCard } from './PostCard';
 import { RankBadge } from './RankBadge';
 import { showToast } from './Toast';
+
+// Helper to compress and resize image client-side to keep localStorage light & fast
+const compressImage = (file: File, maxWidth: number, maxHeight: number, quality = 0.85): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('Por favor selecione um arquivo de imagem válido (JPG, PNG, WebP).'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(event.target?.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed);
+      };
+      img.onerror = () => reject(new Error('Falha ao decodificar a imagem selecionada.'));
+    };
+    reader.onerror = () => reject(new Error('Falha ao ler o arquivo selecionado.'));
+  });
+};
+
+const PATRIOTIC_COVER_PRESETS = [
+  {
+    name: 'Memorial Neoclássico',
+    url: '/assets/memorial/memorial_hall.jpg',
+    tag: '🏛️ Memorial'
+  },
+  {
+    name: 'Pátria Amada',
+    url: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
+    tag: '🇧🇷 Pátria'
+  },
+  {
+    name: 'Esplanada dos Ministérios',
+    url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
+    tag: '🏙️ Brasília'
+  },
+  {
+    name: 'Biblioteca & Filosofia',
+    url: 'https://images.unsplash.com/photo-1507842229451-9f75069732f1?auto=format&fit=crop&w=1200&q=80',
+    tag: '📚 Cultura'
+  }
+];
 
 interface ProfileViewProps {
   username: string;
@@ -64,6 +131,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [editWhatsapp, setEditWhatsapp] = useState(profileUser?.socialLinks.whatsapp || '');
   const [editWebsite, setEditWebsite] = useState(profileUser?.socialLinks.website || '');
 
+  // Upload modal states
+  const [avatarUploadMode, setAvatarUploadMode] = useState<'upload' | 'url'>('upload');
+  const [coverUploadMode, setCoverUploadMode] = useState<'upload' | 'presets' | 'url'>('upload');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+
   if (!profileUser) {
     return (
       <div className="p-12 text-center rounded-3xl bg-[#102019] border border-[#263B30]">
@@ -98,6 +171,94 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     }
   };
 
+  const openEditModal = () => {
+    setEditName(profileUser?.name || '');
+    setEditBio(profileUser?.bio || '');
+    setEditLocation(profileUser?.location || '');
+    setEditAvatar(profileUser?.avatar || '');
+    setEditCover(profileUser?.coverImage || '');
+    setEditInstagram(profileUser?.socialLinks.instagram || '');
+    setEditX(profileUser?.socialLinks.x || '');
+    setEditYoutube(profileUser?.socialLinks.youtube || '');
+    setEditWhatsapp(profileUser?.socialLinks.whatsapp || '');
+    setEditWebsite(profileUser?.socialLinks.website || '');
+    setShowEditModal(true);
+  };
+
+  const handleDirectAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser || !isSelf) return;
+
+    try {
+      setIsUploadingAvatar(true);
+      showToast('Processando e enviando nova foto...');
+      const dataUrl = await compressImage(file, 400, 400, 0.88);
+      storageService.updateProfile(currentUser.id, { avatar: dataUrl });
+      setEditAvatar(dataUrl);
+      showToast('Foto de perfil atualizada com sucesso!');
+      onRefresh();
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao processar imagem.', 'error');
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDirectCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser || !isSelf) return;
+
+    try {
+      setIsUploadingCover(true);
+      showToast('Processando e enviando imagem de capa...');
+      const dataUrl = await compressImage(file, 1400, 600, 0.85);
+      storageService.updateProfile(currentUser.id, { coverImage: dataUrl });
+      setEditCover(dataUrl);
+      showToast('Capa do perfil atualizada com sucesso!');
+      onRefresh();
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao processar imagem.', 'error');
+    } finally {
+      setIsUploadingCover(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleModalAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingAvatar(true);
+      const dataUrl = await compressImage(file, 400, 400, 0.88);
+      setEditAvatar(dataUrl);
+      showToast('Foto carregada no formulário! Clique em Salvar para confirmar.');
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao carregar imagem.', 'error');
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleModalCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingCover(true);
+      const dataUrl = await compressImage(file, 1400, 600, 0.85);
+      setEditCover(dataUrl);
+      showToast('Capa carregada no formulário! Clique em Salvar para confirmar.');
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao carregar imagem.', 'error');
+    } finally {
+      setIsUploadingCover(false);
+      e.target.value = '';
+    }
+  };
+
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || !isSelf) return;
@@ -128,7 +289,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       {/* PROFILE HEADER CARD */}
       <div className="bg-[#102019] rounded-3xl border border-[#263B30] overflow-hidden shadow-xl">
         {/* Cover image */}
-        <div className="relative h-44 sm:h-56 bg-gradient-to-r from-[#0d1a14] to-[#174D32] overflow-hidden">
+        <div className="relative h-44 sm:h-56 bg-gradient-to-r from-[#0d1a14] to-[#174D32] overflow-hidden group/cover">
           {profileUser.coverImage ? (
             <img
               src={profileUser.coverImage}
@@ -139,6 +300,28 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <div className="w-full h-full bg-[#15291F]" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#102019] via-transparent to-black/30" />
+
+          {/* Quick upload button for cover if viewing own profile */}
+          {isSelf && (
+            <label 
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 px-3 py-1.5 rounded-xl bg-[#07140F]/80 hover:bg-[#07140F] backdrop-blur-md border border-[#D4AF37]/50 text-[#E8CC76] hover:text-[#FFF5D0] text-xs font-bold cursor-pointer transition-all shadow-lg flex items-center gap-1.5 active:scale-95"
+              title="Fazer upload de nova imagem de capa do computador ou celular"
+            >
+              {isUploadingCover ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#D4AF37]" />
+              ) : (
+                <Camera className="w-3.5 h-3.5 text-[#D4AF37]" />
+              )}
+              <span>{isUploadingCover ? 'Enviando...' : 'Alterar Capa'}</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={isUploadingCover}
+                onChange={handleDirectCoverUpload}
+                className="hidden"
+              />
+            </label>
+          )}
         </div>
 
         {/* Profile info row */}
@@ -146,14 +329,36 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 -mt-16 sm:-mt-20 mb-4">
             
             {/* Avatar */}
-            <div className="relative group">
+            <div className="relative group/avatar">
               <img
                 src={profileUser.avatar}
                 alt={profileUser.name}
                 className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl object-cover border-4 border-[#102019] shadow-2xl bg-[#07140F]"
               />
+              {isSelf && (
+                <label 
+                  className="absolute inset-0 rounded-3xl bg-black/65 backdrop-blur-[2px] opacity-0 group-hover/avatar:opacity-100 flex flex-col items-center justify-center text-[#E8CC76] cursor-pointer transition-all duration-200 border-2 border-[#D4AF37] shadow-xl"
+                  title="Fazer upload de nova foto de perfil do computador ou celular"
+                >
+                  {isUploadingAvatar ? (
+                    <Loader2 className="w-6 h-6 animate-spin text-[#D4AF37]" />
+                  ) : (
+                    <Camera className="w-6 h-6 text-[#D4AF37] mb-1" />
+                  )}
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#FFF5D0] text-center px-1">
+                    {isUploadingAvatar ? 'Enviando...' : 'Trocar Foto'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingAvatar}
+                    onChange={handleDirectAvatarUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
               {profileUser.role === 'admin' && (
-                <div className="absolute bottom-1 right-1 p-1 rounded-xl bg-[#D4AF37] text-[#07140F] shadow-lg" title="Administrador Oficial">
+                <div className="absolute bottom-1 right-1 p-1 rounded-xl bg-[#D4AF37] text-[#07140F] shadow-lg z-10" title="Administrador Oficial">
                   <Shield className="w-4 h-4" />
                 </div>
               )}
@@ -171,7 +376,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
               {isSelf ? (
                 <button
-                  onClick={() => setShowEditModal(true)}
+                  onClick={openEditModal}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#174D32] hover:bg-[#226B47] text-[#E8CC76] text-xs font-bold border border-[#D4AF37]/30 transition cursor-pointer"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
@@ -467,24 +672,205 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#A5B2A9] mb-1">URL da Foto de Perfil</label>
-                <input
-                  type="url"
-                  value={editAvatar}
-                  onChange={(e) => setEditAvatar(e.target.value)}
-                  className="w-full bg-[#15291F] text-xs text-[#F5F5F0] p-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
-                />
+              {/* SEÇÃO DA FOTO DE PERFIL */}
+              <div className="p-3.5 rounded-2xl bg-[#15291F] border border-[#263B30] space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#E8CC76] flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    <span>Foto de Perfil (Avatar)</span>
+                  </label>
+                  <div className="flex items-center gap-1 bg-[#0B1A13] p-0.5 rounded-lg border border-[#263B30]">
+                    <button
+                      type="button"
+                      onClick={() => setAvatarUploadMode('upload')}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition ${
+                        avatarUploadMode === 'upload' ? 'bg-[#174D32] text-[#FFF5D0] shadow' : 'text-[#A5B2A9]'
+                      }`}
+                    >
+                      Upload
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAvatarUploadMode('url')}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition ${
+                        avatarUploadMode === 'url' ? 'bg-[#174D32] text-[#FFF5D0] shadow' : 'text-[#A5B2A9]'
+                      }`}
+                    >
+                      URL
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    <img
+                      src={editAvatar || profileUser.avatar}
+                      alt="Pré-visualização do avatar"
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-[#D4AF37] bg-[#07140F] shadow-md"
+                    />
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    {avatarUploadMode === 'upload' ? (
+                      <div>
+                        <label className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[#102019] hover:bg-[#15291F] border border-dashed border-[#D4AF37]/60 text-xs font-semibold text-[#E8CC76] hover:text-[#FFF5D0] cursor-pointer transition">
+                          {isUploadingAvatar ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-[#D4AF37]" />
+                          ) : (
+                            <Upload className="w-4 h-4 text-[#D4AF37]" />
+                          )}
+                          <span>{isUploadingAvatar ? 'Processando imagem...' : 'Escolher foto do PC ou Celular'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={isUploadingAvatar}
+                            onChange={handleModalAvatarUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        <p className="text-[10px] text-[#A5B2A9] mt-1 text-center">
+                          Formatos JPG, PNG ou WebP. Redimensionamento e compressão automáticos.
+                        </p>
+                      </div>
+                    ) : (
+                      <input
+                        type="url"
+                        value={editAvatar}
+                        onChange={(e) => setEditAvatar(e.target.value)}
+                        placeholder="https://exemplo.com/sua-foto.jpg"
+                        className="w-full bg-[#102019] text-xs text-[#F5F5F0] p-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#A5B2A9] mb-1">URL da Imagem de Capa</label>
-                <input
-                  type="url"
-                  value={editCover}
-                  onChange={(e) => setEditCover(e.target.value)}
-                  className="w-full bg-[#15291F] text-xs text-[#F5F5F0] p-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
-                />
+              {/* SEÇÃO DA IMAGEM DE CAPA */}
+              <div className="p-3.5 rounded-2xl bg-[#15291F] border border-[#263B30] space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#E8CC76] flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    <span>Imagem de Capa (Banner)</span>
+                  </label>
+                  <div className="flex items-center gap-1 bg-[#0B1A13] p-0.5 rounded-lg border border-[#263B30]">
+                    <button
+                      type="button"
+                      onClick={() => setCoverUploadMode('upload')}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition ${
+                        coverUploadMode === 'upload' ? 'bg-[#174D32] text-[#FFF5D0] shadow' : 'text-[#A5B2A9]'
+                      }`}
+                    >
+                      Upload
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCoverUploadMode('presets')}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition ${
+                        coverUploadMode === 'presets' ? 'bg-[#174D32] text-[#FFF5D0] shadow' : 'text-[#A5B2A9]'
+                      }`}
+                    >
+                      Modelos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCoverUploadMode('url')}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition ${
+                        coverUploadMode === 'url' ? 'bg-[#174D32] text-[#FFF5D0] shadow' : 'text-[#A5B2A9]'
+                      }`}
+                    >
+                      URL
+                    </button>
+                  </div>
+                </div>
+
+                {/* Banner preview */}
+                <div className="relative h-20 rounded-xl overflow-hidden bg-[#07140F] border border-[#263B30]">
+                  {editCover ? (
+                    <img
+                      src={editCover}
+                      alt="Pré-visualização da capa"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-[#A5B2A9]">
+                      Sem capa personalizada (padrão verde escuro)
+                    </div>
+                  )}
+                  {editCover && (
+                    <button
+                      type="button"
+                      onClick={() => setEditCover('')}
+                      className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded bg-black/70 hover:bg-black text-[10px] text-red-400 font-bold transition flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Remover</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Body according to mode */}
+                {coverUploadMode === 'upload' && (
+                  <div>
+                    <label className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[#102019] hover:bg-[#15291F] border border-dashed border-[#D4AF37]/60 text-xs font-semibold text-[#E8CC76] hover:text-[#FFF5D0] cursor-pointer transition">
+                      {isUploadingCover ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-[#D4AF37]" />
+                      ) : (
+                        <Upload className="w-4 h-4 text-[#D4AF37]" />
+                      )}
+                      <span>{isUploadingCover ? 'Processando capa...' : 'Escolher capa do PC ou Celular'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingCover}
+                        onChange={handleModalCoverUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-[10px] text-[#A5B2A9] mt-1 text-center">
+                      Recomendado formato panorâmico (1200x500). Comprimido automaticamente.
+                    </p>
+                  </div>
+                )}
+
+                {coverUploadMode === 'presets' && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    {PATRIOTIC_COVER_PRESETS.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setEditCover(preset.url);
+                          showToast(`Capa "${preset.name}" selecionada!`);
+                        }}
+                        className={`p-1.5 rounded-xl border text-left flex items-center gap-2 transition ${
+                          editCover === preset.url
+                            ? 'bg-[#174D32] border-[#D4AF37] shadow'
+                            : 'bg-[#102019] border-[#263B30] hover:border-[#D4AF37]/50'
+                        }`}
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.name}
+                          className="w-10 h-8 rounded-lg object-cover"
+                        />
+                        <div className="overflow-hidden">
+                          <p className="text-[11px] font-bold text-[#F5F5F0] truncate">{preset.name}</p>
+                          <p className="text-[9px] text-[#E8CC76]">{preset.tag}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {coverUploadMode === 'url' && (
+                  <input
+                    type="url"
+                    value={editCover}
+                    onChange={(e) => setEditCover(e.target.value)}
+                    placeholder="https://exemplo.com/sua-capa.jpg"
+                    className="w-full bg-[#102019] text-xs text-[#F5F5F0] p-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
+                  />
+                )}
               </div>
 
               <div className="pt-2 border-t border-[#263B30]">
