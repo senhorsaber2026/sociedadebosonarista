@@ -25,6 +25,7 @@ import { AdminView } from './components/AdminView';
 import { SettingsView } from './components/SettingsView';
 import { RegisterView } from './components/RegisterView';
 import { FriendsView } from './components/FriendsView';
+import { MemorialView } from './components/MemorialView';
 import { AuthModal } from './components/AuthModal';
 import { ReportModal } from './components/ReportModal';
 import { RankSystemModal } from './components/RankSystemModal';
@@ -351,6 +352,15 @@ export default function App() {
               currentUser={currentUser}
               onNavigate={handleNavigate}
               onOpenAuth={() => handleOpenAuth('login')}
+            />
+          )}
+
+          {/* ALA MEMORIAL — FILÓSOFOS E LÍDERES DA DIREITA */}
+          {currentView === 'memorial' && (
+            <MemorialView
+              currentUser={currentUser}
+              onOpenAuth={() => handleOpenAuth('login')}
+              onNavigate={handleNavigate}
             />
           )}
 

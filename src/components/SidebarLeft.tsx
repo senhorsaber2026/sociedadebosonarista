@@ -14,7 +14,8 @@ import {
   Check,
   ArrowRight,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  Landmark
 } from 'lucide-react';
 import { User, Group } from '../types';
 import { storageService } from '../services/storageService';
@@ -49,6 +50,7 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
   const navItems = [
     { id: 'home', label: 'Início', icon: Home },
     { id: 'register', label: 'Cadastro de Membro', icon: ShieldCheck, badge: 'NOVO', isPill: false },
+    { id: 'memorial', label: 'Ala Memorial', icon: Landmark, badge: 'ALA', isPill: false },
     { id: 'profile', label: 'Meu Perfil', icon: UserIcon, authRequired: true, param: currentUser?.username },
     { id: 'explore', label: 'Explorar', icon: Compass },
     { id: 'news', label: 'Notícias', icon: Newspaper },
