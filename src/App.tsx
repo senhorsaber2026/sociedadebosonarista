@@ -128,6 +128,10 @@ export default function App() {
       />
 
       {/* MAIN CONTAINER: THREE-COLUMN LAYOUT */}
+      {/* Only show right sidebar on feed views — full-page views (memorial, profile, settings, etc.) expand to full width */}
+      {(() => {
+        const isFeedView = ['home', 'explore', 'saved'].includes(currentView);
+        return (
       <div className={`flex-1 max-w-7xl w-full mx-auto px-2 sm:px-6 py-2 sm:py-6 flex gap-6 ${
         currentView === 'messages' ? 'pb-2 lg:pb-6' : 'pb-20 lg:pb-6'
       }`}>
@@ -145,7 +149,7 @@ export default function App() {
         />
 
         {/* CENTER COLUMN: FEED OR SUB-VIEW (FLEXIBLE) */}
-        <main className="flex-1 min-w-0 max-w-3xl mx-auto w-full">
+        <main className={`flex-1 min-w-0 w-full ${isFeedView ? 'max-w-3xl mx-auto' : 'max-w-5xl mx-auto'}`}>
           
           {/* HOME VIEW: HERO BANNER, FEATURED NEWS, CREATE POST & POSTS FEED */}
           {currentView === 'home' && (
@@ -400,19 +404,22 @@ export default function App() {
 
         </main>
 
-        {/* RIGHT COLUMN: TRENDS, DEBATES, MEMBERS & GROUPS (310px) */}
-        <SidebarRight
-          currentUser={currentUser}
-          debates={debates}
-          groups={groups}
-          suggestedUsers={suggestedUsers}
-          onNavigate={handleNavigate}
-          onRefresh={refreshAllData}
-          onOpenAuth={() => handleOpenAuth('login')}
-          onOpenManifesto={() => setIsManifestoOpen(true)}
-        />
+        {/* RIGHT COLUMN: TRENDS, DEBATES, MEMBERS & GROUPS (310px) — only on feed views */}
+        {isFeedView && (
+          <SidebarRight
+            currentUser={currentUser}
+            debates={debates}
+            groups={groups}
+            suggestedUsers={suggestedUsers}
+            onNavigate={handleNavigate}
+            onRefresh={refreshAllData}
+            onOpenAuth={() => handleOpenAuth('login')}
+            onOpenManifesto={() => setIsManifestoOpen(true)}
+          />
+        )}
 
-      </div>
+      </div>);
+      })()}
 
       {/* MOBILE BOTTOM NAVIGATION */}
       {currentView !== 'messages' && (

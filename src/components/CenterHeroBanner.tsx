@@ -8,7 +8,7 @@ interface CenterHeroBannerProps {
   currentUser?: User | null;
   onNavigate: (view: string) => void;
   onOpenCreatePost: () => void;
-  onOpenAuth?: () => void;
+  onOpenAuth?: (tab?: 'login' | 'register') => void;
 }
 
 export const CenterHeroBanner: React.FC<CenterHeroBannerProps> = ({

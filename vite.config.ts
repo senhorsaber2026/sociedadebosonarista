@@ -153,9 +153,9 @@ export default defineConfig(({ mode }) => {
                       verified: false
                     }
                   }));
-                } catch (err) {
+                } catch (err: any) {
                   res.statusCode = 500;
-                  return res.end(JSON.stringify({ error: err.message || 'Erro no servidor' }));
+                  return res.end(JSON.stringify({ error: err?.message || 'Erro no servidor' }));
                 }
               });
               return;

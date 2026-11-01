@@ -1064,39 +1064,38 @@ export const MemorialView: React.FC<{
                 className="group rounded-3xl bg-[#102019] border border-[#263B30] hover:border-[#D4AF37]/60 transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-[#D4AF37]/10 flex flex-col overflow-hidden"
               >
                 {/* Image Header with gold accent */}
-                <div className="relative h-56 overflow-hidden bg-black/40">
+                <div className="relative h-48 sm:h-52 overflow-hidden bg-black/40">
                   <img 
                     src={fig.image} 
                     alt={fig.name} 
                     className="w-full h-full object-cover object-top group-hover:scale-105 transition duration-500"
                     onError={(e) => { (e.target as HTMLImageElement).src = '/assets/memorial/memorial_hall.jpg'; }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#102019] via-[#102019]/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#102019] via-transparent to-transparent" />
                   
                   {/* Badge top right: country flag + period */}
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#07140F]/80 backdrop-blur-md border border-[#263B30] text-[11px] font-semibold text-[#F5F5F0]">
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#07140F]/85 backdrop-blur-md border border-[#263B30] text-[11px] font-semibold text-[#F5F5F0] shadow">
                     <span>{fig.countryFlag}</span>
                     <span>{fig.period}</span>
                   </div>
 
                   {/* Badge top left: category */}
-                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#174D32]/90 border border-[#D4AF37]/50 text-[10px] font-bold text-[#E8CC76] uppercase tracking-wider">
+                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#174D32]/95 border border-[#D4AF37]/50 text-[10px] font-bold text-[#E8CC76] uppercase tracking-wider shadow">
                     {fig.category === 'filosofo' ? 'Filósofo' : fig.category === 'brasil' ? 'Brasil' : fig.category === 'mundo' ? 'Mundo' : 'Economia'}
-                  </div>
-
-                  {/* Name overlaid at bottom of image */}
-                  <div className="absolute bottom-3 left-4 right-4">
-                    <h3 className="font-serif-patriotic font-bold text-lg text-[#FFF5D0] group-hover:text-[#E5AC24] transition leading-tight">
-                      {fig.name}
-                    </h3>
-                    <p className="text-[11px] text-[#A5B2A9] mt-0.5 line-clamp-2">
-                      {fig.title}
-                    </p>
                   </div>
                 </div>
 
                 {/* Body Content */}
-                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                  {/* Name & Title - completely uncaught, full width */}
+                  <div>
+                    <h3 className="font-serif-patriotic font-bold text-lg sm:text-xl text-[#FFF5D0] group-hover:text-[#E5AC24] transition leading-snug break-words">
+                      {fig.name}
+                    </h3>
+                    <p className="text-xs text-[#E5AC24]/90 font-medium mt-1 leading-relaxed break-words">
+                      {fig.title}
+                    </p>
+                  </div>
                   {/* Quote Snippet */}
                   <div className="p-2.5 rounded-xl bg-[#0B1A13] border-l-2 border-[#D4AF37] text-xs italic text-[#D8E2DC]">
                     "{fig.quote}"
@@ -1351,16 +1350,16 @@ export const MemorialView: React.FC<{
                 ✕
               </button>
 
-              <div className="absolute bottom-4 left-6 right-6">
-                <div className="flex items-center gap-2 text-xs text-[#E8CC76] font-bold">
+              <div className="absolute bottom-4 left-4 sm:left-6 right-4 sm:right-6">
+                <div className="flex items-center gap-2 text-xs text-[#E8CC76] font-bold mb-1">
                   <span>{selectedFigure.countryFlag} {selectedFigure.country}</span>
                   <span>•</span>
                   <span>{selectedFigure.period}</span>
                 </div>
-                <h2 className="font-serif-patriotic text-2xl sm:text-3xl font-extrabold text-[#FFF5D0]">
+                <h2 className="font-serif-patriotic text-2xl sm:text-3xl font-extrabold text-[#FFF5D0] leading-snug break-words">
                   {selectedFigure.name}
                 </h2>
-                <p className="text-xs text-[#A5B2A9]">
+                <p className="text-xs text-[#D8E2DC] mt-1 break-words leading-relaxed font-medium">
                   {selectedFigure.title}
                 </p>
               </div>

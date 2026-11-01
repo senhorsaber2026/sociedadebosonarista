@@ -126,7 +126,7 @@ export const PostCard: React.FC<PostCardProps> = ({
           />
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-bold text-xs sm:text-sm text-[#F5F5F0] group-hover:text-[#E8CC76] transition truncate">
+              <span className="font-bold text-xs sm:text-sm text-[#F5F5F0] group-hover:text-[#E8CC76] transition break-words">
                 {post.authorName}
               </span>
               <RankBadge rank={post.authorRank} size="xs" />

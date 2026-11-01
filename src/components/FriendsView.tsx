@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Users, 
   UserCheck, 
@@ -15,6 +15,7 @@ import {
   Crown
 } from 'lucide-react';
 import { User, UserRank } from '../types';
+import { storageService } from '../services/storageService';
 import { RankBadge } from './RankBadge';
 import { showToast } from './Toast';
 
@@ -31,6 +32,7 @@ interface FriendItem {
   avatar: string;
   rank: UserRank;
   location: string;
+  bio?: string;
   honorPoints: number;
   online: boolean;
   mutualFriends: number;
@@ -44,194 +46,55 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'discover'>('friends');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // 12 Connected Friends matching sidebar badge 12
-  const [friendsList, setFriendsList] = useState<FriendItem[]>([
-    {
-      id: 'usr_patriota22',
-      name: 'Patriota22',
-      username: 'patriota22',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-      rank: 'cabo',
-      location: 'Rio de Janeiro, RJ',
-      honorPoints: 340,
-      online: true,
-      mutualFriends: 18,
-      verified: true
-    },
-    {
-      id: 'usr_brasillivre',
-      name: 'BrasilLivre',
-      username: 'brasillivre',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80',
-      rank: 'sargento',
-      location: 'São Paulo, SP',
-      honorPoints: 580,
-      online: true,
-      mutualFriends: 24,
-      verified: true
-    },
-    {
-      id: 'usr_direitaja',
-      name: 'DireitaJá',
-      username: 'direitaja',
-      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80',
-      rank: 'tenente',
-      location: 'Curitiba, PR',
-      honorPoints: 920,
-      online: true,
-      mutualFriends: 32,
-      verified: true
-    },
-    {
-      id: 'usr_helena',
-      name: 'Dra. Helena Moreira',
-      username: 'dra_helenamoreira',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
-      rank: 'capitao',
-      location: 'Brasília, DF',
-      honorPoints: 2150,
-      online: false,
-      mutualFriends: 45,
-      verified: true
-    },
-    {
-      id: 'usr_rodrigo',
-      name: 'Rodrigo Fagundes (Agro Forte)',
-      username: 'rodrigo_agro',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
-      rank: 'tenente',
-      location: 'Sorriso, MT',
-      honorPoints: 1050,
-      online: false,
-      mutualFriends: 15,
-      verified: false
-    },
-    {
-      id: 'usr_carlos_silva',
-      name: 'Carlos Silva',
-      username: 'carlos_silva',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-      rank: 'sargento',
-      location: 'Belo Horizonte, MG',
-      honorPoints: 610,
-      online: true,
-      mutualFriends: 9,
-      verified: true
-    },
-    {
-      id: 'usr_fernanda_lima',
-      name: 'Fernanda Lima',
-      username: 'fernanda_lima',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80',
-      rank: 'cabo',
-      location: 'Florianópolis, SC',
-      honorPoints: 420,
-      online: false,
-      mutualFriends: 11,
-      verified: false
-    },
-    {
-      id: 'usr_ricardo_souza',
-      name: 'Ricardo Souza',
-      username: 'ricardo_souza',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
-      rank: 'soldado',
-      location: 'Porto Alegre, RS',
-      honorPoints: 150,
-      online: false,
-      mutualFriends: 6,
-      verified: true
-    },
-    {
-      id: 'usr_mariana_costa',
-      name: 'Mariana Costa',
-      username: 'mariana_costa',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-      rank: 'cabo',
-      location: 'Goiânia, GO',
-      honorPoints: 380,
-      online: true,
-      mutualFriends: 14,
-      verified: false
-    },
-    {
-      id: 'usr_andre_oliveira',
-      name: 'André Oliveira',
-      username: 'andre_oliveira',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80',
-      rank: 'soldado',
-      location: 'Salvador, BA',
-      honorPoints: 210,
-      online: false,
-      mutualFriends: 8,
-      verified: false
-    },
-    {
-      id: 'usr_dias_es',
-      name: 'Sargento Dias',
-      username: 'sgt_dias',
-      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80',
-      rank: 'sargento',
-      location: 'Vitória, ES',
-      honorPoints: 730,
-      online: true,
-      mutualFriends: 21,
-      verified: true
-    },
-    {
-      id: 'usr_beatriz_ms',
-      name: 'Beatriz Santos',
-      username: 'beatriz_ms',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
-      rank: 'cabo',
-      location: 'Campo Grande, MS',
-      honorPoints: 390,
-      online: false,
-      mutualFriends: 12,
-      verified: false
-    }
-  ]);
-
-  // 3 Pending friend requests
-  const [requestsList, setRequestsList] = useState<FriendItem[]>([
-    {
-      id: 'req_1',
-      name: 'Lucas Martins',
-      username: 'lucas_patriota',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-      rank: 'soldado',
-      location: 'Campinas, SP',
-      honorPoints: 120,
-      online: true,
-      mutualFriends: 5
-    },
-    {
-      id: 'req_2',
-      name: 'Camila Rocha',
-      username: 'camila_direita',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80',
-      rank: 'cabo',
-      location: 'Joinville, SC',
-      honorPoints: 340,
-      online: false,
-      mutualFriends: 8
-    },
-    {
-      id: 'req_3',
-      name: 'Major Valdir',
-      username: 'major_valdir',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
-      rank: 'major',
-      location: 'Fortaleza, CE',
-      honorPoints: 3400,
-      online: true,
-      mutualFriends: 19,
-      verified: true
-    }
-  ]);
-
   const [sentRequests, setSentRequests] = useState<string[]>([]);
+
+  // Load real users from storage
+  const allUsers = useMemo(() => storageService.getUsers(), []);
+  const followingList = useMemo(
+    () => currentUser ? storageService.getFollowingList(currentUser.id) : [],
+    [currentUser]
+  );
+
+  // "Friends" = users this person follows
+  const [friendsList, setFriendsList] = useState<FriendItem[]>(() => {
+    return allUsers
+      .filter(u => followingList.includes(u.id) && u.id !== 'usr_admin')
+      .map(u => ({
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        avatar: u.avatar,
+        rank: (u.rank || 'soldado') as UserRank,
+        location: u.location || 'Brasil',
+        bio: u.bio || 'Membro da Sociedade Bosonarista',
+        honorPoints: u.honorPoints || 0,
+        online: false,
+        mutualFriends: 0,
+        verified: u.verified
+      }));
+  });
+
+  // "Requests" - empty in real mode (no fake requests)
+  const [requestsList, setRequestsList] = useState<FriendItem[]>([]);
+
+  // "Discover" = users not yet followed, excluding admin and self
+  const discoverUsers = useMemo(() => {
+    return allUsers
+      .filter(u => u.id !== currentUser?.id && u.id !== 'usr_admin' && !followingList.includes(u.id))
+      .map(u => ({
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        avatar: u.avatar,
+        rank: (u.rank || 'soldado') as UserRank,
+        location: u.location || 'Brasil',
+        bio: u.bio || 'Membro da Sociedade Bosonarista',
+        honorPoints: u.honorPoints || 0,
+        online: false,
+        mutualFriends: 0,
+        verified: u.verified
+      }));
+  }, [allUsers, currentUser, followingList]);
 
   const handleAcceptRequest = (req: FriendItem) => {
     setRequestsList(prev => prev.filter(r => r.id !== req.id));
@@ -245,9 +108,10 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
   };
 
   const handleRemoveFriend = (friendId: string, friendName: string) => {
-    if (confirm(`Deseja desfazer a amizade com ${friendName}?`)) {
+    if (confirm(`Deseja deixar de seguir ${friendName}?`)) {
+      if (currentUser) storageService.toggleFollow(currentUser.id, friendId);
       setFriendsList(prev => prev.filter(f => f.id !== friendId));
-      showToast(`Amizade com ${friendName} desfeita.`);
+      showToast(`Você deixou de seguir ${friendName}.`);
     }
   };
 
@@ -256,8 +120,9 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
       onOpenAuth();
       return;
     }
+    storageService.toggleFollow(currentUser.id, userId);
     setSentRequests(prev => [...prev, userId]);
-    showToast(`Solicitação de amizade enviada para ${userName}!`);
+    showToast(`Você começou a seguir ${userName}!`);
   };
 
   const filteredFriends = friendsList.filter(f => 
@@ -480,110 +345,79 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
 
       {/* 3. DISCOVER PATRIOTS */}
       {activeTab === 'discover' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {([
-            {
-              id: 'disc_1',
-              name: 'Gustavo Mendonça',
-              username: 'gustavo_patriota',
-              avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-              rank: 'cabo',
-              location: 'Curitiba, PR',
-              bio: 'Defensor da propriedade privada, da família e das liberdades individuais.'
-            },
-            {
-              id: 'disc_2',
-              name: 'Juliana Ferreira',
-              username: 'juliana_agro',
-              avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80',
-              rank: 'soldado',
-              location: 'Ribeirão Preto, SP',
-              bio: 'Engenheira agrônoma. O agro sustenta nossa nação com muito orgulho.'
-            },
-            {
-              id: 'disc_3',
-              name: 'Capitão Ramos',
-              username: 'cap_ramos',
-              avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
-              rank: 'capitao',
-              location: 'Manaus, AM',
-              bio: 'Vigilância contínua da Amazônia e soberania militar nacional.'
-            },
-            {
-              id: 'disc_4',
-              name: 'Dr. Paulo Victor',
-              username: 'paulovictor_adv',
-              avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80',
-              rank: 'tenente',
-              location: 'Goiânia, GO',
-              bio: 'Advogado constitucionalista em defesa da liberdade de expressão.'
-            }
-          ] as { id: string; name: string; username: string; avatar: string; rank: UserRank; location: string; bio: string; }[]).map((patriot) => {
-            const isSent = sentRequests.includes(patriot.id);
-            return (
-              <div
-                key={patriot.id}
-                className="bg-[#102019] rounded-2xl border border-[#263B30] p-4 flex flex-col justify-between gap-3 shadow-md"
-              >
-                <div 
-                  onClick={() => onNavigate('profile', patriot.username)}
-                  className="flex items-start gap-3 cursor-pointer group"
+        discoverUsers.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {discoverUsers.map((patriot) => {
+              const isSent = sentRequests.includes(patriot.id);
+              return (
+                <div
+                  key={patriot.id}
+                  className="bg-[#102019] rounded-2xl border border-[#263B30] p-4 flex flex-col justify-between gap-3 shadow-md"
                 >
-                  <img
-                    src={patriot.avatar}
-                    alt={patriot.name}
-                    className="w-12 h-12 rounded-full object-cover border border-[#263B30] group-hover:border-[#D4AF37] transition shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F0] group-hover:text-[#E8CC76] transition truncate">
-                        {patriot.name}
-                      </h4>
-                      <RankBadge rank={patriot.rank} size="xs" />
+                  <div 
+                    onClick={() => onNavigate('profile', patriot.username)}
+                    className="flex items-start gap-3 cursor-pointer group"
+                  >
+                    <img
+                      src={patriot.avatar}
+                      alt={patriot.name}
+                      className="w-12 h-12 rounded-full object-cover border border-[#263B30] group-hover:border-[#D4AF37] transition shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F0] group-hover:text-[#E8CC76] transition truncate">
+                          {patriot.name}
+                        </h4>
+                        <RankBadge rank={patriot.rank} size="xs" />
+                      </div>
+                      <div className="text-[10px] text-[#A5B2A9]">
+                        @{patriot.username} • {patriot.location}
+                      </div>
+                      <p className="text-[11px] text-[#F5F5F0] mt-1 line-clamp-2 leading-snug">
+                        {patriot.bio}
+                      </p>
                     </div>
-                    <div className="text-[10px] text-[#A5B2A9]">
-                      @{patriot.username} • {patriot.location}
-                    </div>
-                    <p className="text-[11px] text-[#F5F5F0] mt-1 line-clamp-2 leading-snug">
-                      {patriot.bio}
-                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-[#263B30]/60">
+                    <button
+                      onClick={() => onNavigate('profile', patriot.username)}
+                      className="text-xs font-semibold text-[#A5B2A9] hover:text-[#E8CC76] transition"
+                    >
+                      Ver Perfil
+                    </button>
+
+                    <button
+                      onClick={() => handleAddDiscoverFriend(patriot.id, patriot.name)}
+                      disabled={isSent}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                        isSent
+                          ? 'bg-[#15291F] text-[#22C55E] border border-[#263B30]'
+                          : 'bg-gradient-to-r from-[#E5AC24] to-[#C99818] text-[#07140F] hover:brightness-110 shadow-sm active:scale-95'
+                      }`}
+                    >
+                      {isSent ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Seguindo</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>Seguir Patriota</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-[#263B30]/60">
-                  <button
-                    onClick={() => onNavigate('profile', patriot.username)}
-                    className="text-xs font-semibold text-[#A5B2A9] hover:text-[#E8CC76] transition"
-                  >
-                    Ver Perfil
-                  </button>
-
-                  <button
-                    onClick={() => handleAddDiscoverFriend(patriot.id, patriot.name)}
-                    disabled={isSent}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                      isSent
-                        ? 'bg-[#15291F] text-[#22C55E] border border-[#263B30]'
-                        : 'bg-gradient-to-r from-[#E5AC24] to-[#C99818] text-[#07140F] hover:brightness-110 shadow-sm active:scale-95'
-                    }`}
-                  >
-                    {isSent ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Solicitação Enviada</span>
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-3.5 h-3.5" />
-                        <span>Adicionar Amigo</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-12 text-center rounded-3xl bg-[#102019] border border-[#263B30] text-xs text-[#A5B2A9]">
+            Nenhum novo patriota para descobrir no momento. Seja um dos primeiros a convidar amigos e fortalecer a rede!
+          </div>
+        )
       )}
     </div>
   );

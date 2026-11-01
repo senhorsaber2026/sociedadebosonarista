@@ -40,54 +40,28 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
     { tag: '#DeusPátriaFamília', count: '51 mil posts' }
   ];
 
-  // 2. Active members matching screenshot exactly
-  const activeMembers = [
-    {
-      id: 'usr_patriota22',
-      username: 'patriota22',
-      name: 'Patriota22',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
+  // 2. Real members from suggestedUsers (exclude current user and admin)
+  const activeMembers = suggestedUsers
+    .filter(u => u.id !== currentUser?.id && u.id !== 'usr_admin')
+    .slice(0, 5)
+    .map(u => ({
+      id: u.id,
+      username: u.username,
+      name: u.name,
+      avatar: u.avatar,
       status: 'Online agora'
-    },
-    {
-      id: 'usr_brasillivre',
-      username: 'brasillivre',
-      name: 'BrasilLivre',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80',
-      status: 'Online agora'
-    },
-    {
-      id: 'usr_direitaja',
-      username: 'direitaja',
-      name: 'DireitaJá',
-      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80',
-      status: 'Online agora'
-    }
-  ];
+    }));
 
-  // 3. Featured debate matching screenshot
-  const featuredDebate = debates.find(d => d.id === 'deb_futuro_brasil') || debates[0] || {
-    id: 'deb_futuro_brasil',
-    title: 'Qual o futuro do Brasil?',
-    category: 'Política',
-    repliesCount: 124
-  };
+  // 3. Featured debate from real data
+  const featuredDebate = debates.find(d => d.id === 'deb_futuro_brasil') || debates[0];
 
-  // 4. Featured groups matching screenshot
-  const featuredGroups = [
-    {
-      id: 'grp_brasil_forte',
-      name: 'Brasil Forte',
-      members: '253 mil membros',
-      image: '/src/assets/images/brasil_bandeira_card_1793411895078.jpg'
-    },
-    {
-      id: 'grp_direita_brasil',
-      name: 'Direita Brasil',
-      members: '184 mil membros',
-      image: '/src/assets/images/brasil_hero_banner_1793411883121.jpg'
-    }
-  ];
+  // 4. Featured groups from real data
+  const featuredGroups = groups.slice(0, 2).map(g => ({
+    id: g.id,
+    name: g.name,
+    members: g.membersCount > 1000 ? `${Math.round(g.membersCount / 1000)} mil membros` : `${g.membersCount} membros`,
+    image: g.coverImage || '/src/assets/images/brasil_bandeira_card_1793411895078.jpg'
+  }));
 
   const handleToggleGroup = (groupId: string, groupName: string) => {
     if (!currentUser) {
@@ -137,35 +111,41 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
           <span>Membros Ativos</span>
         </div>
 
-        <div className="space-y-2.5">
-          {activeMembers.map((member) => (
-            <div
-              key={member.id}
-              onClick={() => onNavigate('profile', member.username)}
-              className="flex items-center justify-between p-1.5 rounded-xl hover:bg-[#15291F] cursor-pointer transition group"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="relative">
-                  <img
-                    src={member.avatar}
-                    alt={member.name}
-                    className="w-9 h-9 rounded-full object-cover border border-[#D4AF37]/40"
-                  />
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#22C55E] border-2 border-[#102019]" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-[#F5F5F0] group-hover:text-[#E8CC76] transition">
-                    {member.name}
+        {activeMembers.length > 0 ? (
+          <div className="space-y-2.5">
+            {activeMembers.map((member) => (
+              <div
+                key={member.id}
+                onClick={() => onNavigate('profile', member.username)}
+                className="flex items-center justify-between p-1.5 rounded-xl hover:bg-[#15291F] cursor-pointer transition group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="relative">
+                    <img
+                      src={member.avatar}
+                      alt={member.name}
+                      className="w-9 h-9 rounded-full object-cover border border-[#D4AF37]/40"
+                    />
+                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#22C55E] border-2 border-[#102019]" />
                   </div>
-                  <div className="text-[10px] text-[#22C55E] font-medium">
-                    {member.status}
+                  <div>
+                    <div className="text-xs font-bold text-[#F5F5F0] group-hover:text-[#E8CC76] transition">
+                      {member.name}
+                    </div>
+                    <div className="text-[10px] text-[#22C55E] font-medium">
+                      {member.status}
+                    </div>
                   </div>
                 </div>
+                <ChevronRight className="w-4 h-4 text-[#A5B2A9] group-hover:text-[#E8CC76] transition" />
               </div>
-              <ChevronRight className="w-4 h-4 text-[#A5B2A9] group-hover:text-[#E8CC76] transition" />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[11px] text-[#A5B2A9] py-2 text-center">
+            Nenhum outro membro ativo ainda.<br />Convide seus amigos!
+          </p>
+        )}
 
         <button
           onClick={() => onNavigate('explore')}
@@ -210,32 +190,34 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
           </button>
         </div>
 
-        <div
-          onClick={() => onNavigate('debates', featuredDebate.id)}
-          className="p-2 rounded-xl bg-[#0b1712] border border-[#263B30] hover:border-[#D4AF37]/50 cursor-pointer transition flex items-center gap-3 group mt-1"
-        >
-          <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[#263B30]">
-            <img
-              src="/src/assets/images/brasil_bandeira_card_1793411895078.jpg"
-              alt="Debate"
-              className="w-full h-full object-cover group-hover:scale-105 transition"
-            />
-          </div>
+        {featuredDebate && (
+          <div
+            onClick={() => onNavigate('debates', featuredDebate.id)}
+            className="p-2 rounded-xl bg-[#0b1712] border border-[#263B30] hover:border-[#D4AF37]/50 cursor-pointer transition flex items-center gap-3 group mt-1"
+          >
+            <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[#263B30]">
+              <img
+                src="/src/assets/images/brasil_bandeira_card_1793411895078.jpg"
+                alt="Debate"
+                className="w-full h-full object-cover group-hover:scale-105 transition"
+              />
+            </div>
 
-          <div className="flex-1 min-w-0">
-            <h5 className="text-xs font-bold text-[#F5F5F0] truncate group-hover:text-[#E8CC76] transition">
-              {featuredDebate.title}
-            </h5>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#E5AC24] text-[#07140F] font-extrabold uppercase">
-                {featuredDebate.category || 'POLÍTICA'}
-              </span>
-              <span className="text-[10px] text-[#A5B2A9]">
-                {featuredDebate.repliesCount || 124} respostas · 3h atrás
-              </span>
+            <div className="flex-1 min-w-0">
+              <h5 className="text-xs font-bold text-[#F5F5F0] line-clamp-2 leading-tight break-words group-hover:text-[#E8CC76] transition">
+                {featuredDebate.title}
+              </h5>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#E5AC24] text-[#07140F] font-extrabold uppercase">
+                  {featuredDebate.category || 'POLÍTICA'}
+                </span>
+                <span className="text-[10px] text-[#A5B2A9]">
+                  {featuredDebate.repliesCount || 0} respostas
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 5. GRUPOS EM DESTAQUE */}
@@ -260,7 +242,7 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
                     className="w-9 h-9 rounded-xl object-cover border border-[#263B30] shrink-0"
                   />
                   <div className="min-w-0">
-                    <h5 className="text-xs font-bold text-[#F5F5F0] truncate group-hover:text-[#E8CC76]">
+                    <h5 className="text-xs font-bold text-[#F5F5F0] line-clamp-2 leading-tight break-words group-hover:text-[#E8CC76]">
                       {grp.name}
                     </h5>
                     <p className="text-[10px] text-[#A5B2A9]">

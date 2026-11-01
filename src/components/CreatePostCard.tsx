@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Camera, 
   Video, 
@@ -6,7 +6,8 @@ import {
   Send, 
   X, 
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Upload
 } from 'lucide-react';
 import { User, Post } from '../types';
 import { storageService } from '../services/storageService';
@@ -32,6 +33,8 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shareToStories, setShareToStories] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!currentUser) {
     return (
@@ -67,6 +70,19 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
     setPollOptions(updated);
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setMediaUrl(dataUrl);
+      setMediaType('image');
+      setShowMediaInput(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -95,6 +111,21 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
         mediaType,
         pollOptions: showPollCreator ? pollOptions.filter(o => o.trim()) : undefined
       });
+
+      // Share to Stories if checkbox is checked
+      if (shareToStories && currentUser) {
+        const storyMedia = mediaUrl.trim() || '/assets/images/brasil_hero_banner_1793411883121.jpg';
+        storageService.addStory({
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userAvatar: currentUser.avatar,
+          hasUnseenStory: true,
+          isVerified: currentUser.verified ?? false,
+          badgeType: 'verified',
+          mediaUrl: storyMedia,
+          caption: content.trim().slice(0, 280)
+        });
+      }
 
       setContent('');
       setMediaUrl('');
@@ -154,11 +185,19 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
               <div className="flex items-center gap-2">
                 <input
                   type="url"
-                  value={mediaUrl}
+                  value={mediaUrl.startsWith('data:') ? '' : mediaUrl}
                   onChange={(e) => setMediaUrl(e.target.value)}
                   placeholder={mediaType === 'video' ? 'Cole a URL do vídeo (YouTube ou MP4)...' : 'Cole a URL da imagem (JPG, PNG)...'}
                   className="flex-1 bg-[#0b1712] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] px-3 py-2 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
                 />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 rounded-xl bg-[#174D32] text-[#E8CC76] hover:brightness-110 border border-[#263B30] transition"
+                  title="Enviar foto do dispositivo"
+                >
+                  <Upload className="w-4 h-4" />
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -226,66 +265,90 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
             </div>
           )}
 
-          {/* Bottom Action Row: Foto, Vídeo, Enquete, and Golden Publicar Button */}
-          <div className="mt-3.5 pt-2 border-t border-[#263B30]/60 flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-4 pl-1 sm:pl-2">
-              {/* Foto Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setMediaType('image');
-                  setShowMediaInput(true);
-                }}
-                className={`flex items-center gap-1.5 text-xs font-semibold transition ${
-                  showMediaInput && mediaType === 'image'
-                    ? 'text-[#E5AC24]'
-                    : 'text-[#A5B2A9] hover:text-[#F5F5F0]'
-                }`}
-              >
-                <Camera className="w-4 h-4 text-[#E5AC24]" />
-                <span>Foto</span>
-              </button>
+          {/* Bottom Action Row: Foto, Vídeo, Enquete, Stories checkbox, and Golden Publicar Button */}
+          <div className="mt-3.5 pt-2 border-t border-[#263B30]/60 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-4 pl-1 sm:pl-2">
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
 
-              {/* Vídeo Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setMediaType('video');
-                  setShowMediaInput(true);
-                }}
-                className={`flex items-center gap-1.5 text-xs font-semibold transition ${
-                  showMediaInput && mediaType === 'video'
-                    ? 'text-[#E5AC24]'
-                    : 'text-[#A5B2A9] hover:text-[#F5F5F0]'
-                }`}
-              >
-                <Video className="w-4 h-4 text-[#22C55E]" />
-                <span>Vídeo</span>
-              </button>
+                {/* Foto Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMediaType('image');
+                    setShowMediaInput(true);
+                  }}
+                  className={`flex items-center gap-1.5 text-xs font-semibold transition ${
+                    showMediaInput && mediaType === 'image'
+                      ? 'text-[#E5AC24]'
+                      : 'text-[#A5B2A9] hover:text-[#F5F5F0]'
+                  }`}
+                >
+                  <Camera className="w-4 h-4 text-[#E5AC24]" />
+                  <span>Foto</span>
+                </button>
 
-              {/* Enquete Button */}
+                {/* Vídeo Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMediaType('video');
+                    setShowMediaInput(true);
+                  }}
+                  className={`flex items-center gap-1.5 text-xs font-semibold transition ${
+                    showMediaInput && mediaType === 'video'
+                      ? 'text-[#E5AC24]'
+                      : 'text-[#A5B2A9] hover:text-[#F5F5F0]'
+                  }`}
+                >
+                  <Video className="w-4 h-4 text-[#22C55E]" />
+                  <span>Vídeo</span>
+                </button>
+
+                {/* Enquete Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowPollCreator(!showPollCreator)}
+                  className={`flex items-center gap-1.5 text-xs font-semibold transition ${
+                    showPollCreator
+                      ? 'text-[#E5AC24]'
+                      : 'text-[#A5B2A9] hover:text-[#F5F5F0]'
+                  }`}
+                >
+                  <BarChart2 className="w-4 h-4 text-[#EAB308]" />
+                  <span>Enquete</span>
+                </button>
+              </div>
+
+              {/* Golden Publicar Button */}
               <button
-                type="button"
-                onClick={() => setShowPollCreator(!showPollCreator)}
-                className={`flex items-center gap-1.5 text-xs font-semibold transition ${
-                  showPollCreator
-                    ? 'text-[#E5AC24]'
-                    : 'text-[#A5B2A9] hover:text-[#F5F5F0]'
-                }`}
+                type="submit"
+                disabled={isSubmitting || !content.trim()}
+                className="px-5 py-1.5 rounded-xl bg-gradient-to-r from-[#E5AC24] via-[#F3C448] to-[#D4AF37] hover:brightness-110 disabled:opacity-50 text-[#07140F] font-extrabold text-xs shadow-md transition active:scale-95 cursor-pointer"
               >
-                <BarChart2 className="w-4 h-4 text-[#EAB308]" />
-                <span>Enquete</span>
+                {isSubmitting ? 'Publicando...' : 'Publicar'}
               </button>
             </div>
 
-            {/* Golden Publicar Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting || !content.trim()}
-              className="px-5 py-1.5 rounded-xl bg-gradient-to-r from-[#E5AC24] via-[#F3C448] to-[#D4AF37] hover:brightness-110 disabled:opacity-50 text-[#07140F] font-extrabold text-xs shadow-md transition active:scale-95 cursor-pointer"
-            >
-              {isSubmitting ? 'Publicando...' : 'Publicar'}
-            </button>
+            {/* Share to Stories checkbox */}
+            <label className="flex items-center gap-2 pl-1 cursor-pointer select-none group">
+              <input
+                type="checkbox"
+                checked={shareToStories}
+                onChange={(e) => setShareToStories(e.target.checked)}
+                className="w-3.5 h-3.5 accent-[#D4AF37] cursor-pointer"
+              />
+              <span className="text-[11px] text-[#A5B2A9] group-hover:text-[#E8CC76] transition">
+                Compartilhar também nos Stories
+              </span>
+            </label>
           </div>
         </form>
       </div>

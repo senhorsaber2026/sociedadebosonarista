@@ -579,24 +579,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <span>👑 Admin Sociedade Bosonarista</span>
                           {currentUser.id === 'usr_admin' && <Check className="w-3.5 h-3.5" />}
                         </button>
-                        <button
-                          onClick={() => handleQuickSwitchUser('usr_silva')}
-                          className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-[11px] transition text-left cursor-pointer ${
-                            currentUser.id === 'usr_silva' ? 'bg-[#174D32] text-[#E8CC76] font-bold' : 'hover:bg-[#15291F] text-[#A5B2A9]'
-                          }`}
-                        >
-                          <span>🇧🇷 Coronel Silva (Patriota)</span>
-                          {currentUser.id === 'usr_silva' && <Check className="w-3.5 h-3.5" />}
-                        </button>
-                        <button
-                          onClick={() => handleQuickSwitchUser('usr_helena')}
-                          className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-[11px] transition text-left cursor-pointer ${
-                            currentUser.id === 'usr_helena' ? 'bg-[#174D32] text-[#E8CC76] font-bold' : 'hover:bg-[#15291F] text-[#A5B2A9]'
-                          }`}
-                        >
-                          <span>⚖️ Dra. Helena Moreira (Capitão)</span>
-                          {currentUser.id === 'usr_helena' && <Check className="w-3.5 h-3.5" />}
-                        </button>
                       </div>
 
                       <div className="pt-1 mt-1 border-t border-[#263B30] space-y-1">

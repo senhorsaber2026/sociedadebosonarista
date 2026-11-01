@@ -199,12 +199,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     onClose();
   };
 
-  const handleQuickLoginSilva = () => {
-    storageService.setCurrentUser('usr_silva');
-    showToast('Conectado como Coronel Silva (Cidadão Patriota)!');
-    onSuccess();
-    onClose();
-  };
+
 
   const checkEmailStatus = async (emailToCheck: string) => {
     const clean = (emailToCheck || '').trim().toLowerCase();
@@ -802,24 +797,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {/* Quick test buttons for instant 1-click evaluation */}
                 <div className="pt-3 mt-3 border-t border-[#263B30]">
                   <span className="block text-[10px] text-[#A5B2A9] text-center font-bold uppercase tracking-wider mb-2">
-                    Acesso Rápido de Teste (Sem Digitar)
+                    Acesso Rápido Administrativo
                   </span>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div>
                     <button
                       type="button"
                       onClick={handleQuickLoginAdmin}
-                      className="p-2 rounded-xl bg-[#15291F] hover:bg-[#203a2c] border border-[#D4AF37]/40 text-[#E8CC76] text-xs font-bold transition flex items-center justify-center gap-1.5"
+                      className="w-full p-2.5 rounded-xl bg-[#15291F] hover:bg-[#203a2c] border border-[#D4AF37]/40 text-[#E8CC76] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                     >
                       <Shield className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>Admin Oficial</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleQuickLoginSilva}
-                      className="p-2 rounded-xl bg-[#15291F] hover:bg-[#203a2c] border border-[#263B30] text-[#F5F5F0] text-xs font-semibold transition flex items-center justify-center gap-1.5"
-                    >
-                      <UserIcon className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>Cidadão Patriota</span>
+                      <span>Entrar como Administração Central (Admin)</span>
                     </button>
                   </div>
                 </div>

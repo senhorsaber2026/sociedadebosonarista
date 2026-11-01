@@ -49,9 +49,9 @@ const DEFAULT_USERS: User[] = [
     rank: 'general',
     honorPoints: 9500,
     createdAt: '2024-01-01T10:00:00Z',
-    followersCount: 28400,
-    followingCount: 154,
-    postsCount: 112,
+    followersCount: 0,
+    followingCount: 0,
+    postsCount: 0,
     verified: true,
     socialLinks: {
       instagram: 'https://instagram.com',
@@ -74,164 +74,15 @@ const DEFAULT_USERS: User[] = [
     rank: 'general',
     honorPoints: 9200,
     createdAt: '2024-01-01T10:00:00Z',
-    followersCount: 34500,
-    followingCount: 12,
-    postsCount: 84,
+    followersCount: 0,
+    followingCount: 0,
+    postsCount: 0,
     verified: true,
     socialLinks: {
       x: 'https://x.com',
       youtube: 'https://youtube.com',
       instagram: 'https://instagram.com',
       website: 'https://sociedadebosonarista.com.br'
-    }
-  },
-  {
-    id: 'usr_patriota22',
-    name: 'Patriota22',
-    username: 'patriota22',
-    email: 'patriota22@brasil.com.br',
-    cpf: '555.666.777-88',
-    password: 'brasil123',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-    coverImage: '/src/assets/images/brasil_hero_banner_1793411883121.jpg',
-    bio: 'Orgulho de ser brasileira! Em defesa da liberdade e do nosso país! 🇧🇷',
-    location: 'Rio de Janeiro, RJ',
-    role: 'user',
-    status: 'active',
-    rank: 'capitao',
-    honorPoints: 3400,
-    createdAt: '2024-02-10T10:00:00Z',
-    followersCount: 14200,
-    followingCount: 320,
-    postsCount: 88,
-    verified: true,
-    socialLinks: {
-      instagram: 'https://instagram.com'
-    }
-  },
-  {
-    id: 'usr_brasillivre',
-    name: 'BrasilLivre',
-    username: 'brasillivre',
-    email: 'livre@brasil.com.br',
-    cpf: '666.777.888-99',
-    password: 'brasil123',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
-    bio: 'Defensor da livre iniciativa e do Estado enxuto. O Brasil tem pressa!',
-    location: 'Belo Horizonte, MG',
-    role: 'user',
-    status: 'active',
-    rank: 'tenente',
-    honorPoints: 2100,
-    createdAt: '2024-03-01T10:00:00Z',
-    followersCount: 8900,
-    followingCount: 190,
-    postsCount: 45,
-    verified: true,
-    socialLinks: {
-      x: 'https://x.com'
-    }
-  },
-  {
-    id: 'usr_direitaja',
-    name: 'DireitaJá',
-    username: 'direitaja',
-    email: 'direitaja@brasil.com.br',
-    cpf: '777.888.999-00',
-    password: 'brasil123',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
-    bio: 'Mobilização política popular e fórum de debates conservadores.',
-    location: 'Porto Alegre, RS',
-    role: 'user',
-    status: 'active',
-    rank: 'sargento',
-    honorPoints: 1450,
-    createdAt: '2024-03-15T10:00:00Z',
-    followersCount: 6500,
-    followingCount: 240,
-    postsCount: 39,
-    verified: true,
-    socialLinks: {
-      instagram: 'https://instagram.com'
-    }
-  },
-  {
-    id: 'usr_silva',
-    name: 'Coronel Silva Patriota',
-    username: 'coronel_silva',
-    email: 'patriota@brasil.com.br',
-    cpf: '222.333.444-55',
-    password: 'brasil123',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
-    bio: 'Oficial da reserva, pai de família, defensor da pátria, da liberdade econômica e dos princípios constitucionais. Deus acima de tudo!',
-    location: 'Curitiba, PR',
-    role: 'user',
-    status: 'active',
-    rank: 'coronel',
-    honorPoints: 5400,
-    createdAt: '2024-02-15T14:30:00Z',
-    followersCount: 8940,
-    followingCount: 215,
-    postsCount: 142,
-    verified: true,
-    socialLinks: {
-      instagram: 'https://instagram.com',
-      x: 'https://x.com',
-      whatsapp: 'https://whatsapp.com'
-    }
-  },
-  {
-    id: 'usr_helena',
-    name: 'Dra. Helena Moreira',
-    username: 'dra_helena',
-    email: 'helena@direito.com.br',
-    cpf: '333.444.555-66',
-    password: 'brasil123',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=80',
-    bio: 'Advogada constitucionalista, mestre em Direito Público e defensora ferrenha da liberdade de expressão e da presunção de inocência.',
-    location: 'São Paulo, SP',
-    role: 'user',
-    status: 'active',
-    rank: 'capitao',
-    honorPoints: 2150,
-    createdAt: '2024-03-01T09:20:00Z',
-    followersCount: 15420,
-    followingCount: 430,
-    postsCount: 95,
-    verified: true,
-    socialLinks: {
-      x: 'https://x.com',
-      youtube: 'https://youtube.com',
-      website: 'https://helenamoreira.adv.br'
-    }
-  },
-  {
-    id: 'usr_rodrigo',
-    name: 'Rodrigo Fagundes (Agro Forte)',
-    username: 'rodrigo_agro',
-    email: 'rodrigo@agro.com.br',
-    cpf: '444.555.666-77',
-    password: 'brasil123',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
-    bio: 'Produtor rural de soja e milho no Centro-Oeste. O agronegócio sustenta o Brasil e alimenta o mundo com orgulho e tecnologia verde.',
-    location: 'Sorriso, MT',
-    role: 'user',
-    status: 'active',
-    rank: 'tenente',
-    honorPoints: 1050,
-    createdAt: '2024-03-10T11:00:00Z',
-    followersCount: 11200,
-    followingCount: 380,
-    postsCount: 68,
-    verified: false,
-    socialLinks: {
-      instagram: 'https://instagram.com',
-      whatsapp: 'https://whatsapp.com'
     }
   }
 ];
@@ -304,67 +155,25 @@ const DEFAULT_NEWS: NewsItem[] = [
 ];
 
 const DEFAULT_POSTS: Post[] = [
-
-  {
-    id: 'post_patriota22',
-    authorId: 'usr_patriota22',
-    authorName: 'Patriota22',
-    authorUsername: 'patriota22',
-    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-    authorRole: 'user',
-    authorRank: 'capitao',
-    authorVerified: true,
-    content: 'O Brasil precisa de união e de um povo forte! 🇧🇷 💪',
-    category: 'Brasil',
-    likesCount: 1420,
-    likedUserIds: ['usr_kaliton'],
-    commentsCount: 98,
-    sharesCount: 142,
-    savedUserIds: ['usr_kaliton'],
-    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-    comments: [
-      {
-        id: 'c_p1',
-        postId: 'post_patriota22',
-        authorId: 'usr_kaliton',
-        authorName: 'Kaliton Leite',
-        authorUsername: 'kaliton_leite',
-        authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80',
-        authorRank: 'general',
-        content: 'Exatamente! Ninguém solta a mão de ninguém. Deus, Pátria e Família sempre!',
-        createdAt: new Date(Date.now() - 1 * 3600 * 1000).toISOString(),
-        likes: 54,
-        likedUserIds: ['usr_patriota22']
-      }
-    ]
-  },
   {
     id: 'post_1',
-    authorId: 'usr_silva',
-    authorName: 'Coronel Silva Patriota',
-    authorUsername: 'coronel_silva',
-    authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-    authorRole: 'user',
-    authorRank: 'coronel',
+    authorId: 'usr_admin',
+    authorName: 'Administração Sociedade Bosonarista',
+    authorUsername: 'admin_oficial',
+    authorAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
+    authorRole: 'admin',
+    authorRank: 'general',
     authorVerified: true,
-    content: 'Boa noite, patriotas de todos os estados da nossa nação verde e amarela! Quero abrir esta consulta popular para a nossa comunidade aqui na Sociedade Bosonarista.\n\nQual destas prioridades deve ser a bandeira central número um do nosso movimento nas próximas mobilizações cívicas? Votem e deixem suas razões nos comentários! 🇧🇷',
-    category: 'Política',
-    poll: {
-      question: 'Qual deve ser a principal prioridade do Congresso Nacional no próximo semestre?',
-      totalVotes: 1420,
-      options: [
-        { id: 'opt_1', text: 'Corte radical de impostos e despesas estatais', votes: 685, votedUserIds: ['usr_helena'] },
-        { id: 'opt_2', text: 'Endurecimento penal e fim das regalias para criminosos', votes: 412, votedUserIds: [] },
-        { id: 'opt_3', text: 'Garantia irrestrita da liberdade de expressão e fim da censura', votes: 248, votedUserIds: [] },
-        { id: 'opt_4', text: 'Blindagem do agronegócio e defesa da propriedade privada', votes: 75, votedUserIds: [] }
-      ]
-    },
-    likesCount: 384,
-    likedUserIds: ['usr_helena', 'usr_rodrigo'],
-    commentsCount: 28,
-    sharesCount: 52,
-    savedUserIds: ['usr_admin'],
-    createdAt: '2026-10-30T15:20:00Z',
+    content: 'Sejam bem-vindos à plataforma oficial da SOCIEDADE BOSONARISTA!\n\nAqui nós nos reunimos para debater o futuro da nossa pátria, defender os valores que herdamos de nossos antepassados — Deus, Pátria, Família e Liberdade — e construir uma comunidade cívica participativa, ordeira e produtiva.\n\nConvide amigos, participe dos debates e compartilhe a verdade! 🇧🇷🌾⭐',
+    category: 'Brasil',
+    mediaUrl: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
+    mediaType: 'image',
+    likesCount: 1,
+    likedUserIds: ['usr_admin'],
+    commentsCount: 0,
+    sharesCount: 0,
+    savedUserIds: [],
+    createdAt: '2026-10-30T12:00:00Z',
     comments: []
   },
   {
@@ -376,16 +185,24 @@ const DEFAULT_POSTS: Post[] = [
     authorRole: 'admin',
     authorRank: 'general',
     authorVerified: true,
-    content: 'Sejam bem-vindos à plataforma oficial da SOCIEDADE BOSONARISTA!\n\nAqui nós nos reunimos para debater o futuro da nossa pátria, defender os valores que herdamos de nossos antepassados — Deus, Pátria, Família e Liberdade — e construir uma comunidade cívica participativa, ordeira e produtiva.\n\nConvide amigos, crie debates e acompanhe nossas notícias exclusivas diárias! 🇧🇷🌾⭐',
-    category: 'Brasil',
-    mediaUrl: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
-    mediaType: 'image',
-    likesCount: 1240,
-    likedUserIds: ['usr_silva', 'usr_helena', 'usr_rodrigo'],
-    commentsCount: 84,
-    sharesCount: 310,
-    savedUserIds: ['usr_silva'],
-    createdAt: '2026-10-30T12:00:00Z',
+    content: 'Consulta Cívica: Qual destas prioridades deve ser a bandeira central número um do movimento patriótico nas próximas mobilizações? Votem e deixem suas razões nos comentários! 🇧🇷',
+    category: 'Política',
+    poll: {
+      question: 'Qual deve ser a principal prioridade do Congresso Nacional?',
+      totalVotes: 24,
+      options: [
+        { id: 'opt_1', text: 'Corte radical de impostos e despesas estatais', votes: 12, votedUserIds: [] },
+        { id: 'opt_2', text: 'Endurecimento penal e fim das regalias para criminosos', votes: 7, votedUserIds: [] },
+        { id: 'opt_3', text: 'Garantia irrestrita da liberdade de expressão e fim da censura', votes: 4, votedUserIds: [] },
+        { id: 'opt_4', text: 'Blindagem do agronegócio e defesa da propriedade privada', votes: 1, votedUserIds: [] }
+      ]
+    },
+    likesCount: 0,
+    likedUserIds: [],
+    commentsCount: 0,
+    sharesCount: 0,
+    savedUserIds: [],
+    createdAt: '2026-10-30T15:20:00Z',
     comments: []
   }
 ];
@@ -396,14 +213,14 @@ const DEFAULT_DEBATES: DebateTopic[] = [
     title: 'Qual o futuro do Brasil?',
     description: 'Quais reformas prioritárias e diretrizes políticas e econômicas garantirão a soberania e o protagonismo do Brasil nas próximas décadas?',
     category: 'Política',
-    authorId: 'usr_kaliton',
-    authorName: 'Kaliton Leite',
-    authorUsername: 'kaliton_leite',
-    authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80',
-    createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-    repliesCount: 124,
-    proCount: 380,
-    conCount: 22,
+    authorId: 'usr_admin',
+    authorName: 'Administração Sociedade Bosonarista',
+    authorUsername: 'admin_oficial',
+    authorAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
+    createdAt: '2026-10-30T10:00:00Z',
+    repliesCount: 0,
+    proCount: 15,
+    conCount: 1,
     replies: []
   },
   {
@@ -411,71 +228,29 @@ const DEFAULT_DEBATES: DebateTopic[] = [
     title: 'Auditabilidade do processo eleitoral: mecanismos modernos e contagem pública',
     description: 'Como as democracias mais maduras do mundo realizam a conferência dos sufrágios com transparência e verificação física e eletrônica concomitante?',
     category: 'Política brasileira',
-    authorId: 'usr_helena',
-    authorName: 'Dra. Helena Moreira',
-    authorUsername: 'dra_helena',
-    authorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
+    authorId: 'usr_admin',
+    authorName: 'Administração Sociedade Bosonarista',
+    authorUsername: 'admin_oficial',
+    authorAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
     createdAt: '2026-10-29T14:00:00Z',
-    repliesCount: 6,
-    proCount: 148,
-    conCount: 12,
-    replies: [
-      {
-        id: 'dr_1',
-        debateId: 'deb_1',
-        authorId: 'usr_silva',
-        authorName: 'Coronel Silva Patriota',
-        authorUsername: 'coronel_silva',
-        authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-        stance: 'pro',
-        content: 'Todo processo público deve ser auditável de ponta a ponta pelo cidadão comum, e não apenas por especialistas em informática. O voto impresso acoplado à urna eletrônica, sem contato manual do eleitor, é o padrão de segurança adotado por nações como Japão e diversos estados americanos.',
-        upvotes: 45,
-        upvotedUserIds: ['usr_helena'],
-        createdAt: '2026-10-29T14:35:00Z'
-      },
-      {
-        id: 'dr_2',
-        debateId: 'deb_1',
-        authorId: 'usr_rodrigo',
-        authorName: 'Rodrigo Fagundes (Agro Forte)',
-        authorUsername: 'rodrigo_agro',
-        authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
-        stance: 'pro',
-        content: 'A transparência nunca enfraquece uma instituição; pelo contrário, fortalece a confiança cívica de quem vota e de quem é eleito.',
-        upvotes: 31,
-        upvotedUserIds: [],
-        createdAt: '2026-10-29T15:10:00Z'
-      }
-    ]
+    repliesCount: 0,
+    proCount: 22,
+    conCount: 2,
+    replies: []
   },
   {
     id: 'deb_2',
     title: 'Desoneração da folha e simplificação tributária real vs. aumento disfarçado de alíquotas',
     description: 'A reforma tributária aprovada atende verdadeiramente aos setores de comércio, serviços e agropecuária ou trará concentração de arrecadação?',
     category: 'Economia',
-    authorId: 'usr_rodrigo',
-    authorName: 'Rodrigo Fagundes (Agro Forte)',
-    authorUsername: 'rodrigo_agro',
-    authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
-    createdAt: '2026-10-28T10:00:00Z',
-    repliesCount: 4,
-    proCount: 89,
-    conCount: 16,
-    replies: []
-  },
-  {
-    id: 'deb_3',
-    title: 'Limites do Ativismo Judicial e as Prerrogativas dos Poderes Eleitos',
-    description: 'Qual é o papel do Senado Federal na fiscalização e no equilíbrio harmônico entre os três poderes da República?',
-    category: 'Liberdade de expressão',
     authorId: 'usr_admin',
     authorName: 'Administração Sociedade Bosonarista',
     authorUsername: 'admin_oficial',
     authorAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
-    createdAt: '2026-10-27T17:00:00Z',
-    repliesCount: 12,
-    proCount: 220,
-    conCount: 5,
+    createdAt: '2026-10-28T10:00:00Z',
+    repliesCount: 0,
+    proCount: 18,
+    conCount: 3,
     replies: []
   }
 ];
@@ -489,8 +264,8 @@ const DEFAULT_GROUPS: Group[] = [
     category: 'Movimento Cívico',
     creatorId: 'usr_admin',
     isPrivate: false,
-    membersCount: 253000,
-    memberUserIds: ['usr_kaliton', 'usr_admin', 'usr_silva'],
+    membersCount: 25,
+    memberUserIds: ['usr_admin'],
     createdAt: '2024-01-10T10:00:00Z'
   },
   {
@@ -501,8 +276,8 @@ const DEFAULT_GROUPS: Group[] = [
     category: 'Política',
     creatorId: 'usr_admin',
     isPrivate: false,
-    membersCount: 184000,
-    memberUserIds: ['usr_kaliton', 'usr_admin'],
+    membersCount: 18,
+    memberUserIds: ['usr_admin'],
     createdAt: '2024-01-15T10:00:00Z'
   },
   {
@@ -513,258 +288,56 @@ const DEFAULT_GROUPS: Group[] = [
     category: 'Direito & Liberdade',
     creatorId: 'usr_admin',
     isPrivate: false,
-    membersCount: 127000,
-    memberUserIds: ['usr_kaliton', 'usr_silva'],
+    membersCount: 12,
+    memberUserIds: ['usr_admin'],
     createdAt: '2024-02-01T10:00:00Z'
-  },
-  {
-    id: 'grp_1',
-    name: 'Patriotas do Agronegócio',
-    description: 'Comunidade dos produtores rurais, agrônomos, pecuaristas e defensores da soberania do campo brasileiro.',
-    coverImage: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
-    category: 'Agronegócio',
-    creatorId: 'usr_rodrigo',
-    isPrivate: false,
-    membersCount: 14820,
-    memberUserIds: ['usr_rodrigo', 'usr_silva', 'usr_helena', 'usr_admin'],
-    createdAt: '2024-01-10T10:00:00Z'
   }
 ];
 
 const DEFAULT_STORIES: StoryItem[] = [
   {
-    id: 'story_1',
-    userId: 'usr_patriota_br',
-    userName: 'Patriota BR',
-    userAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80',
+    id: 'story_oficial_bemvindo',
+    userId: 'usr_admin',
+    userName: 'Administração Oficial',
+    userAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
     hasUnseenStory: true,
     isVerified: true,
     badgeType: 'verified',
-    mediaUrl: '/src/assets/images/brasil_hero_banner_1793411883121.jpg',
-    caption: 'Mobilização cívica em Brasília pela nossa soberania! 🇧🇷',
-    createdAt: new Date(Date.now() - 1 * 3600 * 1000).toISOString()
-  },
-  {
-    id: 'story_2',
-    userId: 'usr_carlos_silva',
-    userName: 'Carlos Silva',
-    userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-    hasUnseenStory: true,
-    isVerified: true,
-    badgeType: 'verified',
-    mediaUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
-    caption: 'O agro brasileiro nunca dorme. Orgulho do nosso solo!',
-    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString()
-  },
-  {
-    id: 'story_3',
-    userId: 'usr_fernanda_lima',
-    userName: 'Fernanda Lima',
-    userAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
-    hasUnseenStory: true,
-    isVerified: false,
-    badgeType: 'star',
-    mediaUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80',
-    caption: 'Em defesa da liberdade de expressão e dos valores tradicionais!',
-    createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString()
-  },
-  {
-    id: 'story_4',
-    userId: 'usr_ricardo_souza',
-    userName: 'Ricardo Souza',
-    userAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
-    hasUnseenStory: true,
-    isVerified: true,
-    badgeType: 'verified',
-    mediaUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80',
-    caption: 'Segurança pública forte é cidadão protegido nas ruas!',
-    createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString()
-  },
-  {
-    id: 'story_5',
-    userId: 'usr_mariana_costa',
-    userName: 'Mariana Costa',
-    userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-    hasUnseenStory: true,
-    isVerified: true,
-    badgeType: 'flag',
-    mediaUrl: '/src/assets/images/brasil_bandeira_card_1793411895078.jpg',
-    caption: 'Deus, Pátria e Família sempre! Orgulho de ser brasileira! 🇧🇷',
-    createdAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString()
-  },
-  {
-    id: 'story_6',
-    userId: 'usr_andre_oliveira',
-    userName: 'André Oliveira',
-    userAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80',
-    hasUnseenStory: true,
-    isVerified: true,
-    badgeType: 'verified',
-    mediaUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
-    caption: 'Debates cívicos de alto nível na Sociedade Bosonarista.',
-    createdAt: new Date(Date.now() - 6 * 3600 * 1000).toISOString()
+    mediaUrl: '/assets/memorial/memorial_hall.jpg',
+    caption: 'Bem-vindo à Sociedade Bosonarista! A rede social da liberdade e soberania nacional. 🇧🇷',
+    createdAt: new Date().toISOString()
   }
 ];
 
-const DEFAULT_MESSAGES: ChatMessage[] = [
-  {
-    id: 'msg_1',
-    conversationId: 'conv_silva_helena',
-    senderId: 'usr_helena',
-    receiverId: 'usr_silva',
-    content: 'Olá Coronel Silva! Li seu posicionamento sobre a segurança das fronteiras. Muito lúcido e bem embasado.',
-    createdAt: '2026-10-30T14:10:00Z',
-    read: true
-  },
-  {
-    id: 'msg_2',
-    conversationId: 'conv_silva_helena',
-    senderId: 'usr_silva',
-    receiverId: 'usr_helena',
-    content: 'Muito obrigado, Dra. Helena! Seu parecer sobre a imunidade parlamentar também foi brilhante. Vamos em frente!',
-    createdAt: '2026-10-30T14:22:00Z',
-    read: true
-  },
-  {
-    id: 'msg_3',
-    conversationId: 'conv_silva_admin',
-    senderId: 'usr_admin',
-    receiverId: 'usr_silva',
-    content: 'Prezado Coronel Silva, informamos que seu selo de Membro Patriota Verificado está ativo. Agradecemos suas contribuições cívicas!',
-    createdAt: '2026-10-30T11:00:00Z',
-    read: false
-  }
-];
+const DEFAULT_MESSAGES: ChatMessage[] = [];
 
 const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
-    id: 'notif_k1',
-    userId: 'usr_kaliton',
-    fromUserId: 'usr_patriota22',
-    fromUserName: 'Patriota22',
-    fromUserAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-    type: 'like',
-    title: 'Nova curtida',
-    message: 'curtiu sua publicação na comunidade.',
-    link: '#post_1',
-    read: false,
-    createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'notif_k2',
-    userId: 'usr_kaliton',
-    fromUserId: 'usr_helena',
-    fromUserName: 'Dra. Helena Moreira',
-    fromUserAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
-    type: 'comment',
-    title: 'Novo comentário',
-    message: 'comentou na sua publicação sobre o futuro do Brasil.',
-    link: '#post_1',
-    read: false,
-    createdAt: new Date(Date.now() - 55 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'notif_k3',
-    userId: 'usr_kaliton',
-    fromUserId: 'usr_brasillivre',
-    fromUserName: 'BrasilLivre',
-    fromUserAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80',
-    type: 'follow',
-    title: 'Novo seguidor',
-    message: 'começou a seguir o seu perfil.',
-    link: '#perfil/brasillivre',
-    read: false,
-    createdAt: new Date(Date.now() - 120 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'notif_k4',
+    id: 'notif_welcome',
     userId: 'usr_kaliton',
     fromUserId: 'usr_admin',
     fromUserName: 'Administração Sociedade Bosonarista',
     fromUserAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
     type: 'admin_notice',
-    title: 'Selo Membro Premium Ativo',
-    message: 'Seu distintivo de Membro Premium foi validado com sucesso!',
-    link: '#',
+    title: 'Modo Real Ativo',
+    message: 'Bem-vindo! A plataforma está operando no Modo Real com membros genuínos.',
     read: false,
-    createdAt: new Date(Date.now() - 240 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'notif_1',
-    userId: 'usr_silva',
-    fromUserId: 'usr_helena',
-    fromUserName: 'Dra. Helena Moreira',
-    fromUserAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
-    type: 'like',
-    title: 'Nova curtida',
-    message: 'curtiu sua publicação sobre as prioridades no Congresso.',
-    link: '#post_1',
-    read: false,
-    createdAt: '2026-10-30T15:30:00Z'
-  },
-  {
-    id: 'notif_2',
-    userId: 'usr_silva',
-    fromUserId: 'usr_rodrigo',
-    fromUserName: 'Rodrigo Fagundes (Agro Forte)',
-    fromUserAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
-    type: 'comment',
-    title: 'Novo comentário',
-    message: 'comentou na sua enquete popular.',
-    link: '#post_1',
-    read: false,
-    createdAt: '2026-10-30T16:10:00Z'
-  },
-  {
-    id: 'notif_3',
-    userId: 'usr_silva',
-    fromUserId: 'usr_admin',
-    fromUserName: 'Administração',
-    fromUserAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
-    type: 'admin_notice',
-    title: 'Aviso da Moderação',
-    message: 'Nova diretriz de convivência e debates cívicos publicada com sucesso.',
-    link: '#',
-    read: true,
-    createdAt: '2026-10-29T10:00:00Z'
+    createdAt: new Date().toISOString()
   }
 ];
 
-const DEFAULT_REPORTS: ReportItem[] = [
-  {
-    id: 'rep_1',
-    reporterId: 'usr_silva',
-    reporterName: 'Coronel Silva Patriota',
-    contentType: 'comment',
-    contentId: 'comm_spam_test',
-    contentSnippet: 'Link suspeito de cassino online prometendo dinheiro rápido',
-    reason: 'Spam',
-    details: 'Perfil suspeito fazendo propaganda de apostas em tópico de debate sério.',
-    status: 'pending',
-    createdAt: '2026-10-30T13:40:00Z'
-  }
-];
+const DEFAULT_REPORTS: ReportItem[] = [];
 
 const DEFAULT_AUDIT_LOGS: AuditLogItem[] = [
   {
     id: 'log_1',
     adminId: 'usr_admin',
     adminName: 'Administração Central',
-    action: 'NOTICIA_PUBLICADA',
-    targetType: 'Notícia',
-    targetId: 'news_1',
-    details: 'Publicou a notícia em destaque: Balança Comercial do Agronegócio',
-    createdAt: '2026-10-30T10:05:00Z'
-  },
-  {
-    id: 'log_2',
-    adminId: 'usr_admin',
-    adminName: 'Administração Central',
-    action: 'VERIFICACAO_USUARIO',
-    targetType: 'Usuário',
-    targetId: 'usr_silva',
-    details: 'Concedeu selo oficial de verificação ao usuário coronel_silva',
-    createdAt: '2026-10-30T11:00:00Z'
+    action: 'PLATAFORMA_INICIADA',
+    targetType: 'Sistema',
+    targetId: 'sys_init',
+    details: 'Modo Real Ativado — plataforma configurada para membros genuínos.',
+    createdAt: new Date().toISOString()
   }
 ];
 
@@ -808,12 +381,28 @@ export const storageService = {
     getStorage(STORAGE_KEYS.AUDIT_LOGS, DEFAULT_AUDIT_LOGS);
     getStorage(STORAGE_KEYS.STORIES, DEFAULT_STORIES);
     
-    // Real mode: clear any mock/demo user sessions so visitors always land logged-out
-    // and must authenticate with a real account (social or CPF)
-    const MOCK_IDS = ['usr_kaliton', 'usr_admin', 'usr_silva', 'usr_helena', 'usr_rodrigo'];
-    const currentStored = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-    if (currentStored && MOCK_IDS.includes(currentStored)) {
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+    // Purge simulated bot members from stored users & stories
+    const SIMULATED_IDS = ['usr_patriota22', 'usr_brasillivre', 'usr_direitaja', 'usr_silva', 'usr_helena', 'usr_rodrigo'];
+    try {
+      const storedUsersRaw = localStorage.getItem(STORAGE_KEYS.USERS);
+      if (storedUsersRaw) {
+        const storedUsers: User[] = JSON.parse(storedUsersRaw);
+        const filtered = storedUsers.filter(u => !SIMULATED_IDS.includes(u.id));
+        if (filtered.length !== storedUsers.length) {
+          localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(filtered));
+        }
+      }
+
+      const storedStoriesRaw = localStorage.getItem(STORAGE_KEYS.STORIES);
+      if (storedStoriesRaw) {
+        const storedStories: StoryItem[] = JSON.parse(storedStoriesRaw);
+        const filteredStories = storedStories.filter(s => !SIMULATED_IDS.includes(s.userId));
+        if (filteredStories.length !== storedStories.length) {
+          localStorage.setItem(STORAGE_KEYS.STORIES, JSON.stringify(filteredStories));
+        }
+      }
+    } catch (e) {
+      console.warn('Error purging simulated users:', e);
     }
   },
 
@@ -831,6 +420,9 @@ export const storageService = {
     };
     const updated = [newStory, ...stories];
     setStorage(STORAGE_KEYS.STORIES, updated);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sb_stories_updated', { detail: newStory }));
+    }
     return newStory;
   },
 
@@ -1229,7 +821,7 @@ export const storageService = {
           .replace(/[^a-z0-9]/g, '_')
           .slice(0, 14);
         const uniqueSuffix = Math.floor(100 + Math.random() * 9000);
-        user = {
+        const newUser: User = {
           id: 'usr_' + Date.now().toString(36),
           name: socialData.name,
           username: baseUsername + '_' + uniqueSuffix,
@@ -1246,7 +838,8 @@ export const storageService = {
           socialLinks: { providerId: cleanProviderId },
           verified: false
         };
-        users.push(user);
+        user = newUser;
+        users.push(newUser);
         setStorage(STORAGE_KEYS.USERS, users);
       } else {
         // Update name/avatar if re-logging in
@@ -1255,8 +848,11 @@ export const storageService = {
         setStorage(STORAGE_KEYS.USERS, users);
       }
 
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
-      return { success: true, user };
+      if (user) {
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
+        return { success: true, user };
+      }
+      return { success: false, error: 'Erro ao registrar usuário localmente.' };
     }
   },
 
@@ -1339,6 +935,15 @@ export const storageService = {
     const followKey = `sb_follows_${currentUserId}`;
     const followList = getStorage<string[]>(followKey, []);
     return followList.includes(targetUserId);
+  },
+
+  getFollowingList(userId: string): string[] {
+    const followKey = `sb_follows_${userId}`;
+    return getStorage<string[]>(followKey, []);
+  },
+
+  getFollowingCount(userId: string): number {
+    return this.getFollowingList(userId).length;
   },
 
   // ---------------- POSTS & FEED ----------------

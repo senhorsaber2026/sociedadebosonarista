@@ -11,7 +11,9 @@ import {
   Compass,
   Play,
   Pause,
-  Clock
+  Clock,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { StoryItem, User } from '../types';
 import { storageService } from '../services/storageService';
@@ -37,6 +39,16 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Listen for story updates dispatched by storageService.addStory()
+  useEffect(() => {
+    const handleStoriesUpdated = () => {
+      setStories(storageService.getStories());
+    };
+    window.addEventListener('sb_stories_updated', handleStoriesUpdated);
+    return () => window.removeEventListener('sb_stories_updated', handleStoriesUpdated);
+  }, []);
 
   const activeStory = activeStoryIndex !== null && stories[activeStoryIndex] ? stories[activeStoryIndex] : null;
 
@@ -129,6 +141,22 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
     };
   }, [activeStoryIndex, handleCloseStory, handleNextStory, handlePrevStory]);
 
+  const handleStoryFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('A imagem deve ter menos de 10MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setStoryImage(dataUrl);
+      showToast('Foto do Story selecionada com sucesso!');
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleCreateStory = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) {
@@ -136,7 +164,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       return;
     }
 
-    const defaultImg = storyImage.trim() || '/src/assets/images/brasil_hero_banner_1793411883121.jpg';
+    const defaultImg = storyImage.trim() || '/assets/images/brasil_hero_banner_1793411883121.jpg';
     storageService.addStory({
       userId: currentUser.id,
       userName: currentUser.name,
@@ -216,14 +244,14 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
             if (!currentUser) onOpenAuth();
             else setIsAddingStory(true);
           }}
-          className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group select-none w-16"
+          className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group select-none w-20"
         >
           <div className="relative w-14 h-14 rounded-full bg-[#174D32] hover:bg-[#1f6341] border-2 border-dashed border-[#D4AF37]/70 flex items-center justify-center transition-all duration-300 group-hover:scale-105 shadow-[0_0_12px_rgba(212,175,55,0.2)]">
             <div className="w-9 h-9 rounded-full bg-[#2563EB] flex items-center justify-center text-white shadow-md">
               <Plus className="w-5 h-5 stroke-[2.5]" />
             </div>
           </div>
-          <span className="text-[11px] font-medium text-[#F5F5F0] text-center leading-tight line-clamp-1 group-hover:text-[#E8CC76]">
+          <span className="text-[10px] sm:text-[11px] font-medium text-[#F5F5F0] text-center leading-tight line-clamp-2 group-hover:text-[#E8CC76] break-words">
             Adicionar Story
           </span>
         </div>
@@ -239,7 +267,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 setHasLikedStory(false);
                 setIsPaused(false);
               }}
-              className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group select-none w-16"
+              className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group select-none w-20"
             >
               <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-[#D4AF37] via-[#E8CC76] to-[#174D32] group-hover:scale-105 transition-transform duration-300 shadow-md">
                 <div className="w-full h-full rounded-full overflow-hidden p-0.5 bg-[#102019]">
@@ -262,7 +290,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 )}
               </div>
 
-              <span className="text-[11px] font-medium text-[#F5F5F0] text-center leading-tight truncate w-full group-hover:text-[#E8CC76]">
+              <span className="text-[10px] sm:text-[11px] font-medium text-[#F5F5F0] text-center leading-tight line-clamp-2 w-full group-hover:text-[#E8CC76] break-words">
                 {story.userName}
               </span>
             </div>
@@ -518,52 +546,96 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
             <form onSubmit={handleCreateStory} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-[#A5B2A9] mb-1">
-                  Legenda do Story
+                  Legenda do Story (opcional)
                 </label>
                 <input
                   type="text"
                   value={storyCaption}
                   onChange={(e) => setStoryCaption(e.target.value)}
                   placeholder="Ex: Juntos pelo Brasil e pela liberdade! 🇧🇷"
-                  maxLength={120}
+                  maxLength={280}
                   className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
 
+              {/* Direct file upload from device */}
+              <div>
+                <label className="block text-xs font-semibold text-[#A5B2A9] mb-1.5">
+                  Foto do Story (Celular ou Computador)
+                </label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  onChange={handleStoryFileUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-3 px-4 rounded-2xl border border-dashed border-[#D4AF37]/60 hover:border-[#D4AF37] bg-[#15291F] hover:bg-[#1b3829] text-[#E8CC76] transition flex items-center justify-center gap-2 text-xs font-bold cursor-pointer shadow-sm active:scale-98"
+                >
+                  <Upload className="w-4 h-4 text-[#D4AF37]" />
+                  <span>Escolher Foto do seu Aparelho</span>
+                </button>
+              </div>
+
+              {/* Selected Photo Preview */}
+              {storyImage && (
+                <div className="relative rounded-2xl overflow-hidden h-36 border border-[#D4AF37]/50 bg-black/60 shadow-inner">
+                  <img src={storyImage} alt="Prévia" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+                  <button
+                    type="button"
+                    onClick={() => setStoryImage('')}
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/80 hover:bg-[#D94B4B] text-white flex items-center justify-center text-xs transition cursor-pointer shadow"
+                    title="Remover foto"
+                  >
+                    ✕
+                  </button>
+                  <span className="absolute bottom-2 left-3 text-[10px] text-[#E8CC76] font-semibold">
+                    ✓ Imagem pronta para o Story
+                  </span>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-[#A5B2A9] mb-1">
-                  URL da Imagem (opcional)
+                  Ou cole a URL de uma Imagem
                 </label>
                 <input
                   type="url"
                   value={storyImage}
                   onChange={(e) => setStoryImage(e.target.value)}
-                  placeholder="Cole a URL da foto ou escolha uma sugestão abaixo"
+                  placeholder="https://..."
                   className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
 
               {/* Quick image choices */}
               <div>
-                <span className="text-[11px] text-[#A5B2A9] block mb-1.5">Sugestões de Imagens Patrióticas:</span>
+                <span className="text-[11px] text-[#A5B2A9] block mb-1.5">Ou escolha uma sugestão oficial:</span>
                 <div className="grid grid-cols-3 gap-2">
                   <div
-                    onClick={() => setStoryImage('/src/assets/images/brasil_hero_banner_1793411883121.jpg')}
-                    className="h-16 rounded-lg overflow-hidden border border-[#263B30] hover:border-[#D4AF37] cursor-pointer"
+                    onClick={() => setStoryImage('/assets/images/brasil_hero_banner_1793411883121.jpg')}
+                    className="h-16 rounded-lg overflow-hidden border border-[#263B30] hover:border-[#D4AF37] cursor-pointer group/item relative"
                   >
-                    <img src="/src/assets/images/brasil_hero_banner_1793411883121.jpg" alt="Brasília" className="w-full h-full object-cover" />
+                    <img src="/assets/images/brasil_hero_banner_1793411883121.jpg" alt="Brasília" className="w-full h-full object-cover group-hover/item:scale-105 transition" />
+                    <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] text-white text-center py-0.5">Brasília</span>
                   </div>
                   <div
-                    onClick={() => setStoryImage('/src/assets/images/brasil_bandeira_card_1793411895078.jpg')}
-                    className="h-16 rounded-lg overflow-hidden border border-[#263B30] hover:border-[#D4AF37] cursor-pointer"
+                    onClick={() => setStoryImage('/assets/images/brasil_bandeira_card_1793411895078.jpg')}
+                    className="h-16 rounded-lg overflow-hidden border border-[#263B30] hover:border-[#D4AF37] cursor-pointer group/item relative"
                   >
-                    <img src="/src/assets/images/brasil_bandeira_card_1793411895078.jpg" alt="Bandeira" className="w-full h-full object-cover" />
+                    <img src="/assets/images/brasil_bandeira_card_1793411895078.jpg" alt="Bandeira" className="w-full h-full object-cover group-hover/item:scale-105 transition" />
+                    <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] text-white text-center py-0.5">Bandeira</span>
                   </div>
                   <div
                     onClick={() => setStoryImage('/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png')}
-                    className="h-16 rounded-lg overflow-hidden border border-[#263B30] hover:border-[#D4AF37] cursor-pointer"
+                    className="h-16 rounded-lg overflow-hidden border border-[#263B30] hover:border-[#D4AF37] cursor-pointer group/item relative"
                   >
-                    <img src="/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png" alt="Emblema" className="w-full h-full object-cover" />
+                    <img src="/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png" alt="Emblema" className="w-full h-full object-cover group-hover/item:scale-105 transition" />
+                    <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] text-white text-center py-0.5">Emblema</span>
                   </div>
                 </div>
               </div>

@@ -45,6 +45,8 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
     ? storageService.getMessagesForUser(currentUser.id).filter(m => m.receiverId === currentUser.id && !m.read).length
     : 0;
 
+  const followingCount = currentUser ? storageService.getFollowingCount(currentUser.id) : 0;
+
   // Navigation items matching exact user brief and screenshot order:
   // Início, Meu perfil, Explorar, Notícias, Debates, Grupos, Amigos (12), Mensagens, Salvos, Configurações
   const navItems = [
@@ -56,7 +58,7 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
     { id: 'news', label: 'Notícias', icon: Newspaper },
     { id: 'debates', label: 'Debates', icon: Flame },
     { id: 'groups', label: 'Grupos', icon: Users },
-    { id: 'friends', label: 'Amigos', icon: UserCheck, badge: '12', isPill: true },
+    { id: 'friends', label: 'Amigos', icon: UserCheck, badge: followingCount > 0 ? String(followingCount) : undefined, isPill: true },
     { id: 'messages', label: 'Mensagens', icon: MessageSquare, badge: unreadMessagesCount > 0 ? String(unreadMessagesCount) : undefined, isPill: true, authRequired: true },
     { id: 'saved', label: 'Salvos', icon: Bookmark, authRequired: true },
     { id: 'settings', label: 'Configurações', icon: Settings, authRequired: true },
@@ -116,7 +118,7 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
-              <h4 className="text-xs font-bold text-[#F5F5F0] truncate group-hover:text-[#E8CC76] transition">
+              <h4 className="text-xs font-bold text-[#F5F5F0] break-words leading-tight group-hover:text-[#E8CC76] transition">
                 {currentUser.name}
               </h4>
               <div className="w-3.5 h-3.5 rounded-full bg-[#2563EB] flex items-center justify-center text-white shrink-0" title="Verificado">
