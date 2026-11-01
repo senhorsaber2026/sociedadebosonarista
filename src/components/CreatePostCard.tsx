@@ -12,6 +12,7 @@ import {
 import { User, Post } from '../types';
 import { storageService } from '../services/storageService';
 import { showToast } from './Toast';
+import { extractYouTubeId } from '../utils/youtube';
 
 interface CreatePostCardProps {
   currentUser: User | null;
@@ -114,7 +115,14 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
 
       // Share to Stories if checkbox is checked
       if (shareToStories && currentUser) {
-        const storyMedia = mediaUrl.trim() || '/assets/images/brasil_hero_banner_1793411883121.jpg';
+        const rawMedia = mediaUrl.trim();
+        const rawContent = content.trim();
+        const ytId = extractYouTubeId(rawMedia) || extractYouTubeId(rawContent);
+        const isYt = !!ytId;
+        const storyMedia = isYt 
+          ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+          : (rawMedia || '/assets/images/brasil_hero_banner_1793411883121.jpg');
+
         storageService.addStory({
           userId: currentUser.id,
           userName: currentUser.name,
@@ -123,8 +131,10 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
           isVerified: currentUser.verified ?? false,
           badgeType: 'verified',
           mediaUrl: storyMedia,
-          mediaType: mediaUrl.trim() ? mediaType : 'image',
-          caption: content.trim().slice(0, 280)
+          mediaType: isYt ? 'youtube' : (rawMedia ? mediaType : 'image'),
+          youtubeUrl: isYt ? (rawMedia && extractYouTubeId(rawMedia) ? rawMedia : `https://www.youtube.com/watch?v=${ytId}`) : undefined,
+          youtubeId: ytId || undefined,
+          caption: rawContent.slice(0, 280)
         });
       }
 

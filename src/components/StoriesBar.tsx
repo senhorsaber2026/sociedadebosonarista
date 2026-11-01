@@ -14,11 +14,14 @@ import {
   Clock, 
   Upload, 
   Trash2, 
-  Film 
+  Film,
+  Youtube,
+  ExternalLink
 } from 'lucide-react';
 import { StoryItem, User } from '../types';
 import { storageService } from '../services/storageService';
 import { showToast } from './Toast';
+import { extractYouTubeId, getYouTubeThumbnail, getYouTubeEmbedUrl, getYouTubeWatchUrl } from '../utils/youtube';
 
 interface StoriesBarProps {
   currentUser: User | null;
@@ -46,7 +49,8 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
   // Add Story modal state
   const [isAddingStory, setIsAddingStory] = useState(false);
   const [storyImage, setStoryImage] = useState('');
-  const [storyMediaType, setStoryMediaType] = useState<'image' | 'video'>('image');
+  const [storyYoutubeUrl, setStoryYoutubeUrl] = useState('');
+  const [storyMediaType, setStoryMediaType] = useState<'image' | 'video' | 'youtube'>('image');
   const [storyCaption, setStoryCaption] = useState('');
   const [storyReply, setStoryReply] = useState('');
   const [hasLikedStory, setHasLikedStory] = useState(false);
@@ -135,7 +139,9 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
 
   // 1. AUTO-PROGRESS TIMER
   useEffect(() => {
-    if (activeStory === null || isPaused) {
+    // If it's a YouTube video, don't auto-skip after 5s so the user can watch the video
+    const isYt = activeStory?.mediaType === 'youtube' || Boolean(activeStory?.youtubeId);
+    if (activeStory === null || isPaused || isYt) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
@@ -212,7 +218,21 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       return;
     }
 
-    const defaultImg = storyImage.trim() || '/assets/images/brasil_hero_banner_1793411883121.jpg';
+    const ytId = extractYouTubeId(storyYoutubeUrl);
+    let finalMediaType = storyMediaType;
+    let finalMediaUrl = storyImage.trim();
+    let finalYoutubeUrl: string | undefined = undefined;
+    let finalYoutubeId: string | undefined = undefined;
+
+    if (ytId) {
+      finalMediaType = 'youtube';
+      finalYoutubeId = ytId;
+      finalYoutubeUrl = storyYoutubeUrl.trim();
+      finalMediaUrl = getYouTubeThumbnail(ytId);
+    } else if (!finalMediaUrl) {
+      finalMediaUrl = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+    }
+
     storageService.addStory({
       userId: currentUser.id,
       userName: currentUser.name,
@@ -220,14 +240,17 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       hasUnseenStory: true,
       isVerified: currentUser.verified,
       badgeType: 'verified',
-      mediaUrl: defaultImg,
-      mediaType: storyMediaType,
+      mediaUrl: finalMediaUrl,
+      mediaType: finalMediaType,
+      youtubeUrl: finalYoutubeUrl,
+      youtubeId: finalYoutubeId,
       caption: storyCaption.trim() || 'Orgulho de ser brasileiro! 🇧🇷'
     });
 
     setStories(storageService.getStories());
     setIsAddingStory(false);
     setStoryImage('');
+    setStoryYoutubeUrl('');
     setStoryCaption('');
     setStoryMediaType('image');
     showToast('Seu Story foi publicado com sucesso!');
@@ -319,8 +342,9 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
         {storyGroups.map((group, groupIdx) => {
           // Latest story from this user determines the circle thumbnail
           const latestStory = group.stories[0];
-          const isVideo = latestStory?.mediaType === 'video' || latestStory?.mediaUrl?.startsWith('data:video') || latestStory?.mediaUrl?.endsWith('.mp4');
-          const storyMedia = latestStory?.mediaUrl || '/assets/images/brasil_hero_banner_1793411883121.jpg';
+          const isYoutube = latestStory?.mediaType === 'youtube' || Boolean(latestStory?.youtubeId);
+          const isVideo = !isYoutube && (latestStory?.mediaType === 'video' || latestStory?.mediaUrl?.startsWith('data:video') || latestStory?.mediaUrl?.endsWith('.mp4'));
+          const storyMedia = latestStory?.mediaUrl || (isYoutube && latestStory?.youtubeId ? getYouTubeThumbnail(latestStory.youtubeId) : '/assets/images/brasil_hero_banner_1793411883121.jpg');
 
           return (
             <div
@@ -334,10 +358,26 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
               }}
               className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group select-none w-20"
             >
-              {/* Story Circle: Shows STORY PHOTO/VIDEO with gold ring */}
+              {/* Story Circle: Shows STORY PHOTO/VIDEO/YOUTUBE with gold ring */}
               <div className="relative w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-[#D4AF37] via-[#E8CC76] to-[#174D32] group-hover:scale-105 transition-transform duration-300 shadow-md">
                 <div className="w-full h-full rounded-full overflow-hidden p-0.5 bg-[#102019] relative flex items-center justify-center">
-                  {isVideo ? (
+                  {isYoutube ? (
+                    <div className="w-full h-full relative rounded-full overflow-hidden bg-black flex items-center justify-center">
+                      <img
+                        src={storyMedia}
+                        alt={group.userName}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+                        }}
+                        className="w-full h-full object-cover group-hover:brightness-110 transition"
+                      />
+                      <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
+                        <div className="w-5 h-5 rounded-full bg-[#FF0000] flex items-center justify-center text-white shadow-md">
+                          <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
+                        </div>
+                      </div>
+                    </div>
+                  ) : isVideo ? (
                     <div className="w-full h-full relative rounded-full overflow-hidden bg-black flex items-center justify-center">
                       <video
                         src={storyMedia}
@@ -410,9 +450,19 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
             onTouchStart={() => setIsPaused(true)}
             onTouchEnd={() => setIsPaused(false)}
           >
-            {/* Background Story Media (Photo or Video in full clarity) */}
+            {/* Background Story Media (Photo, Video, or YouTube Player) */}
             <div className="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden">
-              {activeStory.mediaType === 'video' || activeStory.mediaUrl?.startsWith('data:video') || activeStory.mediaUrl?.endsWith('.mp4') ? (
+              {activeStory.mediaType === 'youtube' || activeStory.youtubeId ? (
+                <div className="w-full h-full relative flex items-center justify-center bg-black">
+                  <iframe
+                    src={getYouTubeEmbedUrl(activeStory.youtubeId || extractYouTubeId(activeStory.youtubeUrl || '') || '', true)}
+                    title={activeStory.caption || 'Vídeo do YouTube'}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+              ) : activeStory.mediaType === 'video' || activeStory.mediaUrl?.startsWith('data:video') || activeStory.mediaUrl?.endsWith('.mp4') ? (
                 <video
                   src={activeStory.mediaUrl}
                   autoPlay
@@ -531,13 +581,13 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
             </div>
 
             {/* Tap zones for left / right navigation */}
-            <div className="relative z-10 flex-1 flex">
+            <div className={`relative z-10 flex-1 flex ${activeStory.mediaType === 'youtube' || activeStory.youtubeId ? 'pointer-events-none' : ''}`}>
               <div 
                 onClick={(e) => {
                   e.stopPropagation();
                   handlePrevStory();
                 }}
-                className="w-1/3 h-full cursor-pointer flex items-center justify-start pl-2 opacity-0 hover:opacity-80 transition-opacity"
+                className={`w-1/3 h-full cursor-pointer flex items-center justify-start pl-2 opacity-0 hover:opacity-80 transition-opacity ${activeStory.mediaType === 'youtube' || activeStory.youtubeId ? 'pointer-events-auto' : ''}`}
                 title="Story anterior"
               >
                 <div className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center border border-white/20">
@@ -549,7 +599,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                   e.stopPropagation();
                   setIsPaused(prev => !prev);
                 }}
-                className="w-1/3 h-full cursor-pointer"
+                className={`w-1/3 h-full ${activeStory.mediaType === 'youtube' || activeStory.youtubeId ? 'pointer-events-none' : 'cursor-pointer'}`}
                 title="Pressione para pausar"
               />
               <div 
@@ -557,7 +607,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                   e.stopPropagation();
                   handleNextStory();
                 }}
-                className="w-1/3 h-full cursor-pointer flex items-center justify-end pr-2 opacity-0 hover:opacity-80 transition-opacity"
+                className={`w-1/3 h-full cursor-pointer flex items-center justify-end pr-2 opacity-0 hover:opacity-80 transition-opacity ${activeStory.mediaType === 'youtube' || activeStory.youtubeId ? 'pointer-events-auto' : ''}`}
                 title="Próximo story"
               >
                 <div className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center border border-white/20">
@@ -568,6 +618,25 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
 
             {/* Bottom Caption & Interactive Reply Bar */}
             <div className="relative z-20 p-3.5 space-y-2.5 bg-gradient-to-t from-black via-black/85 to-transparent">
+              {(activeStory.mediaType === 'youtube' || activeStory.youtubeId) && (
+                <div className="flex items-center justify-between">
+                  <a
+                    href={activeStory.youtubeUrl || getYouTubeWatchUrl(activeStory.youtubeId!)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-md cursor-pointer active:scale-95"
+                  >
+                    <Youtube className="w-4 h-4 fill-current" />
+                    <span>Assistir no YouTube</span>
+                    <ExternalLink className="w-3 h-3 ml-0.5" />
+                  </a>
+                  <span className="text-[10px] text-white/80 bg-black/60 px-2 py-0.5 rounded-full border border-white/20 font-medium">
+                    YouTube Vídeo
+                  </span>
+                </div>
+              )}
+
               {activeStory.caption && (
                 <div className="p-3 rounded-2xl bg-black/80 backdrop-blur-md border border-[#D4AF37]/40 text-xs sm:text-sm font-semibold text-white leading-relaxed shadow-lg">
                   {activeStory.caption}
@@ -707,6 +776,48 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                   </span>
                 </div>
               )}
+
+              {/* YouTube Video Link Input */}
+              <div>
+                <label className="block text-xs font-semibold text-[#A5B2A9] mb-1.5 flex items-center gap-1.5">
+                  <Youtube className="w-4 h-4 text-[#FF0000]" />
+                  <span>Link de Vídeo do YouTube (Vídeo normal ou Shorts)</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    value={storyYoutubeUrl}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setStoryYoutubeUrl(val);
+                      const yId = extractYouTubeId(val);
+                      if (yId) {
+                        setStoryMediaType('youtube');
+                        setStoryImage(getYouTubeThumbnail(yId));
+                      }
+                    }}
+                    placeholder="https://www.youtube.com/watch?v=... ou youtu.be/..."
+                    className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+                {extractYouTubeId(storyYoutubeUrl) && (
+                  <div className="mt-2 flex items-center gap-2.5 p-2 rounded-xl bg-black/40 border border-[#FF0000]/40">
+                    <img
+                      src={getYouTubeThumbnail(extractYouTubeId(storyYoutubeUrl)!)}
+                      alt="YouTube preview"
+                      className="w-16 h-10 object-cover rounded-lg border border-[#FF0000]/30 shadow-sm"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] font-bold text-white flex items-center gap-1">
+                        <Youtube className="w-3.5 h-3.5 text-[#FF0000]" /> Vídeo do YouTube Detectado
+                      </span>
+                      <span className="text-[10px] text-[#A5B2A9] truncate block">
+                        ID: {extractYouTubeId(storyYoutubeUrl)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-[#A5B2A9] mb-1">

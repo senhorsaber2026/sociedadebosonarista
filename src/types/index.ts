@@ -321,7 +321,9 @@ export interface StoryItem {
   isVerified?: boolean;
   isCurrentUser?: boolean;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video';
+  mediaType?: 'image' | 'video' | 'youtube';
+  youtubeUrl?: string;
+  youtubeId?: string;
   caption?: string;
   createdAt?: string;
   badgeType?: 'verified' | 'flag' | 'star';
