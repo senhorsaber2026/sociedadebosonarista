@@ -211,7 +211,7 @@ const MEMORIAL_FIGURES: MemorialFigure[] = [
     countryFlag: '🇧🇷',
     category: 'brasil',
     period: '1825 — 1891',
-    image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=600&q=80',
+    image: '/assets/memorial/dom_pedro_ii.jpg',
     quote: 'Se eu não fosse imperador, desejaria ser professor. Não conheço missão maior e mais nobre do que dirigir as inteligências juvenis.',
     summary: 'Segundo e último monarca do Império do Brasil. Governou por quase 50 anos com integridade exemplar, tolerância, respeito irrestrito à Constituição e amor à ciência e à educação.',
     fullBio: 'Dom Pedro II consolidou a unidade territorial de um país continental enquanto a América Espanhola se fragmentava em guerras civis. Modelo de probidade pessoal e simplicidade, recusava luxos pessoais e investia do próprio bolso em bibliotecas, institutos históricos e bolsas de estudo para jovens brasileiros. Seu reinado de quase cinco décadas foi caracterizado por estabilidade monetária, liberdade irrestrita de imprensa (nunca censurou um jornal sequer) e consolidação das instituições parlamentares.',
@@ -238,7 +238,7 @@ const MEMORIAL_FIGURES: MemorialFigure[] = [
     countryFlag: '🇧🇷',
     category: 'brasil',
     period: '1763 — 1838',
-    image: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=600&q=80',
+    image: '/assets/memorial/jose_bonifacio.jpg',
     quote: 'A verdadeira liberdade consiste em fazer tudo aquilo que a lei permite, sem prejudicar os outros.',
     summary: 'Cientista de renome europeu, mineralogista, poeta e o grande arquiteto da Independência e da fundação do Estado Nacional brasileiro.',
     fullBio: 'José Bonifácio foi um verdadeiro polímata da Ilustração luso-brasileira. Descobridor de quatro minerais (incluindo a petalita que levou à descoberta do lítio), voltou ao Brasil para liderar o movimento da independência em 1822. Com visão conservadora e realista, arquitetou uma transição ordenada sem a anarquia sanguinolenta das repúblicas hispânicas, mantendo o país unido sob a autoridade constitucional de D. Pedro I. Foi pioneiro ao defender já no início do século XIX a abolição da escravidão, a proteção das florestas e a integração cidadã dos povos indígenas.',
@@ -264,7 +264,7 @@ const MEMORIAL_FIGURES: MemorialFigure[] = [
     countryFlag: '🇦🇹 🇬🇧',
     category: 'economia',
     period: '1899 — 1992',
-    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
+    image: '/assets/memorial/friedrich_hayek.jpg',
     quote: 'A curiosa tarefa da economia é demonstrar aos homens quão pouco eles realmente sabem sobre aquilo que imaginam poder conceber.',
     summary: 'Expoente maior da Escola Austríaca de Economia. Provou que o planejamento central socialista é impossível devido à dispersão do conhecimento na sociedade.',
     fullBio: 'Friedrich Hayek demonstrou no clássico "O Caminho da Servidão" (1944) que qualquer tentativa de planificação econômica socialista conduz inevitavelmente ao totalitarismo e à perda de todas as liberdades individuais. Desenvolveu a teoria da "Ordem Espontânea", provando que as maiores conquistas humanas — a linguagem, o direito consuetudinário, os mercados e a moeda — não foram desenhados por burocratas, mas emergiram da livre cooperação voluntária entre indivíduos.',
@@ -291,7 +291,7 @@ const MEMORIAL_FIGURES: MemorialFigure[] = [
     countryFlag: '🇬🇧',
     category: 'filosofo',
     period: '1944 — 2020',
-    image: 'https://images.unsplash.com/photo-1507842229451-9f75069732f1?auto=format&fit=crop&w=600&q=80',
+    image: '/assets/memorial/roger_scruton.jpg',
     quote: 'Conservadorismo vem de um sentimento que qualquer pessoa madura compartilha com facilidade: que coisas boas são facilmente destruídas, mas não são facilmente criadas.',
     summary: 'Um dos mais elegantes filósofos do século XXI. Escreveu sobre estética, arquitetura, música, ecologia conservadora e a defesa da civilização ocidental.',
     fullBio: 'Sir Roger Scruton viajou clandestinamente na década de 1980 para ministrar seminários secretos atrás da Cortina de Ferro na Tchecoslováquia e Polônia, ajudando a rede de dissidentes anti-comunistas. Desenvolveu o conceito central de "Oikofilia" — o amor ao lar, à paisagem local, às comunidades vizinhas e aos costumes compartilhados —, mostrando que o conservadorismo é motivado pelo amor àquilo que já existe de belo, e não pelo ressentimento social.',
@@ -319,7 +319,7 @@ const MEMORIAL_FIGURES: MemorialFigure[] = [
     countryFlag: '🇧🇷',
     category: 'brasil',
     period: '1917 — 2001',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
+    image: '/assets/memorial/roberto_campos.jpg',
     quote: 'O Brasil nunca perde a oportunidade de perder uma oportunidade. A esquerda brasileira só lê o que ela mesma escreve.',
     summary: 'Economista, diplomata, ministro do Planejamento e senador. Foi o pioneiro solitário e brilhante na defesa do livre mercado contra o estatismo asfixiante brasileiro.',
     fullBio: 'Roberto de Oliveira Campos participou da delegação brasileira nos acordos de Bretton Woods em 1944. Foi embaixador nos EUA e em Londres. Como ministro, modernizou o sistema financeiro nacional com a criação do Banco Central do Brasil, do FGTS e da correção monetária. Com humor refinado e erudição implacável, combateu por décadas o cartorialismo, o nacionalismo xenófobo retrógrado e o vício brasileiro em soluções estatais ineficientes.',
@@ -346,7 +346,7 @@ const MEMORIAL_FIGURES: MemorialFigure[] = [
     countryFlag: '🇧🇷',
     category: 'brasil',
     period: '1914 — 1977',
-    image: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=600&q=80',
+    image: '/assets/memorial/carlos_lacerda.jpg',
     quote: 'A mentira dita cem vezes pode parecer verdade, mas basta uma única verdade corajosa para desmoronar o castelo inteiro da impostura.',
     summary: 'Jornalista, escritor, orador genial e governador do Estado da Guanabara. A voz mais vibrante da oposição ao populismo demagógico e à corrupção.',
     fullBio: 'Fundador do jornal "Tribuna da Imprensa", Carlos Lacerda foi sem dúvida o maior orador político do Brasil republicano. Com estilo incisivo, combateu o getulismo e a demagogia populista. Como primeiro governador da Guanabara (Rio de Janeiro), realizou uma das administrações mais eficientes da história da cidade, canalizando rios, construindo o Túnel Rebouças e Santa Bárbara, elevando os padrões da educação pública e criando a Companhia Estadual de Águas (CEDAE). Tradutor primoroso de Shakespeare e autor de múltiplos livros.',
@@ -373,7 +373,7 @@ const MEMORIAL_FIGURES: MemorialFigure[] = [
     countryFlag: '🇧🇷',
     category: 'brasil',
     period: '1938 — 2007',
-    image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=600&q=80',
+    image: '/assets/memorial/eneas_carneiro.jpg',
     quote: 'O meu nome é Enéas! Um país sem ciência própria, sem tecnologia própria e sem soberania é uma colônia de segunda categoria.',
     summary: 'Médico cardiologista, professor, matemático e deputado federal mais votado da história do Brasil. Ícone da retórica patriótica, soberania das riquezas nacionais e disciplina moral.',
     fullBio: 'Formado pela Escola de Medicina e Cirurgia do Rio de Janeiro, com mestrado em Cardiologia pela UFRJ e autor de livros-texto de eletrocardiografia adotados em todo o país. O Dr. Enéas fundou o Prona e conquistou o Brasil com seus pronunciamentos fulminantes de segundos na televisão. Defendeu a soberania mineral brasileira (especialmente o nióbio e o urânio), a disciplina na educação, a elevação científica do país e a dignidade moral contra a degradação dos costumes e a corrupção generalizada.',
@@ -401,7 +401,7 @@ const MEMORIAL_FIGURES: MemorialFigure[] = [
     countryFlag: '🇬🇧',
     category: 'mundo',
     period: '1874 — 1965',
-    image: 'https://images.unsplash.com/photo-1533227268428-f9ed0900fb3b?auto=format&fit=crop&w=600&q=80',
+    image: '/assets/memorial/winston_churchill.jpg',
     quote: 'Nunca, no campo dos conflitos humanos, tantos deveram tanto a tão poucos.',
     summary: 'Primeiro-ministro britânico, historiador vencedor do Nobel de Literatura. A muralha inabalável da coragem moral contra o totalitarismo nazista.',
     fullBio: 'Quando quase toda a Europa continental havia caído sob as botas do Terceiro Reich e muitos propunham a rendição, Churchill permaneceu firme, mobilizou a língua inglesa como exército e liderou a Grã-Bretanha e o mundo livre até a vitória final. Também foi o primeiro a alertar o Ocidente sobre a ameaça do comunismo soviético com seu célebre discurso da Cortina de Ferro em Fulton, Missouri (1946).',
@@ -428,7 +428,7 @@ const MEMORIAL_FIGURES: MemorialFigure[] = [
     countryFlag: '🇦🇷',
     category: 'mundo',
     period: '1970 — Presente',
-    image: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=600&q=80',
+    image: '/assets/memorial/javier_milei.jpg',
     quote: 'Viva la libertad, carajo! Não vim para guiar cordeiros, vim para acordar leões.',
     summary: 'Economista da Escola Austríaca e Presidente da Argentina. Lidera a reversão histórica do estatismo e da inflação com coragem e clareza conceitual.',
     fullBio: 'Javier Milei transformou a política sul-americana ao desafiar o peronismo hegemônico que empobreceu uma das nações mais ricas do planeta durante um século. Com base sólida em Ludwig von Mises, Murray Rothbard e Friedrich Hayek, demonstrou no Fórum Econômico Mundial de Davos que o capitalismo de livre iniciativa não é apenas o sistema mais eficiente de geração de riqueza, mas o único moralmente justo, pois é baseado na cooperação pacífica e voluntária.',
@@ -772,6 +772,7 @@ export const MemorialView: React.FC<{
                     src="/assets/memorial/olavo_de_carvalho.jpg" 
                     alt="Professor Olavo de Carvalho em sua biblioteca" 
                     className="w-full h-[380px] sm:h-[420px] object-cover rounded-xl transition duration-500 group-hover:scale-105"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/assets/memorial/memorial_hall.jpg'; }}
                   />
                   
                   {/* Memorial plaque at bottom of image */}
@@ -1068,6 +1069,7 @@ export const MemorialView: React.FC<{
                     src={fig.image} 
                     alt={fig.name} 
                     className="w-full h-full object-cover object-top group-hover:scale-105 transition duration-500"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/assets/memorial/memorial_hall.jpg'; }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#102019] via-[#102019]/40 to-transparent" />
                   
@@ -1338,6 +1340,7 @@ export const MemorialView: React.FC<{
                 src={selectedFigure.image} 
                 alt={selectedFigure.name} 
                 className="w-full h-full object-cover object-top"
+                onError={(e) => { (e.target as HTMLImageElement).src = '/assets/memorial/memorial_hall.jpg'; }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#102019] via-[#102019]/40 to-transparent" />
               
