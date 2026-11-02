@@ -309,88 +309,7 @@ const DEFAULT_AUDIT_LOGS: AuditLogItem[] = [
   }
 ];
 
-const DEFAULT_COMPANIES: Company[] = [
-  {
-    id: 'comp_1',
-    name: 'AgroForte Sementes & Nutrição Animal',
-    ownerId: 'usr_kaliton',
-    ownerName: 'Kaliton Leite',
-    ownerUsername: 'kaliton_leite',
-    ownerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80',
-    category: 'Agropecuária',
-    description: 'Fornecimento de insumos, sementes certificadas e suplementação mineral para pecuária de corte e leite. Alimentando o Brasil com a força e honestidade do produtor rural.',
-    city: 'Rondonópolis',
-    state: 'MT',
-    whatsapp: '66999887766',
-    phone: '(66) 3411-9000',
-    website: 'https://agrofortesementes.com.br',
-    instagram: '@agroforte_sementes',
-    logoUrl: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80',
-    specialOffer: '7% de desconto à vista para membros da Sociedade Bosonarista',
-    verified: true,
-    createdAt: '2024-02-15T10:00:00Z'
-  },
-  {
-    id: 'comp_2',
-    name: 'Restaurante & Parrilla Sul Patriota',
-    ownerId: 'usr_admin',
-    ownerName: 'Administração Sociedade Bosonarista',
-    ownerUsername: 'admin_oficial',
-    ownerAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
-    category: 'Alimentação & Gastronomia',
-    description: 'Churrasco tradicional nobre, carnes na brasa, chopp artesanal e ambiente verde e amarelo familiar. Espaço com telão e música ao vivo aos fins de semana.',
-    city: 'Curitiba',
-    state: 'PR',
-    whatsapp: '41988776655',
-    phone: '(41) 3345-2200',
-    website: 'https://sulpatriota.com.br',
-    instagram: '@parrillasulpatriota',
-    logoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80',
-    specialOffer: 'Chopp ou sobremesa cortesia para patriotas da plataforma',
-    verified: true,
-    createdAt: '2024-03-01T14:30:00Z'
-  },
-  {
-    id: 'comp_3',
-    name: 'Liberdade Têxtil & Uniformes Cívicos',
-    ownerId: 'usr_kaliton',
-    ownerName: 'Kaliton Leite',
-    ownerUsername: 'kaliton_leite',
-    ownerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80',
-    category: 'Moda & Vestuário',
-    description: 'Camisas pólo patriotas em algodão pima, bonés bordados do Brasil, jaquetas e uniformes corporativos. Fabricação 100% nacional que gera empregos no nosso solo.',
-    city: 'Brusque',
-    state: 'SC',
-    whatsapp: '47997665544',
-    phone: '(47) 3251-8800',
-    website: 'https://liberdadetextil.com.br',
-    instagram: '@liberdade_vestuario',
-    logoUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80',
-    specialOffer: '15% de desconto no primeiro pedido com o cupom PATRIOTA22',
-    verified: true,
-    createdAt: '2024-03-10T09:15:00Z'
-  },
-  {
-    id: 'comp_4',
-    name: 'Soberana Engenharia & Energia Solar',
-    ownerId: 'usr_admin',
-    ownerName: 'Administração Sociedade Bosonarista',
-    ownerUsername: 'admin_oficial',
-    ownerAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
-    category: 'Construção & Energia',
-    description: 'Projetos de energia fotovoltaica residencial, comercial e rural. Economia de até 95% na conta de luz. Homologação rápida e garantia de 25 anos em placas.',
-    city: 'Ribeirão Preto',
-    state: 'SP',
-    whatsapp: '16996554433',
-    phone: '(16) 3622-4411',
-    website: 'https://soberanasolar.com.br',
-    instagram: '@soberana_energia',
-    logoUrl: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=600&q=80',
-    specialOffer: 'Laudo técnico e projeto de engenharia gratuito',
-    verified: true,
-    createdAt: '2024-03-20T16:00:00Z'
-  }
-];
+const DEFAULT_COMPANIES: Company[] = [];
 
 const DEFAULT_DONATIONS: Donation[] = [];
 
@@ -440,6 +359,13 @@ export const storageService = {
     getStorage(STORAGE_KEYS.STORIES, DEFAULT_STORIES);
     getStorage(STORAGE_KEYS.COMPANIES, DEFAULT_COMPANIES);
     getStorage(STORAGE_KEYS.DONATIONS, DEFAULT_DONATIONS);
+
+    // Purge fictitious seed companies from storage
+    const storedCompanies = getStorage<Company[]>(STORAGE_KEYS.COMPANIES, []);
+    const cleanCompanies = storedCompanies.filter(c => !['comp_1', 'comp_2', 'comp_3', 'comp_4'].includes(c.id));
+    if (cleanCompanies.length !== storedCompanies.length) {
+      setStorage(STORAGE_KEYS.COMPANIES, cleanCompanies);
+    }
     
     // Purge simulated bot members from stored users & stories
     const MOCK_NAMES_SUBSTR = [

@@ -16,7 +16,35 @@ export const FeaturedCompaniesSection: React.FC<FeaturedCompaniesSectionProps> =
 }) => {
   const companies = storageService.getCompanies().slice(0, 3);
 
-  if (companies.length === 0) return null;
+  if (companies.length === 0) {
+    return (
+      <div className="mb-4 bg-[#0a1812] border border-[#263B30] rounded-2xl p-3.5 sm:p-4 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#174D32] border border-[#D4AF37]/40 flex items-center justify-center text-[#E8CC76] shrink-0">
+            <Store className="w-4 h-4 text-[#D4AF37]" />
+          </div>
+          <div>
+            <div className="text-xs sm:text-sm font-bold text-[#F5F5F0] flex items-center gap-2">
+              <span>Vitrine de Empresas Patriotas</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#174D32] text-[#E8CC76] font-bold">
+                Membros Reais
+              </span>
+            </div>
+            <p className="text-[11px] text-[#A5B2A9]">
+              Espaço exclusivo para membros reais da comunidade cadastrarem e divulgarem seus comércios e serviços.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onOpenCreateCompany}
+          className="px-3.5 py-1.5 rounded-xl bg-[#174D32] hover:bg-[#1f6643] text-[#E8CC76] border border-[#D4AF37]/30 text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0"
+        >
+          <Plus className="w-3.5 h-3.5 stroke-[3]" />
+          <span>Divulgar Empresa</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-4 bg-[#0a1812] border border-[#263B30] rounded-3xl p-4 sm:p-5 shadow-lg">
