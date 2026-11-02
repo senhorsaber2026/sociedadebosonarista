@@ -108,6 +108,17 @@ export const PostCard: React.FC<PostCardProps> = ({
     setShowMenu(false);
   };
 
+  const handleDeleteComment = (commentId: string) => {
+    if (!currentUser) return;
+    if (confirm('Deseja realmente excluir este comentário?')) {
+      const deleted = storageService.deleteComment(post.id, commentId, currentUser);
+      if (deleted) {
+        showToast('Comentário excluído com sucesso.');
+        onPostUpdated();
+      }
+    }
+  };
+
   return (
     <article 
       id={post.id}
@@ -165,6 +176,16 @@ export const PostCard: React.FC<PostCardProps> = ({
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#15291F] border border-[#263B30] text-[#E8CC76] font-semibold">
             {post.category}
           </span>
+
+          {currentUser?.role === 'admin' && (
+            <button
+              onClick={handleDeletePost}
+              className="p-1 rounded-lg text-[#D94B4B] hover:bg-[#2a1414] transition cursor-pointer"
+              title="Excluir Publicação (Poder Admin)"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
 
           <div className="relative">
             <button
@@ -383,9 +404,20 @@ export const PostCard: React.FC<PostCardProps> = ({
                       <RankBadge rank={comm.authorRank} size="xs" />
                       <span className="text-[10px] text-[#A5B2A9]">@{comm.authorUsername}</span>
                     </div>
-                    <span className="text-[10px] text-[#A5B2A9]">
-                      {new Date(comm.createdAt).toLocaleDateString('pt-BR')}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-[#A5B2A9]">
+                        {new Date(comm.createdAt).toLocaleDateString('pt-BR')}
+                      </span>
+                      {(currentUser?.role === 'admin' || currentUser?.id === comm.authorId) && (
+                        <button
+                          onClick={() => handleDeleteComment(comm.id)}
+                          className="p-1 rounded text-[#A5B2A9] hover:text-[#D94B4B] hover:bg-[#2e1515] transition cursor-pointer"
+                          title="Excluir Comentário"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="text-[#F5F5F0] pl-6 leading-relaxed">{comm.content}</p>
                 </div>

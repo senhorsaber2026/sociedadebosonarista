@@ -275,11 +275,11 @@ export const CompaniesView: React.FC<CompaniesViewProps> = ({
                   </div>
 
                   {/* Delete button for owner or admin */}
-                  {isOwner && (
+                  {(isOwner || currentUser?.role === 'admin') && (
                     <button
                       onClick={() => handleDeleteCompany(comp)}
                       className="p-1.5 rounded-lg text-[#A5B2A9] hover:text-[#D94B4B] hover:bg-[#2a1414] transition cursor-pointer"
-                      title="Excluir empresa"
+                      title={currentUser?.role === 'admin' && !isOwner ? "Excluir empresa (Poder Admin)" : "Excluir empresa"}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

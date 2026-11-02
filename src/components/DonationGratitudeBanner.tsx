@@ -8,7 +8,8 @@ import {
   Sparkles,
   ChevronRight,
   Shield,
-  Award
+  Award,
+  Trash2
 } from 'lucide-react';
 import { Donation, User } from '../types';
 import { storageService } from '../services/storageService';
@@ -35,6 +36,17 @@ export const DonationGratitudeBanner: React.FC<DonationGratitudeBannerProps> = (
     setCopied(true);
     showToast('Código PIX copiado com sucesso!');
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleDeleteDonation = (donationId: string) => {
+    if (!currentUser || currentUser.role !== 'admin') return;
+    if (confirm('Deseja realmente excluir este registro de doação do Mural?')) {
+      storageService.deleteDonation(donationId, currentUser);
+      showToast('Registro de doação excluído com sucesso.');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sb_user_updated'));
+      }
+    }
   };
 
   return (
@@ -136,9 +148,20 @@ export const DonationGratitudeBanner: React.FC<DonationGratitudeBannerProps> = (
                   <span className="text-[#34A853] font-bold">
                     Apoio: R$ {d.amount.toFixed(2)}
                   </span>
-                  <span className="text-[#A5B2A9]">
-                    {new Date(d.createdAt).toLocaleDateString('pt-BR')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#A5B2A9]">
+                      {new Date(d.createdAt).toLocaleDateString('pt-BR')}
+                    </span>
+                    {currentUser?.role === 'admin' && (
+                      <button
+                        onClick={() => handleDeleteDonation(d.id)}
+                        className="p-1 rounded text-[#A5B2A9] hover:text-[#D94B4B] hover:bg-[#2e1515] transition cursor-pointer"
+                        title="Excluir doação do mural (Poder Admin)"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

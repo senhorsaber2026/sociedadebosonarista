@@ -1403,6 +1403,28 @@ export const storageService = {
     return post;
   },
 
+  deleteComment(postId: string, commentId: string, user: User): boolean {
+    const posts = this.getPosts();
+    const post = posts.find(p => p.id === postId);
+    if (!post || !post.comments) return false;
+
+    const comm = post.comments.find(c => c.id === commentId);
+    if (!comm) return false;
+
+    if (comm.authorId !== user.id && post.authorId !== user.id && user.role !== 'admin') {
+      return false;
+    }
+
+    post.comments = post.comments.filter(c => c.id !== commentId);
+    post.commentsCount = post.comments.length;
+    setStorage(STORAGE_KEYS.POSTS, posts);
+
+    if (user.role === 'admin' && comm.authorId !== user.id) {
+      this.addAuditLog('EXCLUSAO_COMENTARIO_ADMIN', user.name, 'Comentário', `Comentário excluído no post ${postId}.`);
+    }
+    return true;
+  },
+
   votePoll(postId: string, optionId: string, userId: string): Post | null {
     const posts = this.getPosts();
     const post = posts.find(p => p.id === postId);
@@ -1655,6 +1677,51 @@ export const storageService = {
     return upvoted;
   },
 
+  deleteDebate(debateId: string, user: User): boolean {
+    const debates = this.getDebates();
+    const deb = debates.find(d => d.id === debateId);
+    if (!deb) return false;
+
+    if (deb.authorId !== user.id && user.role !== 'admin') {
+      return false;
+    }
+
+    const filtered = debates.filter(d => d.id !== debateId);
+    setStorage(STORAGE_KEYS.DEBATES, filtered);
+
+    if (user.role === 'admin') {
+      this.addAuditLog('EXCLUSAO_DEBATE_ADMIN', user.name, 'Debate', `Debate "${deb.title}" excluído.`);
+    }
+    return true;
+  },
+
+  deleteDebateReply(debateId: string, replyId: string, user: User): boolean {
+    const debates = this.getDebates();
+    const deb = debates.find(d => d.id === debateId);
+    if (!deb) return false;
+
+    const reply = deb.replies.find(r => r.id === replyId);
+    if (!reply) return false;
+
+    if (reply.authorId !== user.id && user.role !== 'admin') {
+      return false;
+    }
+
+    if (reply.stance === 'pro') {
+      deb.proCount = Math.max(0, deb.proCount - 1);
+    } else {
+      deb.conCount = Math.max(0, deb.conCount - 1);
+    }
+    deb.replies = deb.replies.filter(r => r.id !== replyId);
+    deb.repliesCount = deb.replies.length;
+    setStorage(STORAGE_KEYS.DEBATES, debates);
+
+    if (user.role === 'admin' && reply.authorId !== user.id) {
+      this.addAuditLog('EXCLUSAO_ARGUMENTO_ADMIN', user.name, 'Argumento', `Argumento excluído no debate "${deb.title}".`);
+    }
+    return true;
+  },
+
   // ---------------- GROUPS ----------------
   getGroups(category?: string, query?: string): Group[] {
     let groups = getStorage<Group[]>(STORAGE_KEYS.GROUPS, DEFAULT_GROUPS);
@@ -1733,6 +1800,24 @@ export const storageService = {
     this.addHonorPoints(data.creator.id, 50, 'Fundação de comunidade patriótica');
 
     return newGroup;
+  },
+
+  deleteGroup(groupId: string, user: User): boolean {
+    const groups = this.getGroups();
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return false;
+
+    if (group.creatorId !== user.id && user.role !== 'admin') {
+      return false;
+    }
+
+    const filtered = groups.filter(g => g.id !== groupId);
+    setStorage(STORAGE_KEYS.GROUPS, filtered);
+
+    if (user.role === 'admin') {
+      this.addAuditLog('EXCLUSAO_GRUPO_ADMIN', user.name, 'Comunidade', `Grupo "${group.name}" excluído.`);
+    }
+    return true;
   },
 
   // ---------------- DIRECT MESSAGES ----------------
@@ -1940,6 +2025,64 @@ export const storageService = {
     return user.role;
   },
 
+  deleteUser(userId: string, adminUser: User): boolean {
+    if (adminUser.role !== 'admin') return false;
+    if (userId === adminUser.id) return false;
+
+    const users = this.getUsers();
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) return false;
+
+    // 1. Remove user from users list
+    const filteredUsers = users.filter(u => u.id !== userId);
+    setStorage(STORAGE_KEYS.USERS, filteredUsers);
+
+    // 2. Remove all posts authored by this user & their comments across all posts
+    const posts = this.getPosts();
+    const filteredPosts = posts.filter(p => p.authorId !== userId);
+    filteredPosts.forEach(p => {
+      if (p.comments) {
+        p.comments = p.comments.filter(c => c.authorId !== userId);
+        p.commentsCount = p.comments.length;
+      }
+    });
+    setStorage(STORAGE_KEYS.POSTS, filteredPosts);
+
+    // 3. Remove stories by this user
+    const stories = this.getStories().filter(s => s.userId !== userId);
+    setStorage(STORAGE_KEYS.STORIES, stories);
+
+    // 4. Remove groups created by this user and clean up memberships
+    const groups = this.getGroups();
+    const updatedGroups = groups.filter(g => g.creatorId !== userId);
+    updatedGroups.forEach(g => {
+      if (g.memberUserIds && g.memberUserIds.includes(userId)) {
+        g.memberUserIds = g.memberUserIds.filter(id => id !== userId);
+        g.membersCount = Math.max(0, g.membersCount - 1);
+      }
+    });
+    setStorage(STORAGE_KEYS.GROUPS, updatedGroups);
+
+    // 5. Remove companies created by this user
+    const companies = this.getCompanies().filter(c => c.ownerId !== userId);
+    setStorage(STORAGE_KEYS.COMPANIES, companies);
+
+    // 6. Remove debate replies by this user
+    const debates = this.getDebates();
+    debates.forEach(d => {
+      d.replies = d.replies.filter(r => r.authorId !== userId);
+      d.repliesCount = d.replies.length;
+    });
+    setStorage(STORAGE_KEYS.DEBATES, debates);
+
+    this.addAuditLog('EXCLUSAO_MEMBRO_ADMIN', adminUser.name, 'Usuário', `Membro @${targetUser.username} (${targetUser.name}) excluído definitivamente.`);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sb_user_updated'));
+    }
+    return true;
+  },
+
   getAuditLogs(): AuditLogItem[] {
     const logs = getStorage<AuditLogItem[]>(STORAGE_KEYS.AUDIT_LOGS, DEFAULT_AUDIT_LOGS);
     return logs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -2016,6 +2159,15 @@ export const storageService = {
   getDonations(): Donation[] {
     const list = getStorage<Donation[]>(STORAGE_KEYS.DONATIONS, DEFAULT_DONATIONS);
     return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  deleteDonation(donationId: string, adminUser: User): boolean {
+    if (adminUser.role !== 'admin') return false;
+    const donations = this.getDonations();
+    const filtered = donations.filter(d => d.id !== donationId);
+    setStorage(STORAGE_KEYS.DONATIONS, filtered);
+    this.addAuditLog('EXCLUSAO_DOACAO_ADMIN', adminUser.name, 'Doação', `Doação ${donationId} excluída.`);
+    return true;
   },
 
   createDonation(data: {

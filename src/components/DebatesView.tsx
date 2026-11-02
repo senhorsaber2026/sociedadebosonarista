@@ -12,7 +12,8 @@ import {
   HelpCircle,
   Calendar,
   XCircle,
-  Search
+  Search,
+  Trash2
 } from 'lucide-react';
 import { DebateTopic, DebateCategory, User } from '../types';
 import { storageService } from '../services/storageService';
@@ -131,6 +132,34 @@ export const DebatesView: React.FC<DebatesViewProps> = ({
     }
   };
 
+  const handleDeleteDebate = (e: React.MouseEvent, debateId: string, title: string) => {
+    e.stopPropagation();
+    if (!currentUser) return;
+    if (confirm(`Deseja realmente excluir o debate "${title}"?`)) {
+      const deleted = storageService.deleteDebate(debateId, currentUser);
+      if (deleted) {
+        showToast('Debate excluído com sucesso.');
+        if (selectedDebate?.id === debateId) {
+          setSelectedDebate(null);
+        }
+        onRefresh();
+      }
+    }
+  };
+
+  const handleDeleteReply = (replyId: string) => {
+    if (!currentUser || !selectedDebate) return;
+    if (confirm('Deseja realmente excluir este argumento?')) {
+      const deleted = storageService.deleteDebateReply(selectedDebate.id, replyId, currentUser);
+      if (deleted) {
+        showToast('Argumento excluído com sucesso.');
+        const fresh = storageService.getDebateById(selectedDebate.id);
+        if (fresh) setSelectedDebate(fresh);
+        onRefresh();
+      }
+    }
+  };
+
   // IF DETAILED VIEW FOR A SPECIFIC DEBATE IS SELECTED
   if (selectedDebate) {
     const proReplies = selectedDebate.replies.filter(r => r.stance === 'pro');
@@ -155,9 +184,21 @@ export const DebatesView: React.FC<DebatesViewProps> = ({
             <span className="px-3 py-1 rounded-full bg-[#174D32] border border-[#D4AF37]/30 text-xs font-bold text-[#E8CC76]">
               {selectedDebate.category}
             </span>
-            <span className="text-xs text-[#A5B2A9]">
-              Criado em {new Date(selectedDebate.createdAt).toLocaleDateString('pt-BR')} por @{selectedDebate.authorUsername}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[#A5B2A9]">
+                Criado em {new Date(selectedDebate.createdAt).toLocaleDateString('pt-BR')} por @{selectedDebate.authorUsername}
+              </span>
+              {(currentUser?.role === 'admin' || currentUser?.id === selectedDebate.authorId) && (
+                <button
+                  onClick={(e) => handleDeleteDebate(e, selectedDebate.id, selectedDebate.title)}
+                  className="px-2.5 py-1 rounded-xl bg-[#2a1414] hover:bg-[#3d1818] text-[#D94B4B] border border-[#D94B4B]/30 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                  title="Excluir Debate (Poder de Administrador)"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Excluir Debate</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <h2 className="font-serif-patriotic text-xl sm:text-2xl font-bold text-[#F5F5F0] leading-snug mb-3">
@@ -290,7 +331,17 @@ export const DebatesView: React.FC<DebatesViewProps> = ({
                       {reply.content}
                     </p>
 
-                    <div className="pt-2 border-t border-[#263B30]/40 flex justify-end">
+                    <div className="pt-2 border-t border-[#263B30]/40 flex items-center justify-between">
+                      {(currentUser?.role === 'admin' || currentUser?.id === reply.authorId) ? (
+                        <button
+                          onClick={() => handleDeleteReply(reply.id)}
+                          className="p-1 rounded text-[#A5B2A9] hover:text-[#D94B4B] hover:bg-[#2e1515] transition cursor-pointer"
+                          title="Excluir Argumento"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      ) : <div />}
+
                       <button
                         onClick={() => handleUpvoteReply(reply.id)}
                         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold transition ${
@@ -475,9 +526,20 @@ export const DebatesView: React.FC<DebatesViewProps> = ({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1 text-[#D4AF37] font-semibold group-hover:translate-x-1 transition-transform">
-                  <span>Debater</span>
-                  <ChevronRight className="w-4 h-4" />
+                <div className="flex items-center gap-3">
+                  {(currentUser?.role === 'admin' || currentUser?.id === deb.authorId) && (
+                    <button
+                      onClick={(e) => handleDeleteDebate(e, deb.id, deb.title)}
+                      className="p-1 rounded text-[#A5B2A9] hover:text-[#D94B4B] hover:bg-[#2e1515] transition cursor-pointer"
+                      title="Excluir Debate"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <div className="flex items-center gap-1 text-[#D4AF37] font-semibold group-hover:translate-x-1 transition-transform">
+                    <span>Debater</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
                 </div>
               </div>
             </div>

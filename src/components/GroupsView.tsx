@@ -8,7 +8,8 @@ import {
   Globe, 
   Check, 
   ArrowRight,
-  MessageSquare
+  MessageSquare,
+  Trash2
 } from 'lucide-react';
 import { Group, User } from '../types';
 import { storageService } from '../services/storageService';
@@ -63,6 +64,17 @@ export const GroupsView: React.FC<GroupsViewProps> = ({
     const result = storageService.toggleGroupMember(group.id, currentUser.id);
     showToast(result.joined ? `Você agora faz parte de "${group.name}"!` : `Você saiu de "${group.name}".`);
     onRefresh();
+  };
+
+  const handleDeleteGroup = (group: Group) => {
+    if (!currentUser) return;
+    if (confirm(`Deseja realmente excluir a comunidade "${group.name}"?`)) {
+      const deleted = storageService.deleteGroup(group.id, currentUser);
+      if (deleted) {
+        showToast(`Comunidade "${group.name}" excluída com sucesso.`);
+        onRefresh();
+      }
+    }
   };
 
   const handleCreateGroup = (e: React.FormEvent) => {
@@ -218,23 +230,35 @@ export const GroupsView: React.FC<GroupsViewProps> = ({
                   {grp.membersCount.toLocaleString('pt-BR')} membros
                 </span>
 
-                <button
-                  onClick={() => handleToggleMember(grp)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                    isMember
-                      ? 'bg-[#15291F] border border-[#263B30] text-[#A5B2A9] hover:text-[#D94B4B]'
-                      : 'bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] hover:brightness-110 shadow-sm'
-                  }`}
-                >
-                  {isMember ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Membro</span>
-                    </>
-                  ) : (
-                    <span>Participar</span>
+                <div className="flex items-center gap-2">
+                  {(currentUser?.role === 'admin' || currentUser?.id === grp.creatorId) && (
+                    <button
+                      onClick={() => handleDeleteGroup(grp)}
+                      className="p-1.5 rounded-xl bg-[#2a1414] hover:bg-[#3d1818] text-[#D94B4B] border border-[#D94B4B]/30 transition cursor-pointer"
+                      title="Excluir Comunidade"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   )}
-                </button>
+
+                  <button
+                    onClick={() => handleToggleMember(grp)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      isMember
+                        ? 'bg-[#15291F] border border-[#263B30] text-[#A5B2A9] hover:text-[#D94B4B]'
+                        : 'bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] hover:brightness-110 shadow-sm'
+                    }`}
+                  >
+                    {isMember ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Membro</span>
+                      </>
+                    ) : (
+                      <span>Participar</span>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           );

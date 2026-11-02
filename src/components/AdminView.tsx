@@ -98,6 +98,22 @@ export const AdminView: React.FC<AdminViewProps> = ({
     onRefresh();
   };
 
+  const handleDeleteUser = (u: User) => {
+    if (u.id === currentUser.id) {
+      showToast('Você não pode excluir sua própria conta de administrador.', 'error');
+      return;
+    }
+    if (confirm(`ATENÇÃO: Deseja realmente excluir o membro @${u.username} (${u.name}) definitivamente da plataforma?\n\nTodas as publicações, comentários, empresas e dados associados serão removidos permanentemente.`)) {
+      const deleted = storageService.deleteUser(u.id, currentUser);
+      if (deleted) {
+        showToast(`Membro @${u.username} excluído definitivamente com sucesso.`);
+        onRefresh();
+      } else {
+        showToast('Erro ao excluir membro.', 'error');
+      }
+    }
+  };
+
   const handlePromoteRank = (targetUser: User, newRank: UserRank) => {
     if (!currentUser) return;
     const updated = storageService.setUserRank(targetUser.id, newRank, currentUser);
@@ -467,6 +483,16 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           className="px-2 py-1 rounded bg-[#174D32] text-[#E8CC76] hover:bg-[#226B47]"
                         >
                           Reativar
+                        </button>
+                      )}
+
+                      {u.id !== currentUser.id && (
+                        <button
+                          onClick={() => handleDeleteUser(u)}
+                          className="px-2 py-1 rounded bg-[#3b1212] text-[#FF4D4D] border border-[#FF4D4D]/40 hover:bg-[#521919] transition font-bold"
+                          title="Excluir Membro Definitivamente (Poder de Administrador)"
+                        >
+                          Excluir
                         </button>
                       )}
                     </td>

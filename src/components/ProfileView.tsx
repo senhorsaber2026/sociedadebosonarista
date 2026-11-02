@@ -171,6 +171,22 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     }
   };
 
+  const handleAdminDeleteUser = () => {
+    if (!currentUser || currentUser.role !== 'admin' || !profileUser) return;
+    if (confirm(`ATENÇÃO ADMINISTRADOR:\n\nDeseja realmente excluir o membro @${profileUser.username} (${profileUser.name}) definitivamente da plataforma?\n\nTodas as publicações, comentários, empresas e dados associados serão removidos permanentemente.`)) {
+      const deleted = storageService.deleteUser(profileUser.id, currentUser);
+      if (deleted) {
+        showToast(`Membro @${profileUser.username} excluído definitivamente pelo Administrador.`);
+        onRefresh();
+        if (onNavigate) {
+          onNavigate('explore');
+        }
+      } else {
+        showToast('Erro ao excluir membro.', 'error');
+      }
+    }
+  };
+
   const openEditModal = () => {
     setEditName(profileUser?.name || '');
     setEditBio(profileUser?.bio || '');
@@ -410,6 +426,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">Mensagem</span>
+                    </button>
+                  )}
+
+                  {currentUser?.role === 'admin' && (
+                    <button
+                      onClick={handleAdminDeleteUser}
+                      className="px-3.5 py-2 rounded-xl bg-[#2a1414] hover:bg-[#3d1818] text-[#D94B4B] border border-[#D94B4B]/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                      title="Excluir este membro definitivamente (Poder de Administrador)"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Excluir Membro</span>
                     </button>
                   )}
                 </div>
