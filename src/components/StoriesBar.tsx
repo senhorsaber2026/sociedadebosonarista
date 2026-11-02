@@ -16,7 +16,8 @@ import {
   Trash2, 
   Film,
   Youtube,
-  ExternalLink
+  ExternalLink,
+  Activity
 } from 'lucide-react';
 import { StoryItem, User } from '../types';
 import { storageService } from '../services/storageService';
@@ -775,9 +776,17 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
 
               {/* Selected Photo or Video Preview */}
               {storyImage && (
-                <div className="relative rounded-2xl overflow-hidden h-36 border border-[#D4AF37]/50 bg-black/60 shadow-inner flex items-center justify-center">
+                <div className="relative rounded-2xl overflow-hidden h-36 border-2 border-[#D4AF37]/50 bg-black/60 shadow-inner flex items-center justify-center">
                   {storyMediaType === 'video' ? (
-                    <video src={storyImage} className="w-full h-full object-contain" muted autoPlay playsInline />
+                    <>
+                      <video src={storyImage} className="w-full h-full object-contain" muted autoPlay playsInline />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#D94B4B]/90 border border-[#D4AF37] text-[#FFF5D0] font-black text-[10px] uppercase tracking-wider shadow-lg">
+                          <Activity className="w-3 h-3 fill-current animate-pulse" />
+                          AO VIVO
+                        </div>
+                      </div>
+                    </>
                   ) : (
                     <img src={storyImage} alt="Prévia" className="w-full h-full object-contain" />
                   )}
@@ -790,8 +799,8 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                   >
                     ✕
                   </button>
-                  <span className="absolute bottom-2 left-3 text-[10px] text-[#E8CC76] font-semibold">
-                    ✓ Mídia pronta para o Story
+                  <span className={`absolute bottom-2 left-3 text-[10px] font-bold ${storyMediaType === 'video' ? 'text-[#D94B4B]' : 'text-[#E8CC76]'}`}>
+                    {storyMediaType === 'video' ? '🔴 VÍDEO AO VIVO' : '✓ Mídia pronta para o Story'}
                   </span>
                 </div>
               )}
@@ -901,9 +910,19 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-xs font-bold text-[#07140F] hover:brightness-110 shadow cursor-pointer"
+                  className={`px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#D94B4B] via-[#b52828] to-[#8a1a1a] text-xs font-black text-[#FFF5D0] hover:brightness-110 shadow-[0_0_20px_rgba(217,75,75,0.5)] transition cursor-pointer flex items-center justify-center gap-1.5`}
                 >
-                  Publicar Story
+                  {storyMediaType === 'video' ? (
+                    <>
+                      <Activity className="w-3.5 h-3.5 fill-current animate-pulse" />
+                      <span>Publicar STORY AO VIVO</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 fill-current" />
+                      <span>Publicar Story</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
