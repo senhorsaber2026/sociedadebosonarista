@@ -392,68 +392,7 @@ const DEFAULT_COMPANIES: Company[] = [
   }
 ];
 
-const DEFAULT_DONATIONS: Donation[] = [
-  {
-    id: 'don_seed_1',
-    donorName: 'Coronel Renato Albuquerque',
-    donorUsername: 'coronel_renato',
-    donorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-    amount: 250,
-    message: 'Vida longa à Sociedade Bosonarista! Seguiremos firmes defendendo o nosso país e a nossa liberdade.',
-    pixKey: '81119119200',
-    newRank: 'general',
-    createdAt: '2024-04-10T11:20:00Z',
-    transactionCode: 'PIX-882319'
-  },
-  {
-    id: 'don_seed_2',
-    donorName: 'Dra. Tereza Cristina Mello',
-    donorUsername: 'dra_terezacristina',
-    donorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
-    amount: 100,
-    message: 'Parabéns pela plataforma independente. Uma verdadeira trincheira cívica e constitucional!',
-    pixKey: '81119119200',
-    newRank: 'capitao',
-    createdAt: '2024-04-12T14:45:00Z',
-    transactionCode: 'PIX-741902'
-  },
-  {
-    id: 'don_seed_3',
-    donorName: 'Eduardo Bastos da Silva',
-    donorUsername: 'eduardo_bastos_agro',
-    donorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
-    amount: 150,
-    message: 'Doação feita via PIX com muito orgulho. Brasil acima de tudo, Deus acima de todos!',
-    pixKey: '81119119200',
-    newRank: 'major',
-    createdAt: '2024-04-15T09:10:00Z',
-    transactionCode: 'PIX-901844'
-  },
-  {
-    id: 'don_seed_4',
-    donorName: 'Família Rocha & Amigos do Agro',
-    donorUsername: 'familia_rocha',
-    donorAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=256&q=80',
-    amount: 200,
-    message: 'O agro brasileiro apoia a verdade, a família e a livre manifestação da cidadania.',
-    pixKey: '81119119200',
-    newRank: 'tenente',
-    createdAt: '2024-04-16T18:30:00Z',
-    transactionCode: 'PIX-553201'
-  },
-  {
-    id: 'don_seed_5',
-    donorName: 'Marcio Valente',
-    donorUsername: 'marcio_valente_sp',
-    donorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80',
-    amount: 50,
-    message: 'Contribuição de coração para ajudar nos custos dos servidores desta linda rede!',
-    pixKey: '81119119200',
-    newRank: 'sargento',
-    createdAt: '2024-04-17T08:05:00Z',
-    transactionCode: 'PIX-419876'
-  }
-];
+const DEFAULT_DONATIONS: Donation[] = [];
 
 // Helper to get from LocalStorage with fallback
 function getStorage<T>(key: string, defaultValue: T): T {

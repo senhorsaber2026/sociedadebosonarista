@@ -1064,14 +1064,14 @@ export const MemorialView: React.FC<{
                 className="group rounded-3xl bg-[#102019] border border-[#263B30] hover:border-[#D4AF37]/60 transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-[#D4AF37]/10 flex flex-col overflow-hidden"
               >
                 {/* Image Header with gold accent */}
-                <div className="relative h-48 sm:h-52 overflow-hidden bg-black/40">
+                <div className="relative h-48 sm:h-52 overflow-hidden bg-[#0A1A12]/30">
                   <img 
                     src={fig.image} 
                     alt={fig.name} 
-                    className="w-full h-full object-cover object-top group-hover:scale-105 transition duration-500"
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition duration-500"
                     onError={(e) => { (e.target as HTMLImageElement).src = '/assets/memorial/memorial_hall.jpg'; }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#102019] via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A1A12]/60 via-[#0A1A12]/20 to-transparent" />
                   
                   {/* Badge top right: country flag + period */}
                   <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#07140F]/85 backdrop-blur-md border border-[#263B30] text-[11px] font-semibold text-[#F5F5F0] shadow">
@@ -1334,14 +1334,14 @@ export const MemorialView: React.FC<{
           <div className="bg-[#102019] border-2 border-[#D4AF37]/70 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative text-[#F5F5F0]">
             
             {/* Header Image */}
-            <div className="relative h-64 overflow-hidden bg-black/60">
+            <div className="relative h-64 overflow-hidden bg-[#0A1A12]/20">
               <img 
                 src={selectedFigure.image} 
                 alt={selectedFigure.name} 
-                className="w-full h-full object-cover object-top"
+                className="w-full h-full object-cover object-center"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/assets/memorial/memorial_hall.jpg'; }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#102019] via-[#102019]/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A1A12]/70 via-[#0A1A12]/30 to-transparent" />
               
               <button
                 onClick={() => setSelectedFigure(null)}

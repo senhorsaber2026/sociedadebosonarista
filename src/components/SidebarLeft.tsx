@@ -17,7 +17,8 @@ import {
   UserCheck,
   Landmark,
   Store,
-  Heart
+  Heart,
+  CreditCard
 } from 'lucide-react';
 import { User, Group } from '../types';
 import { storageService } from '../services/storageService';
@@ -180,6 +181,16 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
             </button>
           );
         })}
+
+        {/* DOAÇÃO LATERAL - Botão de apoio voluntário via PIX */}
+        <button
+          onClick={onOpenDonationModal}
+          className="w-full flex items-center justify-center gap-2.5 px-3.5 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] via-[#E8CC76] to-[#AA8325] text-[#07140F] font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+          title="Apoie a Sociedade Bosonarista via PIX"
+        >
+          <CreditCard className="w-4 h-4 text-[#07140F]" />
+          <span>Apoiar via PIX</span>
+        </button>
       </nav>
 
       {/* 3. COMUNIDADES EM DESTAQUE */}

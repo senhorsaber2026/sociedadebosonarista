@@ -30,6 +30,8 @@ export const DonationGratitudeBanner: React.FC<DonationGratitudeBannerProps> = (
   const [copied, setCopied] = useState(false);
   const donations = storageService.getDonations();
 
+  if (!donations || donations.length === 0) return null;
+
   const handleCopyPix = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(PIX_KEY);
