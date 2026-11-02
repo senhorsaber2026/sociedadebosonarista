@@ -68,3 +68,12 @@
 .gold-border-gradient {
   border-image: linear-gradient(135deg, #D4AF37, #263B30) 1;
 }
+
+/* Slow spin animation for Stories compass */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 6s linear infinite;
+}

@@ -39,8 +39,7 @@ interface UserStoryGroup {
   stories: StoryItem[];
 }
 
-  const STORY_DURATION_MS = 5000; // 5 seconds per story
-  const TIMER_INTERVAL_MS = 200; // update every 200ms instead of 50ms to avoid re-render storm
+const STORY_DURATION_MS = 5000;
 
 export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth }) => {
   const [stories, setStories] = useState<StoryItem[]>(() =>
@@ -51,7 +50,6 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
   );
   const [activeGroupIndex, setActiveGroupIndex] = useState<number | null>(null);
   const [activeStoryIndexInGroup, setActiveStoryIndexInGroup] = useState<number>(0);
-  const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
   // Add Story modal state
@@ -65,12 +63,12 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number | null>(null);
+  const progressRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Group stories by userId so each user has EXACTLY ONE circle
   const storyGroups: UserStoryGroup[] = useMemo(() => {
     const groups: UserStoryGroup[] = [];
-
     stories.forEach(story => {
       let g = groups.find(group => group.userId === story.userId);
       if (!g) {
@@ -86,7 +84,6 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       }
       g.stories.push(story);
     });
-
     return groups;
   }, [stories]);
 
@@ -115,12 +112,14 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
   const handleCloseStory = useCallback(() => {
     setActiveGroupIndex(null);
     setActiveStoryIndexInGroup(0);
-    setProgress(0);
+    progressRef.current = 0;
     setIsPaused(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
   }, []);
 
   const handleNextStory = useCallback(() => {
-    setProgress(0);
+    progressRef.current = 0;
     setHasLikedStory(false);
     if (activeGroupIndex === null || !currentGroup) return;
 
@@ -135,7 +134,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
   }, [activeGroupIndex, activeStoryIndexInGroup, currentGroup, storyGroups.length, handleCloseStory]);
 
   const handlePrevStory = useCallback(() => {
-    setProgress(0);
+    progressRef.current = 0;
     setHasLikedStory(false);
     if (activeGroupIndex === null) return;
 
@@ -148,30 +147,29 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
     }
   }, [activeGroupIndex, activeStoryIndexInGroup, storyGroups]);
 
-  // 1. AUTO-PROGRESS TIMER
+  // 1. AUTO-PROGRESS TIMER - usa ref para não causar re-render
   useEffect(() => {
-    // If it's a YouTube video, don't auto-skip after 5s so the user can watch the video
     const isYt = activeStory?.mediaType === 'youtube' || Boolean(activeStory?.youtubeId);
     if (activeStory === null || isPaused || isYt) {
       if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
       return;
     }
 
-    const intervalTime = TIMER_INTERVAL_MS; // update every 200ms to avoid re-render storm
+    progressRef.current = 0;
+    const intervalTime = 200;
     const step = (intervalTime / STORY_DURATION_MS) * 100;
 
     timerRef.current = window.setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          handleNextStory();
-          return 0;
-        }
-        return prev + step;
-      });
+      progressRef.current = Math.min(progressRef.current + step, 100);
+      if (progressRef.current >= 100) {
+        handleNextStory();
+      }
     }, intervalTime);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
     };
   }, [activeStory, isPaused, handleNextStory]);
 
@@ -244,7 +242,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       finalMediaUrl = '/assets/images/brasil_hero_banner_1793411883121.jpg';
     }
 
-    storageService.addStory({
+    const newStory = storageService.addStory({
       userId: currentUser.id,
       userName: currentUser.name,
       userAvatar: currentUser.avatar,
@@ -259,7 +257,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       caption: storyCaption.trim() || 'Orgulho de ser brasileiro! 🇧🇷'
     });
 
-    setStories(storageService.getStories());
+    setStories(prev => [newStory, ...prev]);
     setIsAddingStory(false);
     setStoryImage('');
     setStoryYoutubeUrl('');
@@ -284,7 +282,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       onOpenAuth();
       return;
     }
-    
+
     storageService.sendMessage(
       currentUser.id,
       activeStory.userId,
@@ -312,7 +310,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
           <div className="w-5 h-5 rounded-full bg-[#174D32] flex items-center justify-center text-[#D4AF37]">
             <Compass className="w-3.5 h-3.5 animate-spin-slow" />
           </div>
-          <span className="text-xs sm:text-sm font-bold text-[#E8CC76] tracking-wide">
+          <span className="text-xs sm:text-sm font-bold text-[#E8CC76] tracking-wider">
             Stories
           </span>
         </div>
@@ -360,7 +358,6 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
 
         {/* STORIES LIST - ONE CIRCLE PER USER */}
         {storyGroups.map((group, groupIdx) => {
-          // Latest story from this user determines the circle thumbnail
           const latestStory = group.stories[0];
           const isYoutube = latestStory?.mediaType === 'youtube' || Boolean(latestStory?.youtubeId);
           const isVideo = !isYoutube && (latestStory?.mediaType === 'video' || latestStory?.mediaUrl?.startsWith('data:video') || latestStory?.mediaUrl?.endsWith('.mp4'));
@@ -372,7 +369,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
               onClick={() => {
                 setActiveGroupIndex(groupIdx);
                 setActiveStoryIndexInGroup(0);
-                setProgress(0);
+                progressRef.current = 0;
                 setHasLikedStory(false);
                 setIsPaused(false);
               }}
@@ -449,22 +446,22 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
             }
           }}
         >
-          {/* DESKTOP PREVIOUS BUTTON */}
+          {/* MOBILE PREVIOUS BUTTON */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               handlePrevStory();
             }}
             disabled={activeGroupIndex === 0 && activeStoryIndexInGroup === 0}
-            className="hidden md:flex mr-4 w-11 h-11 rounded-full bg-[#102019]/80 border border-[#263B30] hover:border-[#D4AF37] disabled:opacity-30 disabled:hover:border-[#263B30] text-[#F5F5F0] hover:text-[#E8CC76] items-center justify-center transition cursor-pointer shadow-lg active:scale-95"
-            title="Story anterior (Seta esquerda)"
+            className="md:hidden ml-2 w-10 h-10 rounded-full bg-[#102019]/80 border border-[#263B30] hover:border-[#D4AF37] disabled:opacity-30 disabled:hover:border-[#263B30] text-[#F5F5F0] hover:text-[#E8CC76] items-center justify-center transition cursor-pointer shadow-lg active:scale-95"
+            title="Story anterior"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
 
           {/* MAIN STORY CONTAINER */}
           <div 
-            className="relative w-full max-w-[400px] h-[640px] max-h-[92vh] bg-[#07140F] rounded-3xl overflow-hidden border-2 border-[#D4AF37]/60 shadow-[0_0_35px_rgba(0,0,0,0.9)] flex flex-col justify-between"
+            className="relative w-full max-w-[400px] max-h-[92vh] bg-[#07140F] rounded-3xl overflow-hidden border-2 border-[#D4AF37]/60 shadow-[0_0_35px_rgba(0,0,0,0.9)] flex flex-col justify-between"
             onMouseDown={() => setIsPaused(true)}
             onMouseUp={() => setIsPaused(false)}
             onTouchStart={() => setIsPaused(true)}
@@ -506,7 +503,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
 
             {/* Top Navigation & Info Header */}
             <div className="relative z-20 p-3 pt-3">
-              {/* Segmented Progress Bars (one segment per story of this user) */}
+              {/* Segmented Progress Bars */}
               <div className="flex items-center gap-1.5 w-full mb-3">
                 {currentGroup.stories.map((s, idx) => (
                   <div 
@@ -515,7 +512,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveStoryIndexInGroup(idx);
-                      setProgress(0);
+                      progressRef.current = 0;
                     }}
                   >
                     <div 
@@ -524,7 +521,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                         width: idx < activeStoryIndexInGroup 
                           ? '100%' 
                           : idx === activeStoryIndexInGroup 
-                            ? `${progress}%` 
+                            ? `${Math.min(progressRef.current, 100)}%` 
                             : '0%'
                       }}
                     />
@@ -559,7 +556,6 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  {/* Delete Button (if author or admin) */}
                   {(currentUser?.id === activeStory.userId || currentUser?.role === 'admin') && (
                     <button
                       onClick={(e) => {
@@ -573,7 +569,6 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                     </button>
                   )}
 
-                  {/* Pause / Resume Button */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -585,7 +580,6 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                     {isPaused ? <Play className="w-3.5 h-3.5 fill-current" /> : <Pause className="w-3.5 h-3.5 fill-current" />}
                   </button>
 
-                  {/* Close Button */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -700,6 +694,32 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
             </div>
           </div>
 
+          {/* MOBILE NEXT BUTTON */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleNextStory();
+            }}
+            disabled={activeGroupIndex === storyGroups.length - 1 && activeStoryIndexInGroup === currentGroup.stories.length - 1}
+            className="md:hidden mr-2 w-10 h-10 rounded-full bg-[#102019]/80 border border-[#263B30] hover:border-[#D4AF37] disabled:opacity-30 disabled:hover:border-[#263B30] text-[#F5F5F0] hover:text-[#E8CC76] items-center justify-center transition cursor-pointer shadow-lg active:scale-95"
+            title="Próximo story"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+
+          {/* DESKTOP PREVIOUS BUTTON */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrevStory();
+            }}
+            disabled={activeGroupIndex === 0 && activeStoryIndexInGroup === 0}
+            className="hidden md:flex ml-4 w-11 h-11 rounded-full bg-[#102019]/80 border border-[#263B30] hover:border-[#D4AF37] disabled:opacity-30 disabled:hover:border-[#263B30] text-[#F5F5F0] hover:text-[#E8CC76] items-center justify-center transition cursor-pointer shadow-lg active:scale-95"
+            title="Story anterior (Seta esquerda)"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
           {/* DESKTOP NEXT BUTTON */}
           <button
             onClick={(e) => {
@@ -718,14 +738,14 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       {/* ADD STORY MODAL */}
       {isAddingStory && (
         <div 
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 animate-fade-in"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsAddingStory(false);
           }}
         >
-          <div className="relative w-full max-w-md bg-[#102019] rounded-3xl border border-[#263B30] p-5 shadow-2xl">
+          <div className="relative w-full max-w-md bg-[#102019] rounded-3xl border border-[#263B30] p-5 sm:p-6 shadow-2xl max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-[#263B30] mb-4">
-              <h3 className="text-sm font-bold text-[#F5F5F0] flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-[#F5F5F0] flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#D4AF37]" />
                 Publicar Novo Story
               </h3>
@@ -737,9 +757,9 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
               </button>
             </div>
 
-            <form onSubmit={handleCreateStory} className="space-y-3.5">
+            <form onSubmit={handleCreateStory} className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#A5B2A9] mb-1">
+                <label className="block text-xs sm:text-sm font-semibold text-[#A5B2A9] mb-1">
                   Legenda do Story (opcional)
                 </label>
                 <input
@@ -748,13 +768,13 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                   onChange={(e) => setStoryCaption(e.target.value)}
                   placeholder="Ex: Juntos pelo Brasil e pela liberdade! 🇧🇷"
                   maxLength={280}
-                  className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
+                  className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
 
               {/* Direct file upload from device */}
               <div>
-                <label className="block text-xs font-semibold text-[#A5B2A9] mb-1.5">
+                <label className="block text-xs sm:text-sm font-semibold text-[#A5B2A9] mb-1.5">
                   Foto ou Vídeo do Story (Celular ou Computador)
                 </label>
                 <input
@@ -767,16 +787,16 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-3 px-4 rounded-2xl border border-dashed border-[#D4AF37]/60 hover:border-[#D4AF37] bg-[#15291F] hover:bg-[#1b3829] text-[#E8CC76] transition flex items-center justify-center gap-2 text-xs font-bold cursor-pointer shadow-sm active:scale-98"
+                  className="w-full py-3 sm:py-4 px-4 rounded-2xl border border-dashed border-[#D4AF37]/60 hover:border-[#D4AF37] bg-[#15291F] hover:bg-[#1b3829] text-[#E8CC76] transition flex items-center justify-center gap-2 text-xs sm:text-sm font-bold cursor-pointer shadow-sm active:scale-98"
                 >
-                  <Upload className="w-4 h-4 text-[#D4AF37]" />
+                  <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37]" />
                   <span>Escolher Foto ou Vídeo do seu Aparelho</span>
                 </button>
               </div>
 
               {/* Selected Photo or Video Preview */}
               {storyImage && (
-                <div className="relative rounded-2xl overflow-hidden h-36 border-2 border-[#D4AF37]/50 bg-black/60 shadow-inner flex items-center justify-center">
+                <div className="relative rounded-2xl overflow-hidden h-32 sm:h-40 border-2 border-[#D4AF37]/50 bg-black/60 shadow-inner flex items-center justify-center">
                   {storyMediaType === 'video' ? (
                     <>
                       <video src={storyImage} className="w-full h-full object-contain" muted autoPlay playsInline />
@@ -807,8 +827,8 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
 
               {/* YouTube Video Link Input */}
               <div>
-                <label className="block text-xs font-semibold text-[#A5B2A9] mb-1.5 flex items-center gap-1.5">
-                  <Youtube className="w-4 h-4 text-[#FF0000]" />
+                <label className="block text-xs sm:text-sm font-semibold text-[#A5B2A9] mb-1.5 flex items-center gap-1.5">
+                  <Youtube className="w-4 h-4 sm:w-5 sm:h-5 text-[#FF0000]" />
                   <span>Link de Vídeo do YouTube (Vídeo normal ou Shorts)</span>
                 </label>
                 <div className="relative">
@@ -825,7 +845,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                       }
                     }}
                     placeholder="https://www.youtube.com/watch?v=... ou youtu.be/..."
-                    className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
+                    className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
                   />
                 </div>
                 {extractYouTubeId(storyYoutubeUrl) && (
@@ -848,7 +868,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#A5B2A9] mb-1">
+                <label className="block text-xs sm:text-sm font-semibold text-[#A5B2A9] mb-1">
                   Ou cole a URL de uma Imagem
                 </label>
                 <input
@@ -859,7 +879,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                     setStoryMediaType('image');
                   }}
                   placeholder="https://..."
-                  className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
+                  className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
 
@@ -904,22 +924,22 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 <button
                   type="button"
                   onClick={() => setIsAddingStory(false)}
-                  className="px-3 py-1.5 rounded-xl bg-[#15291F] text-xs text-[#A5B2A9] hover:text-[#F5F5F0] cursor-pointer"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-[#15291F] text-xs sm:text-sm text-[#A5B2A9] hover:text-[#F5F5F0] cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className={`px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#D94B4B] via-[#b52828] to-[#8a1a1a] text-xs font-black text-[#FFF5D0] hover:brightness-110 shadow-[0_0_20px_rgba(217,75,75,0.5)] transition cursor-pointer flex items-center justify-center gap-1.5`}
+                  className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#D94B4B] via-[#b52828] to-[#8a1a1a] text-xs sm:text-sm font-black text-[#FFF5D0] hover:brightness-110 shadow-[0_0_20px_rgba(217,75,75,0.5)] transition cursor-pointer flex items-center justify-center gap-1.5`}
                 >
                   {storyMediaType === 'video' ? (
                     <>
-                      <Activity className="w-3.5 h-3.5 fill-current animate-pulse" />
+                      <Activity className="w-3.5 sm:w-4 h-3.5 sm:h-4 fill-current animate-pulse" />
                       <span>Publicar STORY AO VIVO</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-3.5 h-3.5 fill-current" />
+                      <Sparkles className="w-3.5 sm:w-4 h-3.5 sm:h-4 fill-current" />
                       <span>Publicar Story</span>
                     </>
                   )}
