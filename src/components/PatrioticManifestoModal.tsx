@@ -111,8 +111,11 @@ Apoio integral aos agentes de segurança e combate implacável à criminalidade 
         {/* HERO IMAGE HEADER */}
         <div className="relative h-44 overflow-hidden bg-[#07140F]">
           <img
-            src="/src/assets/images/brasil_bandeira_card_1793411895078.jpg"
+            src="/assets/images/brasil_bandeira_card_1793411895078.jpg"
             alt="Bandeira Nacional"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+            }}
             className="w-full h-full object-cover filter brightness-[0.7]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#102019] via-transparent to-black/60" />

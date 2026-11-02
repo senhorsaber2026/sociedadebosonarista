@@ -52,8 +52,11 @@ export const FeaturedNewsPanel: React.FC<FeaturedNewsPanelProps> = ({
           {/* Main Photo with Category Tag */}
           <div className="relative h-44 sm:h-52 overflow-hidden bg-[#07140F]">
             <img
-              src={mainArticle.imageUrl || '/src/assets/images/brasil_hero_banner_1793411883121.jpg'}
+              src={mainArticle.imageUrl?.replace('/src/assets/', '/assets/') || '/assets/images/brasil_hero_banner_1793411883121.jpg'}
               alt={mainArticle.title}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+              }}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
             <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-[#E5AC24] text-[#07140F] font-extrabold text-[10px] tracking-wider uppercase shadow-md">
@@ -111,8 +114,11 @@ export const FeaturedNewsPanel: React.FC<FeaturedNewsPanelProps> = ({
               {/* Thumbnail */}
               <div className="w-24 sm:w-28 h-20 rounded-xl overflow-hidden shrink-0 bg-[#07140F] border border-[#263B30]">
                 <img
-                  src={item.imageUrl}
+                  src={item.imageUrl?.replace('/src/assets/', '/assets/')}
                   alt={item.title}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/images/brasil_bandeira_card_1793411895078.jpg';
+                  }}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>

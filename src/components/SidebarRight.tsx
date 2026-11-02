@@ -88,7 +88,7 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
     id: g.id,
     name: g.name,
     members: g.membersCount > 1000 ? `${Math.round(g.membersCount / 1000)} mil membros` : `${g.membersCount} membros`,
-    image: g.coverImage || '/src/assets/images/brasil_bandeira_card_1793411895078.jpg'
+    image: (g.coverImage || '/assets/images/brasil_bandeira_card_1793411895078.jpg').replace('/src/assets/', '/assets/')
   }));
 
   const handleToggleGroup = (groupId: string, groupName: string) => {
@@ -152,6 +152,9 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
                     <img
                       src={member.avatar}
                       alt={member.name}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`;
+                      }}
                       className="w-9 h-9 rounded-full object-cover border border-[#D4AF37]/40"
                     />
                     <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#22C55E] border-2 border-[#102019]" />
@@ -190,8 +193,11 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
         className="relative overflow-hidden rounded-2xl border border-[#D4AF37]/50 shadow-lg cursor-pointer group min-h-[112px] h-28 shrink-0 flex items-center justify-center p-3"
       >
         <img
-          src="/src/assets/images/brasil_bandeira_card_1793411895078.jpg"
+          src="/assets/images/brasil_bandeira_card_1793411895078.jpg"
           alt="Bandeira do Brasil"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+          }}
           className="absolute inset-0 w-full h-full object-cover filter brightness-[0.7] group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
@@ -225,8 +231,11 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
           >
             <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[#263B30]">
               <img
-                src="/src/assets/images/brasil_bandeira_card_1793411895078.jpg"
+                src="/assets/images/brasil_bandeira_card_1793411895078.jpg"
                 alt="Debate"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+                }}
                 className="w-full h-full object-cover group-hover:scale-105 transition"
               />
             </div>
@@ -278,6 +287,9 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
                     <img
                       src={grp.image}
                       alt={grp.name}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/assets/images/brasil_bandeira_card_1793411895078.jpg';
+                      }}
                       className="w-9 h-9 rounded-xl object-cover border border-[#263B30] shrink-0"
                     />
                     <div className="min-w-0">

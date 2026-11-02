@@ -133,6 +133,9 @@ export const PostCard: React.FC<PostCardProps> = ({
           <img
             src={post.authorAvatar}
             alt={post.authorName}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(post.authorName)}`;
+            }}
             className="w-10 h-10 rounded-full object-cover border border-[#263B30] group-hover:border-[#D4AF37] transition shrink-0"
           />
           <div className="min-w-0">
@@ -250,8 +253,11 @@ export const PostCard: React.FC<PostCardProps> = ({
       {post.mediaUrl && (
         <div className="mb-3.5 rounded-2xl overflow-hidden border border-[#263B30] max-h-96 bg-[#07140F]">
           <img
-            src={post.mediaUrl}
+            src={post.mediaUrl?.replace('/src/assets/', '/assets/')}
             alt="Mídia da publicação"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+            }}
             className="w-full h-full object-cover hover:scale-101 transition-transform"
           />
         </div>

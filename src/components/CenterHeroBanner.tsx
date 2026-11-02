@@ -74,8 +74,11 @@ export const CenterHeroBanner: React.FC<CenterHeroBannerProps> = ({
       {/* BACKGROUND IMAGE WITH CINEMATIC LIGHTING */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/src/assets/images/brasil_hero_banner_1793411883121.jpg"
+          src="/assets/images/brasil_hero_banner_1793411883121.jpg"
           alt="Brasília ao pôr do sol com o Congresso Nacional"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/assets/images/brasil_bandeira_card_1793411895078.jpg';
+          }}
           className="w-full h-full object-cover object-center filter brightness-[0.8] contrast-[1.1] transition-transform duration-700 group-hover:scale-[1.02]"
         />
         {/* Dark green & golden vignette overlays */}
@@ -88,6 +91,9 @@ export const CenterHeroBanner: React.FC<CenterHeroBannerProps> = ({
         <img
           src="/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png"
           alt="Retrato Patriótico"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/assets/memorial/bolsonaro.jpg';
+          }}
           className="h-full object-contain object-bottom filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] opacity-95 transition-transform duration-500 group-hover:scale-105"
         />
       </div>

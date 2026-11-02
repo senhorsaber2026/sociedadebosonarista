@@ -73,6 +73,9 @@ export const FeaturedCompaniesSection: React.FC<FeaturedCompaniesSectionProps> =
                   <img
                     src={comp.logoUrl || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80'}
                     alt={comp.name}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/assets/images/brasil_bandeira_card_1793411895078.jpg';
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />

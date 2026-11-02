@@ -89,7 +89,7 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
     members: g.membersCount > 1000
       ? `${(g.membersCount / 1000).toFixed(1)} mil membros`
       : `${g.membersCount} ${g.membersCount === 1 ? 'membro' : 'membros'}`,
-    image: g.coverImage || '/src/assets/images/brasil_bandeira_card_1793411895078.jpg'
+    image: (g.coverImage || '/assets/images/brasil_bandeira_card_1793411895078.jpg').replace('/src/assets/', '/assets/')
   }));
 
   return (
@@ -106,6 +106,9 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
               <img
                 src={currentUser.avatar}
                 alt={currentUser.name}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(currentUser.name)}`;
+                }}
                 className="w-full h-full rounded-full object-cover"
               />
             </div>
@@ -221,6 +224,9 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
                   <img
                     src={c.image}
                     alt={c.name}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/assets/images/brasil_bandeira_card_1793411895078.jpg';
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition"
                   />
                 </div>
@@ -253,8 +259,11 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
         className="relative overflow-hidden rounded-2xl border border-[#D4AF37]/50 shadow-lg cursor-pointer group min-h-[112px] h-28 shrink-0 flex items-center justify-center p-3"
       >
         <img
-          src="/src/assets/images/brasil_bandeira_card_1793411895078.jpg"
+          src="/assets/images/brasil_bandeira_card_1793411895078.jpg"
           alt="Bandeira do Brasil"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+          }}
           className="absolute inset-0 w-full h-full object-cover filter brightness-[0.7] group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />

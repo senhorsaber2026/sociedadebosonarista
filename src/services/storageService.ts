@@ -45,7 +45,7 @@ const DEFAULT_USERS: User[] = [
     cpf: '123.456.789-00',
     password: 'brasil123',
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80',
-    coverImage: '/src/assets/images/brasil_hero_banner_1793411883121.jpg',
+    coverImage: '/assets/images/brasil_hero_banner_1793411883121.jpg',
     bio: 'Patriota, cristão, defensor da família e da liberdade econômica no Brasil. Juntos por um país soberano e forte! Deus acima de tudo!',
     location: 'São Paulo, SP',
     role: 'user',
@@ -98,7 +98,7 @@ const DEFAULT_NEWS: NewsItem[] = [
     subtitle: 'Senado e Câmara devem analisar projetos fundamentais para o país, incluindo pautas econômicas e de segurança.',
     summary: 'Senado e Câmara devem analisar projetos fundamentais para o país, incluindo pautas econômicas e de segurança.',
     content: `O Congresso Nacional inicia nesta semana uma rodada decisiva de votações legislativas no plenário da Câmara dos Deputados e do Senado Federal.\n\nEntre as matérias de maior relevância, destacam-se medidas de contenção fiscal, desoneração produtiva, blindagem jurídica para as atividades agrícolas e propostas que ampliam o rigor penal para crimes violentos.\n\nLideranças parlamentares articulam consenso em torno de projetos estruturantes que visam garantir a estabilidade institucional e o crescimento econômico sustentável do Brasil nos próximos anos.`,
-    imageUrl: '/src/assets/images/brasil_hero_banner_1793411883121.jpg',
+    imageUrl: '/assets/images/brasil_hero_banner_1793411883121.jpg',
     category: 'POLÍTICA',
     authorId: 'usr_admin',
     authorName: 'Administração Sociedade Bosonarista',
@@ -403,7 +403,12 @@ function getStorage<T>(key: string, defaultValue: T): T {
       localStorage.setItem(key, JSON.stringify(defaultValue));
       return defaultValue;
     }
-    return JSON.parse(raw) as T;
+    // Auto-migrate legacy asset paths
+    const cleanedRaw = raw.includes('/src/assets/') ? raw.replaceAll('/src/assets/', '/assets/') : raw;
+    if (cleanedRaw !== raw) {
+      localStorage.setItem(key, cleanedRaw);
+    }
+    return JSON.parse(cleanedRaw) as T;
   } catch (e) {
     console.warn(`Error reading ${key} from localStorage:`, e);
     return defaultValue;
