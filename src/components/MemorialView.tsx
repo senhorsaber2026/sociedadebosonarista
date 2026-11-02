@@ -771,7 +771,7 @@ export const MemorialView: React.FC<{
                   <img 
                     src="/assets/memorial/olavo_de_carvalho.jpg" 
                     alt="Professor Olavo de Carvalho em sua biblioteca" 
-                    className="w-full h-[380px] sm:h-[420px] object-cover object-position-top rounded-xl transition duration-500 group-hover:scale-105"
+                    className="w-full h-[380px] sm:h-[420px] object-cover object-position-center rounded-xl transition duration-500 group-hover:scale-105"
                     onError={(e) => { (e.target as HTMLImageElement).src = '/assets/memorial/memorial_hall.jpg'; }}
                   />
                   
@@ -1068,7 +1068,7 @@ export const MemorialView: React.FC<{
                   <img 
                     src={fig.image} 
                     alt={fig.name} 
-                    className="w-full h-full object-cover object-center object-position-top group-hover:scale-105 transition duration-500"
+                    className="w-full h-full object-cover object-center object-position-center group-hover:scale-105 transition duration-500"
                     onError={(e) => { (e.target as HTMLImageElement).src = '/assets/memorial/memorial_hall.jpg'; }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0A1A12]/60 via-[#0A1A12]/20 to-transparent" />
@@ -1338,7 +1338,7 @@ export const MemorialView: React.FC<{
               <img 
                 src={selectedFigure.image} 
                 alt={selectedFigure.name} 
-                className="w-full h-full object-cover object-center object-position-top"
+                className="w-full h-full object-cover object-center object-position-center"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/assets/memorial/memorial_hall.jpg'; }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A1A12]/70 via-[#0A1A12]/30 to-transparent" />
