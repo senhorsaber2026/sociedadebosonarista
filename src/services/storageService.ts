@@ -595,7 +595,10 @@ export const storageService = {
     if (filtered.length !== stories.length) {
       setStorage(STORAGE_KEYS.STORIES, filtered);
     }
-    return filtered;
+    return filtered.map(s => ({
+      ...s,
+      isLive: s.mediaType === 'video' || s.mediaType === 'youtube'
+    }));
   },
 
   addStory(story: Omit<StoryItem, 'id' | 'createdAt'>): StoryItem {

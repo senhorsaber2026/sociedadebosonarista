@@ -320,6 +320,7 @@ export interface StoryItem {
   hasUnseenStory?: boolean;
   isVerified?: boolean;
   isCurrentUser?: boolean;
+  isLive?: boolean;
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'youtube';
   youtubeUrl?: string;

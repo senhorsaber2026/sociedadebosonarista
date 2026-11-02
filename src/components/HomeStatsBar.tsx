@@ -1,6 +1,8 @@
 import React from 'react';
 import { Activity } from 'lucide-react';
 import { storageService } from '../services/storageService';
+import { StoryItem } from '../types';
+import { LiveAlert } from './LiveAlert';
 
 interface HomeStatsBarProps {
   onNavigate?: (view: string) => void;
@@ -8,9 +10,39 @@ interface HomeStatsBarProps {
 
 export const HomeStatsBar: React.FC<HomeStatsBarProps> = ({ onNavigate }) => {
   const stats = storageService.getAdminStats();
+  const allStories: StoryItem[] = storageService.getStories();
+  const liveStories = allStories.filter(s => s.isLive && s.mediaType === 'video');
 
   return (
     <div className="mb-4 bg-[#0a1812] border border-[#263B30] rounded-2xl p-3 sm:p-3.5 shadow-lg">
+      {/* LIVE ALERT BANNER — LUZ VERMELHA E SOM QUANDO HOUVER LIVE ATIVA */}
+      {liveStories.length > 0 && (
+        <div className="mb-3 px-3 py-2.5 rounded-xl border-2 border-[#D94B4B]/50 bg-[#2a1414]/40 flex items-center gap-3 shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-[#D94B4B]/10 to-transparent pointer-events-none" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#D94B4B] shadow-[0_0_15px_rgba(217,75,75,0.9)] animate-ping shrink-0" />
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Activity className="w-4 h-4 text-[#D94B4B] animate-pulse" />
+            <span className="text-xs font-black text-[#FFF5D0] tracking-wider uppercase">AO VIVO AGORA</span>
+          </div>
+          <div className="flex-1 min-w-0 ml-2">
+            {liveStories.map((s, i) => (
+              <div key={s.id} className="flex items-center gap-2 mb-1 last:mb-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#D94B4B] animate-pulse shrink-0" />
+                <span className="text-[10px] font-bold text-[#F5F5F0] truncate">
+                  {s.userName}
+                </span>
+                <span className="text-[9px] text-[#A5B2A9] truncate max-w-xs">{s.caption || 'Transmissão ao vivo'}</span>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => onNavigate?.('home')}
+            className="px-3 py-1.5 rounded-lg bg-[#D94B4B] text-[#FFF5D0] font-bold text-xs hover:bg-[#b52828] transition shadow"
+          >
+            ASSISTIR AGORA
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-2 px-1">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">

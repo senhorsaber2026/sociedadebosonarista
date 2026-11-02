@@ -22,6 +22,7 @@ import { StoryItem, User } from '../types';
 import { storageService } from '../services/storageService';
 import { showToast } from './Toast';
 import { extractYouTubeId, getYouTubeThumbnail, getYouTubeEmbedUrl, getYouTubeWatchUrl } from '../utils/youtube';
+import { LiveAlert } from './LiveAlert';
 
 interface StoriesBarProps {
   currentUser: User | null;
@@ -37,10 +38,16 @@ interface UserStoryGroup {
   stories: StoryItem[];
 }
 
-const STORY_DURATION_MS = 5000; // 5 seconds per story
+  const STORY_DURATION_MS = 5000; // 5 seconds per story
+  const TIMER_INTERVAL_MS = 200; // update every 200ms instead of 50ms to avoid re-render storm
 
 export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth }) => {
-  const [stories, setStories] = useState<StoryItem[]>(() => storageService.getStories());
+  const [stories, setStories] = useState<StoryItem[]>(() =>
+    storageService.getStories().map(s => ({
+      ...s,
+      isLive: s.mediaType === 'video' || s.mediaType === 'youtube'
+    }))
+  );
   const [activeGroupIndex, setActiveGroupIndex] = useState<number | null>(null);
   const [activeStoryIndexInGroup, setActiveStoryIndexInGroup] = useState<number>(0);
   const [progress, setProgress] = useState(0);
@@ -85,7 +92,10 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
   // Listen for story updates
   useEffect(() => {
     const handleStoriesUpdated = () => {
-      setStories(storageService.getStories());
+      setStories(storageService.getStories().map(s => ({
+        ...s,
+        isLive: s.mediaType === 'video' || s.mediaType === 'youtube'
+      })));
     };
     window.addEventListener('sb_stories_updated', handleStoriesUpdated);
     return () => window.removeEventListener('sb_stories_updated', handleStoriesUpdated);
@@ -146,7 +156,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       return;
     }
 
-    const intervalTime = 50; // update every 50ms
+    const intervalTime = TIMER_INTERVAL_MS; // update every 200ms to avoid re-render storm
     const step = (intervalTime / STORY_DURATION_MS) * 100;
 
     timerRef.current = window.setInterval(() => {
@@ -239,6 +249,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       userAvatar: currentUser.avatar,
       hasUnseenStory: true,
       isVerified: currentUser.verified,
+      isLive: finalMediaType === 'video' || finalMediaType === 'youtube',
       badgeType: 'verified',
       mediaUrl: finalMediaUrl,
       mediaType: finalMediaType,
@@ -286,6 +297,14 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
 
   return (
     <div className="mb-4 bg-[#102019] rounded-2xl border border-[#263B30] p-3 shadow-md relative">
+      {/* LIVE ALERT — SOM E LUZ VERMELHA QUANDO UM STORY DE VÍDEO ESTÁ AO VIVO */}
+      {(activeGroupIndex !== null && activeStory && (activeStory.mediaType === 'video' || activeStory.mediaType === 'youtube')) && (
+        <LiveAlert
+          isLive={activeStory.isLive !== false}
+          liveTitle={activeStory.caption}
+          liveUser={activeStory.userName}
+        />
+      )}
       {/* Header with Title and Nav arrows */}
       <div className="flex items-center justify-between mb-2.5 px-1">
         <div className="flex items-center gap-2">

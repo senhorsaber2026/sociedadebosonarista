@@ -13,9 +13,10 @@ import {
   MessageSquare,
   UserX,
   UserCheck,
-  AlertTriangle
+  AlertTriangle,
+  Activity
 } from 'lucide-react';
-import { User, UserRank } from '../types';
+import { User, UserRank, StoryItem } from '../types';
 import { storageService } from '../services/storageService';
 import { RankBadge } from './RankBadge';
 import { RANK_DEFINITIONS } from '../services/rankService';
@@ -41,6 +42,10 @@ export const MembersView: React.FC<MembersViewProps> = ({
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'suspended'>('all');
 
   const allUsers = storageService.getUsers();
+  const allStories: StoryItem[] = storageService.getStories();
+  const liveUserIds = new Set(
+    allStories.filter(s => s.isLive && s.mediaType === 'video').map(s => s.userId)
+  );
   const isAdmin = currentUser?.role === 'admin';
 
   // Filtered list
@@ -266,6 +271,11 @@ export const MembersView: React.FC<MembersViewProps> = ({
                         {u.verified && (
                           <div className="w-3.5 h-3.5 rounded-full bg-[#2563EB] flex items-center justify-center text-white shrink-0" title="Verificado">
                             <Check className="w-2 h-2 stroke-[3]" />
+                          </div>
+                        )}
+                        {liveUserIds.has(u.id) && (
+                          <div className="w-3.5 h-3.5 rounded-full bg-[#D94B4B] border-2 border-[#102019] flex items-center justify-center text-white shrink-0 animate-pulse" title="Ao Vivo">
+                            <Activity className="w-2 h-2 fill-current" />
                           </div>
                         )}
                       </div>
