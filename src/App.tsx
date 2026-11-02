@@ -24,6 +24,7 @@ import { ExploreView } from './components/ExploreView';
 import { AdminView } from './components/AdminView';
 import { SettingsView } from './components/SettingsView';
 import { RegisterView } from './components/RegisterView';
+import { MembersView } from './components/MembersView';
 import { FriendsView } from './components/FriendsView';
 import { MemorialView } from './components/MemorialView';
 import { AuthModal } from './components/AuthModal';
@@ -411,6 +412,17 @@ export default function App() {
                 handleNavigate('home');
               }}
               onOpenLogin={() => handleOpenAuth('login')}
+            />
+          )}
+
+          {/* MEMBROS CADASTRADOS — LISTA COMPLETA DE PATRIOTAS */}
+          {currentView === 'members' && (
+            <MembersView
+              currentUser={currentUser}
+              onNavigateToUser={(username) => handleNavigate('profile', username)}
+              onNavigate={handleNavigate}
+              onRefresh={refreshAllData}
+              onOpenAuth={() => handleOpenAuth('login')}
             />
           )}
 

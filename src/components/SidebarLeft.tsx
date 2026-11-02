@@ -50,11 +50,13 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
     : 0;
 
   const followingCount = currentUser ? storageService.getFollowingCount(currentUser.id) : 0;
+  const totalUsersCount = storageService.getUsers().length;
 
   // Navigation items matching exact user brief and screenshot order:
   const navItems = [
     { id: 'home', label: 'Início', icon: Home },
     { id: 'register', label: 'Cadastro de Membro', icon: ShieldCheck, badge: 'NOVO', isPill: false },
+    { id: 'members', label: 'Membros Cadastrados', icon: Users, badge: totalUsersCount > 0 ? String(totalUsersCount) : undefined, isPill: true },
     { id: 'companies', label: 'Empresas Patriotas', icon: Store, badge: 'VITRINE', isPill: false },
     { id: 'memorial', label: 'Ala Memorial', icon: Landmark, badge: 'ALA', isPill: false },
     { id: 'profile', label: 'Meu Perfil', icon: UserIcon, authRequired: true, param: currentUser?.username },
