@@ -21,7 +21,9 @@ import {
   ShieldCheck,
   PenLine,
   Mail,
-  CheckCircle2
+  CheckCircle2,
+  Store,
+  Heart
 } from 'lucide-react';
 import { User, NotificationItem } from '../types';
 import { storageService } from '../services/storageService';
@@ -34,6 +36,7 @@ interface NavbarProps {
   onOpenCreatePost: () => void;
   onOpenAuth: (initialTab?: 'login' | 'register') => void;
   onOpenRanksModal: () => void;
+  onOpenDonationModal?: () => void;
   currentView: string;
 }
 
@@ -43,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCreatePost,
   onOpenAuth,
   onOpenRanksModal,
+  onOpenDonationModal,
   currentView
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -307,6 +311,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden sm:inline">Publicar</span>
           </button>
 
+          {/* Doação PIX Button */}
+          {onOpenDonationModal && (
+            <button
+              onClick={onOpenDonationModal}
+              className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#102019] border border-[#D4AF37]/50 hover:bg-[#174D32] text-[#E8CC76] font-bold text-xs transition cursor-pointer"
+              title="Doação Voluntária via PIX (81119119200) - Suba de Patente"
+            >
+              <Heart className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37]" />
+              <span>Apoiar PIX</span>
+            </button>
+          )}
+
           {currentUser ? (
             <>
               {/* Notifications Dropdown */}
@@ -526,24 +542,36 @@ export const Navbar: React.FC<NavbarProps> = ({
                         Publicações Salvas
                       </button>
 
-                      {/* Admin Panel Link */}
+                      {/* Empresas Patriotas */}
                       <button
                         onClick={() => {
-                          onNavigate('admin');
+                          onNavigate('companies');
                           setShowUserMenu(false);
                         }}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#174D32] transition text-left group"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#15291F] transition text-left"
                       >
-                        <div className="flex items-center gap-2.5 text-[#E8CC76] font-semibold">
-                          <Shield className="w-4 h-4 text-[#D4AF37]" />
-                          Painel Administrativo
-                        </div>
-                        {currentUser.role === 'admin' && (
+                        <Store className="w-4 h-4 text-[#D4AF37]" />
+                        Vitrine de Empresas
+                      </button>
+
+                      {/* Admin Panel Link - strictly shown for admin */}
+                      {currentUser.role === 'admin' && (
+                        <button
+                          onClick={() => {
+                            onNavigate('admin');
+                            setShowUserMenu(false);
+                          }}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#174D32] transition text-left group"
+                        >
+                          <div className="flex items-center gap-2.5 text-[#E8CC76] font-semibold">
+                            <Shield className="w-4 h-4 text-[#D4AF37]" />
+                            Painel Administrativo
+                          </div>
                           <span className="text-[10px] px-1.5 py-0.2 bg-[#D4AF37] text-[#07140F] rounded font-bold">
                             ADMIN
                           </span>
-                        )}
-                      </button>
+                        </button>
+                      )}
 
                       <button
                         onClick={() => {
@@ -567,7 +595,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             currentUser.id === 'usr_kaliton' ? 'bg-[#174D32] text-[#E8CC76] font-bold' : 'hover:bg-[#15291F] text-[#A5B2A9]'
                           }`}
                         >
-                          <span>⭐️ Kaliton Leite (Membro Premium)</span>
+                          <span>⭐️ Kaliton Leite (Membro Normal - Sem Admin)</span>
                           {currentUser.id === 'usr_kaliton' && <Check className="w-3.5 h-3.5" />}
                         </button>
                         <button
@@ -576,7 +604,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             currentUser.id === 'usr_admin' ? 'bg-[#174D32] text-[#E8CC76] font-bold' : 'hover:bg-[#15291F] text-[#A5B2A9]'
                           }`}
                         >
-                          <span>👑 Admin Sociedade Bosonarista</span>
+                          <span>👑 Administração Central (Admin Oficial)</span>
                           {currentUser.id === 'usr_admin' && <Check className="w-3.5 h-3.5" />}
                         </button>
                       </div>
@@ -699,12 +727,31 @@ export const Navbar: React.FC<NavbarProps> = ({
             Comunidades & Grupos
           </button>
           <button
-            onClick={() => { onNavigate('admin'); setMobileMenuOpen(false); }}
-            className={`w-full text-left py-2 px-3 rounded-lg flex items-center justify-between text-[#E8CC76] font-semibold ${currentView === 'admin' ? 'bg-[#174D32]' : ''}`}
+            onClick={() => { onNavigate('companies'); setMobileMenuOpen(false); }}
+            className={`w-full text-left py-2 px-3 rounded-lg flex items-center justify-between ${currentView === 'companies' ? 'bg-[#174D32] text-[#E8CC76] font-bold' : 'text-[#F5F5F0]'}`}
           >
-            <span>Painel Administrativo</span>
-            <Shield className="w-4 h-4 text-[#D4AF37]" />
+            <span>Empresas Patriotas</span>
+            <Store className="w-4 h-4 text-[#D4AF37]" />
           </button>
+          {onOpenDonationModal && (
+            <button
+              onClick={() => { onOpenDonationModal(); setMobileMenuOpen(false); }}
+              className="w-full text-left py-2 px-3 rounded-lg flex items-center justify-between text-[#E8CC76] font-bold"
+            >
+              <span>Apoiar via PIX (81119119200)</span>
+              <Heart className="w-4 h-4 fill-[#D4AF37] text-[#D4AF37]" />
+            </button>
+          )}
+          {/* Admin panel in mobile - strictly if admin */}
+          {currentUser?.role === 'admin' && (
+            <button
+              onClick={() => { onNavigate('admin'); setMobileMenuOpen(false); }}
+              className={`w-full text-left py-2 px-3 rounded-lg flex items-center justify-between text-[#E8CC76] font-semibold ${currentView === 'admin' ? 'bg-[#174D32]' : ''}`}
+            >
+              <span>Painel Administrativo</span>
+              <Shield className="w-4 h-4 text-[#D4AF37]" />
+            </button>
+          )}
           <button
             onClick={() => { onNavigate('settings'); setMobileMenuOpen(false); }}
             className="w-full text-left py-2 px-3 rounded-lg text-[#A5B2A9]"

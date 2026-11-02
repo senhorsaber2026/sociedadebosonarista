@@ -15,7 +15,9 @@ import {
   ArrowRight,
   ShieldCheck,
   UserCheck,
-  Landmark
+  Landmark,
+  Store,
+  Heart
 } from 'lucide-react';
 import { User, Group } from '../types';
 import { storageService } from '../services/storageService';
@@ -28,6 +30,7 @@ interface SidebarLeftProps {
   onOpenAuth: () => void;
   onOpenRanksModal: () => void;
   onOpenManifesto?: () => void;
+  onOpenDonationModal?: () => void;
   groups: Group[];
 }
 
@@ -39,6 +42,7 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
   onOpenAuth,
   onOpenRanksModal,
   onOpenManifesto,
+  onOpenDonationModal,
   groups
 }) => {
   const unreadMessagesCount = currentUser 
@@ -48,10 +52,10 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
   const followingCount = currentUser ? storageService.getFollowingCount(currentUser.id) : 0;
 
   // Navigation items matching exact user brief and screenshot order:
-  // Início, Meu perfil, Explorar, Notícias, Debates, Grupos, Amigos (12), Mensagens, Salvos, Configurações
   const navItems = [
     { id: 'home', label: 'Início', icon: Home },
     { id: 'register', label: 'Cadastro de Membro', icon: ShieldCheck, badge: 'NOVO', isPill: false },
+    { id: 'companies', label: 'Empresas Patriotas', icon: Store, badge: 'VITRINE', isPill: false },
     { id: 'memorial', label: 'Ala Memorial', icon: Landmark, badge: 'ALA', isPill: false },
     { id: 'profile', label: 'Meu Perfil', icon: UserIcon, authRequired: true, param: currentUser?.username },
     { id: 'explore', label: 'Explorar', icon: Compass },
@@ -75,27 +79,15 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
     });
   }
 
-  // Fallback / standard communities matching screenshot
-  const featuredCommunities = [
-    {
-      id: 'grp_brasil_forte',
-      name: 'Brasil Forte',
-      members: '253 mil membros',
-      image: '/src/assets/images/brasil_bandeira_card_1793411895078.jpg'
-    },
-    {
-      id: 'grp_direita_brasil',
-      name: 'Direita Brasil',
-      members: '184 mil membros',
-      image: '/src/assets/images/brasil_hero_banner_1793411883121.jpg'
-    },
-    {
-      id: 'grp_liberdade_ja',
-      name: 'Liberdade Já',
-      members: '127 mil membros',
-      image: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=256&q=80'
-    }
-  ];
+  // Real featured communities from groups prop - use top 3 groups
+  const featuredCommunities = groups.slice(0, 3).map(g => ({
+    id: g.id,
+    name: g.name,
+    members: g.membersCount > 1000
+      ? `${(g.membersCount / 1000).toFixed(1)} mil membros`
+      : `${g.membersCount} ${g.membersCount === 1 ? 'membro' : 'membros'}`,
+    image: g.coverImage || '/src/assets/images/brasil_bandeira_card_1793411895078.jpg'
+  }));
 
   return (
     <aside className="w-[250px] shrink-0 hidden lg:flex flex-col gap-3.5 sticky top-20 max-h-[calc(100vh-5.5rem)] overflow-y-auto pr-1 select-none">

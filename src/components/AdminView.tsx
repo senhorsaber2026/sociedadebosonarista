@@ -41,7 +41,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
   const isAdmin = currentUser?.role === 'admin';
 
-  // If user is not admin, provide clear feedback and test switch button
+  // If user is not admin, provide clear feedback without public test bypass
   if (!currentUser || !isAdmin) {
     return (
       <div className="p-8 sm:p-12 text-center rounded-3xl bg-[#102019] border border-[#D94B4B]/50 shadow-2xl space-y-4">
@@ -52,20 +52,18 @@ export const AdminView: React.FC<AdminViewProps> = ({
           Acesso Restrito à Administração Central
         </h2>
         <p className="text-xs sm:text-sm text-[#A5B2A9] max-w-lg mx-auto leading-relaxed">
-          Este painel contém ferramentas de moderação institucional, auditoria jurídica e controle de publicações reservadas aos administradores da Sociedade Bosonarista.
+          Este painel contém ferramentas de moderação institucional, auditoria jurídica e controle de membros reservadas exclusivamente aos administradores oficiais da Sociedade Bosonarista.
         </p>
         
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
             onClick={() => {
-              storageService.setCurrentUser('usr_admin');
-              showToast('Conectado como Administrador Oficial!');
+              window.location.hash = '';
               window.location.reload();
             }}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-bold text-xs shadow-lg hover:brightness-110 flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl bg-[#174D32] hover:bg-[#1f6643] text-[#E8CC76] font-bold text-xs shadow-lg transition"
           >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Acessar como Administrador Oficial (Teste)</span>
+            Voltar para o Início
           </button>
         </div>
       </div>

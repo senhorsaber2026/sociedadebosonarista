@@ -30,6 +30,12 @@ import { AuthModal } from './components/AuthModal';
 import { ReportModal } from './components/ReportModal';
 import { RankSystemModal } from './components/RankSystemModal';
 import { PatrioticManifestoModal } from './components/PatrioticManifestoModal';
+import { HomeStatsBar } from './components/HomeStatsBar';
+import { DonationGratitudeBanner } from './components/DonationGratitudeBanner';
+import { DonationModal } from './components/DonationModal';
+import { FeaturedCompaniesSection } from './components/FeaturedCompaniesSection';
+import { CompaniesView } from './components/CompaniesView';
+import { CompanyModal } from './components/CompanyModal';
 import { MobileNav } from './components/MobileNav';
 import { ToastContainer, showToast } from './components/Toast';
 import { Flame, Clock, BarChart2, Filter, X } from 'lucide-react';
@@ -58,6 +64,8 @@ export default function App() {
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
   const [isRankModalOpen, setIsRankModalOpen] = useState(false);
   const [isManifestoOpen, setIsManifestoOpen] = useState(false);
+  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
 
   // Initialize data on mount
   useEffect(() => {
@@ -124,6 +132,7 @@ export default function App() {
         onOpenCreatePost={() => setIsCreatePostModalOpen(true)}
         onOpenAuth={handleOpenAuth}
         onOpenRanksModal={() => setIsRankModalOpen(true)}
+        onOpenDonationModal={() => setIsDonationModalOpen(true)}
         currentView={currentView}
       />
 
@@ -145,6 +154,7 @@ export default function App() {
           onOpenAuth={() => handleOpenAuth('login')}
           onOpenRanksModal={() => setIsRankModalOpen(true)}
           onOpenManifesto={() => setIsManifestoOpen(true)}
+          onOpenDonationModal={() => setIsDonationModalOpen(true)}
           groups={groups}
         />
 
@@ -166,6 +176,22 @@ export default function App() {
                 onNavigate={handleNavigate}
                 onOpenCreatePost={() => setIsCreatePostModalOpen(true)}
                 onOpenAuth={() => handleOpenAuth('login')}
+              />
+
+              {/* HOME LIVE STATS BAR - EXACT INDICATORS FROM USER SCREENSHOT */}
+              <HomeStatsBar onNavigate={handleNavigate} />
+
+              {/* MURAL DE GRATIDÃO & DOAÇÕES VOLUNTÁRIAS VIA PIX (81119119200) */}
+              <DonationGratitudeBanner
+                onOpenDonationModal={() => setIsDonationModalOpen(true)}
+                currentUser={currentUser}
+              />
+
+              {/* VITRINE DE EMPRESAS PATRIOTAS PREVIEW */}
+              <FeaturedCompaniesSection
+                onNavigateToCompanies={() => handleNavigate('companies')}
+                onOpenCreateCompany={() => setIsCompanyModalOpen(true)}
+                currentUser={currentUser}
               />
 
               {/* FEATURED NEWS CAROUSEL */}
@@ -321,13 +347,45 @@ export default function App() {
             />
           )}
 
-          {/* PAINEL ADMINISTRATIVO */}
-          {currentView === 'admin' && (
-            <AdminView
+          {/* VITRINE DE EMPRESAS PATRIOTAS */}
+          {currentView === 'companies' && (
+            <CompaniesView
               currentUser={currentUser}
+              onOpenCreateCompany={() => setIsCompanyModalOpen(true)}
               onRefresh={refreshAllData}
-              onOpenArticle={(item) => setSelectedNewsArticle(item)}
+              onNavigateToUser={(u) => handleNavigate('profile', u.username)}
             />
+          )}
+
+          {/* PAINEL ADMINISTRATIVO - EXCLUSIVO PARA O ADMINISTRADOR */}
+          {currentView === 'admin' && (
+            currentUser?.role === 'admin' ? (
+              <AdminView
+                currentUser={currentUser}
+                onRefresh={refreshAllData}
+                onOpenArticle={(item) => setSelectedNewsArticle(item)}
+              />
+            ) : (
+              <div className="p-8 sm:p-12 text-center rounded-3xl bg-[#102019] border border-[#D94B4B]/50 shadow-2xl space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-[#2a1414] border border-[#D94B4B] flex items-center justify-center mx-auto text-[#D94B4B]">
+                  <X className="w-8 h-8" />
+                </div>
+                <h2 className="font-serif-patriotic text-xl font-bold text-[#F5F5F0]">
+                  Acesso Restrito ao Administrador
+                </h2>
+                <p className="text-xs sm:text-sm text-[#A5B2A9] max-w-lg mx-auto leading-relaxed">
+                  O Painel Administrativo é exclusivo para administradores da Sociedade Bosonarista.
+                </p>
+                <div className="pt-2">
+                  <button
+                    onClick={() => handleNavigate('home')}
+                    className="px-5 py-2.5 rounded-xl bg-[#174D32] hover:bg-[#1f6643] text-[#E8CC76] font-bold text-xs shadow-lg transition"
+                  >
+                    Voltar para o Início
+                  </button>
+                </div>
+              </div>
+            )
           )}
 
           {/* CONFIGURAÇÕES & PRIVACIDADE */}
@@ -493,6 +551,29 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* MODAL: DOAÇÕES VOLUNTÁRIAS VIA PIX (81119119200) & SUBIR DE PATENTE */}
+      <DonationModal
+        isOpen={isDonationModalOpen}
+        onClose={() => setIsDonationModalOpen(false)}
+        currentUser={currentUser}
+        onDonationSuccess={(updatedUser) => {
+          refreshAllData();
+          if (updatedUser) {
+            setCurrentUser(updatedUser);
+          }
+        }}
+        onOpenAuth={() => handleOpenAuth('login')}
+      />
+
+      {/* MODAL: CADASTRAR & DIVULGAR EMPRESA */}
+      <CompanyModal
+        isOpen={isCompanyModalOpen}
+        onClose={() => setIsCompanyModalOpen(false)}
+        currentUser={currentUser}
+        onCompanyCreated={refreshAllData}
+        onOpenAuth={() => handleOpenAuth('login')}
+      />
 
     </div>
   );

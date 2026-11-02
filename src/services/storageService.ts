@@ -13,9 +13,11 @@ import {
   DebateCategory,
   ReportReason,
   UserRank,
-  StoryItem
+  StoryItem,
+  Company,
+  Donation
 } from '../types';
-import { calculateRankFromPoints, RANK_DEFINITIONS } from './rankService';
+import { calculateRankFromPoints, RANK_DEFINITIONS, getNextRank } from './rankService';
 
 const STORAGE_KEYS = {
   USERS: 'sb_users_v2',
@@ -29,6 +31,8 @@ const STORAGE_KEYS = {
   REPORTS: 'sb_reports_v2',
   AUDIT_LOGS: 'sb_audit_logs_v2',
   STORIES: 'sb_stories_v2',
+  COMPANIES: 'sb_companies_v2',
+  DONATIONS: 'sb_donations_v2',
 };
 
 // Initial Seed Data
@@ -44,10 +48,10 @@ const DEFAULT_USERS: User[] = [
     coverImage: '/src/assets/images/brasil_hero_banner_1793411883121.jpg',
     bio: 'Patriota, cristão, defensor da família e da liberdade econômica no Brasil. Juntos por um país soberano e forte! Deus acima de tudo!',
     location: 'São Paulo, SP',
-    role: 'admin',
+    role: 'user',
     status: 'active',
-    rank: 'general',
-    honorPoints: 9500,
+    rank: 'coronel',
+    honorPoints: 5500,
     createdAt: '2024-01-01T10:00:00Z',
     followersCount: 0,
     followingCount: 0,
@@ -341,6 +345,152 @@ const DEFAULT_AUDIT_LOGS: AuditLogItem[] = [
   }
 ];
 
+const DEFAULT_COMPANIES: Company[] = [
+  {
+    id: 'comp_1',
+    name: 'AgroForte Sementes & Nutrição Animal',
+    ownerId: 'usr_kaliton',
+    ownerName: 'Kaliton Leite',
+    ownerUsername: 'kaliton_leite',
+    ownerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80',
+    category: 'Agropecuária',
+    description: 'Fornecimento de insumos, sementes certificadas e suplementação mineral para pecuária de corte e leite. Alimentando o Brasil com a força e honestidade do produtor rural.',
+    city: 'Rondonópolis',
+    state: 'MT',
+    whatsapp: '66999887766',
+    phone: '(66) 3411-9000',
+    website: 'https://agrofortesementes.com.br',
+    instagram: '@agroforte_sementes',
+    logoUrl: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80',
+    specialOffer: '7% de desconto à vista para membros da Sociedade Bosonarista',
+    verified: true,
+    createdAt: '2024-02-15T10:00:00Z'
+  },
+  {
+    id: 'comp_2',
+    name: 'Restaurante & Parrilla Sul Patriota',
+    ownerId: 'usr_admin',
+    ownerName: 'Administração Sociedade Bosonarista',
+    ownerUsername: 'admin_oficial',
+    ownerAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
+    category: 'Alimentação & Gastronomia',
+    description: 'Churrasco tradicional nobre, carnes na brasa, chopp artesanal e ambiente verde e amarelo familiar. Espaço com telão e música ao vivo aos fins de semana.',
+    city: 'Curitiba',
+    state: 'PR',
+    whatsapp: '41988776655',
+    phone: '(41) 3345-2200',
+    website: 'https://sulpatriota.com.br',
+    instagram: '@parrillasulpatriota',
+    logoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80',
+    specialOffer: 'Chopp ou sobremesa cortesia para patriotas da plataforma',
+    verified: true,
+    createdAt: '2024-03-01T14:30:00Z'
+  },
+  {
+    id: 'comp_3',
+    name: 'Liberdade Têxtil & Uniformes Cívicos',
+    ownerId: 'usr_kaliton',
+    ownerName: 'Kaliton Leite',
+    ownerUsername: 'kaliton_leite',
+    ownerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80',
+    category: 'Moda & Vestuário',
+    description: 'Camisas pólo patriotas em algodão pima, bonés bordados do Brasil, jaquetas e uniformes corporativos. Fabricação 100% nacional que gera empregos no nosso solo.',
+    city: 'Brusque',
+    state: 'SC',
+    whatsapp: '47997665544',
+    phone: '(47) 3251-8800',
+    website: 'https://liberdadetextil.com.br',
+    instagram: '@liberdade_vestuario',
+    logoUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80',
+    specialOffer: '15% de desconto no primeiro pedido com o cupom PATRIOTA22',
+    verified: true,
+    createdAt: '2024-03-10T09:15:00Z'
+  },
+  {
+    id: 'comp_4',
+    name: 'Soberana Engenharia & Energia Solar',
+    ownerId: 'usr_admin',
+    ownerName: 'Administração Sociedade Bosonarista',
+    ownerUsername: 'admin_oficial',
+    ownerAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
+    category: 'Construção & Energia',
+    description: 'Projetos de energia fotovoltaica residencial, comercial e rural. Economia de até 95% na conta de luz. Homologação rápida e garantia de 25 anos em placas.',
+    city: 'Ribeirão Preto',
+    state: 'SP',
+    whatsapp: '16996554433',
+    phone: '(16) 3622-4411',
+    website: 'https://soberanasolar.com.br',
+    instagram: '@soberana_energia',
+    logoUrl: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=600&q=80',
+    specialOffer: 'Laudo técnico e projeto de engenharia gratuito',
+    verified: true,
+    createdAt: '2024-03-20T16:00:00Z'
+  }
+];
+
+const DEFAULT_DONATIONS: Donation[] = [
+  {
+    id: 'don_seed_1',
+    donorName: 'Coronel Renato Albuquerque',
+    donorUsername: 'coronel_renato',
+    donorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
+    amount: 250,
+    message: 'Vida longa à Sociedade Bosonarista! Seguiremos firmes defendendo o nosso país e a nossa liberdade.',
+    pixKey: '81119119200',
+    newRank: 'general',
+    createdAt: '2024-04-10T11:20:00Z',
+    transactionCode: 'PIX-882319'
+  },
+  {
+    id: 'don_seed_2',
+    donorName: 'Dra. Tereza Cristina Mello',
+    donorUsername: 'dra_terezacristina',
+    donorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
+    amount: 100,
+    message: 'Parabéns pela plataforma independente. Uma verdadeira trincheira cívica e constitucional!',
+    pixKey: '81119119200',
+    newRank: 'capitao',
+    createdAt: '2024-04-12T14:45:00Z',
+    transactionCode: 'PIX-741902'
+  },
+  {
+    id: 'don_seed_3',
+    donorName: 'Eduardo Bastos da Silva',
+    donorUsername: 'eduardo_bastos_agro',
+    donorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
+    amount: 150,
+    message: 'Doação feita via PIX com muito orgulho. Brasil acima de tudo, Deus acima de todos!',
+    pixKey: '81119119200',
+    newRank: 'major',
+    createdAt: '2024-04-15T09:10:00Z',
+    transactionCode: 'PIX-901844'
+  },
+  {
+    id: 'don_seed_4',
+    donorName: 'Família Rocha & Amigos do Agro',
+    donorUsername: 'familia_rocha',
+    donorAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=256&q=80',
+    amount: 200,
+    message: 'O agro brasileiro apoia a verdade, a família e a livre manifestação da cidadania.',
+    pixKey: '81119119200',
+    newRank: 'tenente',
+    createdAt: '2024-04-16T18:30:00Z',
+    transactionCode: 'PIX-553201'
+  },
+  {
+    id: 'don_seed_5',
+    donorName: 'Marcio Valente',
+    donorUsername: 'marcio_valente_sp',
+    donorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80',
+    amount: 50,
+    message: 'Contribuição de coração para ajudar nos custos dos servidores desta linda rede!',
+    pixKey: '81119119200',
+    newRank: 'sargento',
+    createdAt: '2024-04-17T08:05:00Z',
+    transactionCode: 'PIX-419876'
+  }
+];
+
 // Helper to get from LocalStorage with fallback
 function getStorage<T>(key: string, defaultValue: T): T {
   if (typeof window === 'undefined') return defaultValue;
@@ -380,6 +530,8 @@ export const storageService = {
     getStorage(STORAGE_KEYS.REPORTS, DEFAULT_REPORTS);
     getStorage(STORAGE_KEYS.AUDIT_LOGS, DEFAULT_AUDIT_LOGS);
     getStorage(STORAGE_KEYS.STORIES, DEFAULT_STORIES);
+    getStorage(STORAGE_KEYS.COMPANIES, DEFAULT_COMPANIES);
+    getStorage(STORAGE_KEYS.DONATIONS, DEFAULT_DONATIONS);
     
     // Purge simulated bot members from stored users & stories
     const MOCK_NAMES_SUBSTR = [
@@ -435,7 +587,19 @@ export const storageService = {
           if (MOCK_NAMES_SUBSTR.some(m => uName.includes(m))) return false;
           return true;
         });
-        if (filtered.length !== storedUsers.length) {
+        // Ensure usr_admin is admin and usr_kaliton is user so the admin button visibility is tested cleanly
+        let roleChanged = false;
+        filtered.forEach(u => {
+          if (u.id === 'usr_admin' && u.role !== 'admin') {
+            u.role = 'admin';
+            roleChanged = true;
+          }
+          if (u.id === 'usr_kaliton' && u.role === 'admin') {
+            u.role = 'user';
+            roleChanged = true;
+          }
+        });
+        if (filtered.length !== storedUsers.length || roleChanged) {
           localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(filtered));
         }
       }
@@ -1754,10 +1918,10 @@ export const storageService = {
     });
 
     return {
-      totalUsers: users.length + 15400, // Show realistic community scale + real persisted
-      activeUsers: users.filter(u => u.status === 'active').length + 8920,
-      totalPosts: posts.length + 42300,
-      totalComments: totalComments + 115000,
+      totalUsers: users.length,
+      activeUsers: users.filter(u => u.status === 'active').length,
+      totalPosts: posts.length,
+      totalComments: totalComments,
       totalGroups: groups.length,
       totalNews: news.length,
       pendingReports: reports.filter(r => r.status === 'pending').length
@@ -1809,6 +1973,149 @@ export const storageService = {
     setStorage(STORAGE_KEYS.AUDIT_LOGS, logs.slice(0, 100));
   },
 
+  // ---------------- EMPRESAS & NEGÓCIOS PATRIOTAS ----------------
+  getCompanies(filter?: { category?: string; state?: string; search?: string }): Company[] {
+    let list = getStorage<Company[]>(STORAGE_KEYS.COMPANIES, DEFAULT_COMPANIES);
+    if (filter) {
+      if (filter.category && filter.category !== 'Todas') {
+        list = list.filter(c => c.category === filter.category);
+      }
+      if (filter.state && filter.state !== 'Todos') {
+        list = list.filter(c => c.state === filter.state);
+      }
+      if (filter.search) {
+        const q = filter.search.toLowerCase().trim();
+        list = list.filter(c =>
+          c.name.toLowerCase().includes(q) ||
+          c.description.toLowerCase().includes(q) ||
+          c.city.toLowerCase().includes(q) ||
+          c.ownerName.toLowerCase().includes(q)
+        );
+      }
+    }
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  addCompany(companyData: Omit<Company, 'id' | 'createdAt'>, currentUser: User): Company {
+    const companies = getStorage<Company[]>(STORAGE_KEYS.COMPANIES, DEFAULT_COMPANIES);
+    const newCompany: Company = {
+      ...companyData,
+      id: `company_${Date.now()}`,
+      ownerId: currentUser.id,
+      ownerName: currentUser.name,
+      ownerUsername: currentUser.username,
+      ownerAvatar: currentUser.avatar,
+      createdAt: new Date().toISOString()
+    };
+    companies.unshift(newCompany);
+    setStorage(STORAGE_KEYS.COMPANIES, companies);
+    this.addAuditLog('CADASTRO_EMPRESA', currentUser.name, 'Empresa', `Cadastrou a empresa "${newCompany.name}" na Vitrine Patriota.`);
+    return newCompany;
+  },
+
+  deleteCompany(companyId: string, userId: string, isAdmin: boolean = false): boolean {
+    const companies = getStorage<Company[]>(STORAGE_KEYS.COMPANIES, DEFAULT_COMPANIES);
+    const idx = companies.findIndex(c => c.id === companyId);
+    if (idx === -1) return false;
+    if (companies[idx].ownerId !== userId && !isAdmin) return false;
+
+    companies.splice(idx, 1);
+    setStorage(STORAGE_KEYS.COMPANIES, companies);
+    return true;
+  },
+
+  // ---------------- DOAÇÕES VOLUNTÁRIAS VIA PIX & MURAL DE GRATIDÃO ----------------
+  getDonations(): Donation[] {
+    const list = getStorage<Donation[]>(STORAGE_KEYS.DONATIONS, DEFAULT_DONATIONS);
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  createDonation(data: {
+    donorId?: string;
+    donorName: string;
+    donorUsername?: string;
+    donorAvatar?: string;
+    amount: number;
+    message?: string;
+    pixKey?: string;
+  }): { donation: Donation; updatedUser?: User; rankPromoted?: boolean; newRankTitle?: string } {
+    const donations = getStorage<Donation[]>(STORAGE_KEYS.DONATIONS, DEFAULT_DONATIONS);
+    let updatedUser: User | undefined;
+    let rankPromoted = false;
+    let newRankTitle = '';
+    let targetRank: UserRank = 'cabo';
+
+    if (data.donorId) {
+      const users = this.getUsers();
+      const user = users.find(u => u.id === data.donorId);
+      if (user) {
+        const oldRank = user.rank || 'soldado';
+        const nextRankDef = getNextRank(oldRank);
+        if (nextRankDef) {
+          user.rank = nextRankDef.id;
+          targetRank = nextRankDef.id;
+          newRankTitle = nextRankDef.title;
+          rankPromoted = true;
+        } else {
+          targetRank = oldRank;
+          newRankTitle = RANK_DEFINITIONS[oldRank].title;
+        }
+
+        // Grant bonus honor points for patriotic support
+        user.honorPoints = (user.honorPoints || 0) + 500;
+        setStorage(STORAGE_KEYS.USERS, users);
+        updatedUser = user;
+
+        // Create congratulatory notification
+        this.createNotification({
+          userId: user.id,
+          fromUserId: 'usr_admin',
+          fromUserName: 'Administração Central',
+          fromUserAvatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
+          type: 'admin_notice',
+          title: '🎖️ Promoção por Apoio Patriótico!',
+          message: `Sua doação voluntária via PIX foi confirmada! Você foi promovido para a patente de ${newRankTitle} e recebeu destaque no Mural de Gratidão da tela inicial. Muito obrigado por fortalecer nossa causa!`,
+          link: '/perfil'
+        });
+
+        this.addAuditLog(
+          'DOACAO_PIX_RECEBIDA',
+          user.name,
+          'Doação PIX',
+          `Doou R$ ${data.amount} via PIX (${data.pixKey || '81119119200'}). Promovido para ${targetRank}.`
+        );
+      }
+    } else {
+      targetRank = 'cabo';
+      newRankTitle = 'Cabo da Reserva Cívica';
+    }
+
+    const newDonation: Donation = {
+      id: `don_${Date.now()}`,
+      donorId: data.donorId,
+      donorName: data.donorName,
+      donorUsername: data.donorUsername,
+      donorAvatar: data.donorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80',
+      amount: data.amount,
+      message: data.message,
+      pixKey: data.pixKey || '81119119200',
+      previousRank: updatedUser ? updatedUser.rank : undefined,
+      newRank: targetRank,
+      createdAt: new Date().toISOString(),
+      transactionCode: `PIX-${Math.floor(100000 + Math.random() * 900000)}`
+    };
+
+    donations.unshift(newDonation);
+    setStorage(STORAGE_KEYS.DONATIONS, donations);
+
+    return {
+      donation: newDonation,
+      updatedUser,
+      rankPromoted,
+      newRankTitle
+    };
+  },
+
   resetDefaults(): void {
     localStorage.removeItem(STORAGE_KEYS.USERS);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
@@ -1820,6 +2127,9 @@ export const storageService = {
     localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
     localStorage.removeItem(STORAGE_KEYS.REPORTS);
     localStorage.removeItem(STORAGE_KEYS.AUDIT_LOGS);
+    localStorage.removeItem(STORAGE_KEYS.STORIES);
+    localStorage.removeItem(STORAGE_KEYS.COMPANIES);
+    localStorage.removeItem(STORAGE_KEYS.DONATIONS);
     this.init();
   }
 };

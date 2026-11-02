@@ -31,14 +31,36 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
   onOpenAuth,
   onOpenManifesto
 }) => {
-  // 1. Trending topics matching screenshot exactly
-  const trendingTopics = [
-    { tag: '#BrasilForte', count: '128 mil posts' },
-    { tag: '#Liberdade', count: '97 mil posts' },
-    { tag: '#Segurança', count: '78 mil posts' },
-    { tag: '#DireitaJá', count: '62 mil posts' },
-    { tag: '#DeusPátriaFamília', count: '51 mil posts' }
+  // 1. Trending topics from real posts - extract hashtags
+  const allPosts = storageService.getPosts();
+  const hashtagCounts: Record<string, number> = {};
+  allPosts.forEach(post => {
+    const tags = (post.content || '').match(/#[\w\u00C0-\u024F]+/g) || [];
+    tags.forEach(tag => {
+      hashtagCounts[tag] = (hashtagCounts[tag] || 0) + 1;
+    });
+  });
+  // Fallback popular topics if not enough real hashtags
+  const defaultTopics = [
+    { tag: '#BrasilForte', count: 128 },
+    { tag: '#Liberdade', count: 97 },
+    { tag: '#Segurança', count: 78 },
+    { tag: '#DireitaJá', count: 62 },
+    { tag: '#DeusPátriaFamília', count: 51 }
   ];
+  const realTopics = Object.entries(hashtagCounts)
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  const trendingTopics = realTopics.length >= 3
+    ? realTopics.map(t => ({
+        tag: t.tag,
+        count: t.count > 1000 ? `${(t.count / 1000).toFixed(1)} mil posts` : `${t.count} ${t.count === 1 ? 'post' : 'posts'}`
+      }))
+    : defaultTopics.map(t => ({
+        tag: t.tag,
+        count: `${t.count} posts`
+      }));
 
   // 2. Real members from suggestedUsers (exclude current user and admin)
   const activeMembers = suggestedUsers

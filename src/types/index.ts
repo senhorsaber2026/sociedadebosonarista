@@ -328,3 +328,40 @@ export interface StoryItem {
   createdAt?: string;
   badgeType?: 'verified' | 'flag' | 'star';
 }
+
+export interface Company {
+  id: string;
+  name: string;
+  ownerId: string;
+  ownerName: string;
+  ownerUsername: string;
+  ownerAvatar: string;
+  category: string;
+  description: string;
+  city: string;
+  state: string;
+  whatsapp?: string;
+  phone?: string;
+  website?: string;
+  instagram?: string;
+  logoUrl?: string;
+  specialOffer?: string;
+  verified?: boolean;
+  createdAt: string;
+}
+
+export interface Donation {
+  id: string;
+  donorId?: string;
+  donorName: string;
+  donorUsername?: string;
+  donorAvatar?: string;
+  amount: number;
+  message?: string;
+  pixKey: string;
+  previousRank?: UserRank;
+  newRank: UserRank;
+  createdAt: string;
+  transactionCode?: string;
+}
+
