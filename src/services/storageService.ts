@@ -66,7 +66,7 @@ const DEFAULT_USERS: User[] = [
     id: 'usr_admin',
     name: 'Administração Sociedade Bosonarista',
     username: 'admin_oficial',
-    email: 'admin@sociedadebosonarista.com.br',
+    email: 'kalitonleite@gmail.com',
     cpf: '111.222.333-44',
     password: 'admin123',
     avatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png',
