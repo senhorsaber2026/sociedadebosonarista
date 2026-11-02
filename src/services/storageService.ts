@@ -531,6 +531,15 @@ export const storageService = {
           localStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(filteredGroups));
         }
       }
+
+      // Purge seed/fictitious donations so the Mural de Gratidão stays empty until a real donation is made
+      const storedDonationsRaw = localStorage.getItem(STORAGE_KEYS.DONATIONS);
+      if (storedDonationsRaw) {
+        const storedDonations: Donation[] = JSON.parse(storedDonationsRaw);
+        if (storedDonations.length > 0) {
+          localStorage.setItem(STORAGE_KEYS.DONATIONS, JSON.stringify([]));
+        }
+      }
     } catch (e) {
       console.warn('Error purging simulated users/groups:', e);
     }
