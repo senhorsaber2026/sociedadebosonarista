@@ -31,48 +31,54 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
   onOpenAuth,
   onOpenManifesto
 }) => {
-  // 1. Trending topics from real posts - extract hashtags
+  // 1. Trending topics from real posts and debates (only real data)
   const allPosts = storageService.getPosts();
   const hashtagCounts: Record<string, number> = {};
   allPosts.forEach(post => {
+    // Extract actual hashtags in content
     const tags = (post.content || '').match(/#[\w\u00C0-\u024F]+/g) || [];
     tags.forEach(tag => {
       hashtagCounts[tag] = (hashtagCounts[tag] || 0) + 1;
     });
+    // Also consider post category as real topic
+    if (post.category && post.category !== 'Todos') {
+      const catTag = post.category.startsWith('#') ? post.category : `#${post.category}`;
+      hashtagCounts[catTag] = (hashtagCounts[catTag] || 0) + 1;
+    }
   });
-  // Fallback popular topics if not enough real hashtags
-  const defaultTopics = [
-    { tag: '#BrasilForte', count: 128 },
-    { tag: '#Liberdade', count: 97 },
-    { tag: '#Segurança', count: 78 },
-    { tag: '#DireitaJá', count: 62 },
-    { tag: '#DeusPátriaFamília', count: 51 }
-  ];
-  const realTopics = Object.entries(hashtagCounts)
+
+  const trendingTopics = Object.entries(hashtagCounts)
     .map(([tag, count]) => ({ tag, count }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-  const trendingTopics = realTopics.length >= 3
-    ? realTopics.map(t => ({
-        tag: t.tag,
-        count: t.count > 1000 ? `${(t.count / 1000).toFixed(1)} mil posts` : `${t.count} ${t.count === 1 ? 'post' : 'posts'}`
-      }))
-    : defaultTopics.map(t => ({
-        tag: t.tag,
-        count: `${t.count} posts`
-      }));
-
-  // 2. Real members from suggestedUsers (exclude current user and admin)
-  const activeMembers = suggestedUsers
-    .filter(u => u.id !== currentUser?.id && u.id !== 'usr_admin')
     .slice(0, 5)
-    .map(u => ({
-      id: u.id,
-      username: u.username,
-      name: u.name,
-      avatar: u.avatar,
-      status: 'Online agora'
+    .map(t => ({
+      tag: t.tag,
+      count: `${t.count} ${t.count === 1 ? 'publicação' : 'publicações'}`
     }));
+
+  // 2. Real members: current user ALWAYS at the top (with updated avatar) + other registered members
+  const activeMembers: Array<{ id: string; username: string; name: string; avatar: string; status: string }> = [];
+  if (currentUser) {
+    activeMembers.push({
+      id: currentUser.id,
+      username: currentUser.username,
+      name: `${currentUser.name} (Você)`,
+      avatar: currentUser.avatar,
+      status: 'Online agora'
+    });
+  }
+  suggestedUsers
+    .filter(u => u.id !== currentUser?.id)
+    .slice(0, 4)
+    .forEach(u => {
+      activeMembers.push({
+        id: u.id,
+        username: u.username,
+        name: u.name,
+        avatar: u.avatar,
+        status: 'Online agora'
+      });
+    });
 
   // 3. Featured debate from real data
   const featuredDebate = debates.find(d => d.id === 'deb_futuro_brasil') || debates[0];
@@ -181,7 +187,7 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
       {/* 3. PATRIOTIC CARD BANNER: BRASIL ACIMA DE TUDO, DEUS ACIMA DE TODOS! */}
       <div 
         onClick={() => onOpenManifesto ? onOpenManifesto() : onNavigate('explore')}
-        className="relative overflow-hidden rounded-2xl border border-[#D4AF37]/50 shadow-lg cursor-pointer group h-28 flex items-center justify-center p-3"
+        className="relative overflow-hidden rounded-2xl border border-[#D4AF37]/50 shadow-lg cursor-pointer group min-h-[112px] h-28 shrink-0 flex items-center justify-center p-3"
       >
         <img
           src="/src/assets/images/brasil_bandeira_card_1793411895078.jpg"
@@ -249,44 +255,56 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
           <span>Grupos em Destaque</span>
         </div>
 
-        <div className="space-y-2.5">
-          {featuredGroups.map((grp) => {
-            const isMember = currentUser ? groups.find(g => g.id === grp.id)?.memberUserIds?.includes(currentUser.id) : false;
-            return (
-              <div key={grp.id} className="flex items-center justify-between gap-2">
-                <div 
-                  onClick={() => onNavigate('groups', grp.id)}
-                  className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer group"
-                >
-                  <img
-                    src={grp.image}
-                    alt={grp.name}
-                    className="w-9 h-9 rounded-xl object-cover border border-[#263B30] shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <h5 className="text-xs font-bold text-[#F5F5F0] line-clamp-2 leading-tight break-words group-hover:text-[#E8CC76]">
-                      {grp.name}
-                    </h5>
-                    <p className="text-[10px] text-[#A5B2A9]">
-                      {grp.members}
-                    </p>
+        {featuredGroups.length === 0 ? (
+          <div className="py-3 px-2 text-center bg-[#0d1a14] rounded-xl border border-dashed border-[#263B30] text-[11px] text-[#A5B2A9]">
+            <span>Nenhum grupo criado ainda.</span>
+            <button
+              onClick={() => onNavigate('groups')}
+              className="block mx-auto mt-1.5 text-[#E8CC76] font-bold hover:underline"
+            >
+              + Criar comunidade
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {featuredGroups.map((grp) => {
+              const isMember = currentUser ? groups.find(g => g.id === grp.id)?.memberUserIds?.includes(currentUser.id) : false;
+              return (
+                <div key={grp.id} className="flex items-center justify-between gap-2">
+                  <div 
+                    onClick={() => onNavigate('groups', grp.id)}
+                    className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer group"
+                  >
+                    <img
+                      src={grp.image}
+                      alt={grp.name}
+                      className="w-9 h-9 rounded-xl object-cover border border-[#263B30] shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <h5 className="text-xs font-bold text-[#F5F5F0] line-clamp-2 leading-tight break-words group-hover:text-[#E8CC76]">
+                        {grp.name}
+                      </h5>
+                      <p className="text-[10px] text-[#A5B2A9]">
+                        {grp.members}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <button
-                  onClick={() => handleToggleGroup(grp.id, grp.name)}
-                  className={`px-3 py-1 rounded-xl text-[11px] font-bold transition shrink-0 border cursor-pointer ${
-                    isMember
-                      ? 'bg-[#15291F] border-[#263B30] text-[#A5B2A9]'
-                      : 'bg-[#0b1712] hover:bg-[#174D32] text-[#F5F5F0] hover:text-[#E8CC76] border-[#263B30] hover:border-[#D4AF37]/50'
-                  }`}
-                >
-                  {isMember ? 'Participando' : 'Participar'}
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                  <button
+                    onClick={() => handleToggleGroup(grp.id, grp.name)}
+                    className={`px-3 py-1 rounded-xl text-[11px] font-bold transition shrink-0 border cursor-pointer ${
+                      isMember
+                        ? 'bg-[#15291F] border-[#263B30] text-[#A5B2A9]'
+                        : 'bg-[#0b1712] hover:bg-[#174D32] text-[#F5F5F0] hover:text-[#E8CC76] border-[#263B30] hover:border-[#D4AF37]/50'
+                    }`}
+                  >
+                    {isMember ? 'Participando' : 'Participar'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
     </aside>

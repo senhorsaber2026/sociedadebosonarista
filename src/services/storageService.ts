@@ -259,44 +259,8 @@ const DEFAULT_DEBATES: DebateTopic[] = [
   }
 ];
 
-const DEFAULT_GROUPS: Group[] = [
-  {
-    id: 'grp_brasil_forte',
-    name: 'Brasil Forte',
-    description: 'Movimento cívico nacional pela soberania, liberdade econômica, fortalecimento familiar e patriotismo.',
-    coverImage: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
-    category: 'Movimento Cívico',
-    creatorId: 'usr_admin',
-    isPrivate: false,
-    membersCount: 25,
-    memberUserIds: ['usr_admin'],
-    createdAt: '2024-01-10T10:00:00Z'
-  },
-  {
-    id: 'grp_direita_brasil',
-    name: 'Direita Brasil',
-    description: 'União de conservadores, liberais e patriotas em defesa do livre mercado e dos valores cristãos.',
-    coverImage: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80',
-    category: 'Política',
-    creatorId: 'usr_admin',
-    isPrivate: false,
-    membersCount: 18,
-    memberUserIds: ['usr_admin'],
-    createdAt: '2024-01-15T10:00:00Z'
-  },
-  {
-    id: 'grp_liberdade_ja',
-    name: 'Liberdade Já',
-    description: 'Comunidade ativa contra a censura e em defesa da livre manifestação de pensamento nas redes.',
-    coverImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80',
-    category: 'Direito & Liberdade',
-    creatorId: 'usr_admin',
-    isPrivate: false,
-    membersCount: 12,
-    memberUserIds: ['usr_admin'],
-    createdAt: '2024-02-01T10:00:00Z'
-  }
-];
+const DEFAULT_GROUPS: Group[] = [];
+
 
 const DEFAULT_STORIES: StoryItem[] = [
   {
@@ -617,8 +581,19 @@ export const storageService = {
           localStorage.setItem(STORAGE_KEYS.STORIES, JSON.stringify(filteredStories));
         }
       }
+
+      // Purge mock groups so "Grupos em destaque" and "Comunidades" are truly zeroed unless created by real users
+      const MOCK_GROUP_IDS = ['grp_brasil_forte', 'grp_direita_brasil', 'grp_liberdade_ja'];
+      const storedGroupsRaw = localStorage.getItem(STORAGE_KEYS.GROUPS);
+      if (storedGroupsRaw) {
+        const storedGroups: Group[] = JSON.parse(storedGroupsRaw);
+        const filteredGroups = storedGroups.filter(g => !MOCK_GROUP_IDS.includes(g.id));
+        if (filteredGroups.length !== storedGroups.length) {
+          localStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(filteredGroups));
+        }
+      }
     } catch (e) {
-      console.warn('Error purging simulated users:', e);
+      console.warn('Error purging simulated users/groups:', e);
     }
   },
 
@@ -1149,7 +1124,7 @@ export const storageService = {
 
     setStorage(STORAGE_KEYS.USERS, users);
 
-    // Propagate avatar and name changes to user's posts
+    // Propagate avatar and name changes to user's posts and comments
     if (data.avatar || data.name) {
       const posts = this.getPosts();
       let changed = false;
@@ -1159,8 +1134,21 @@ export const storageService = {
           if (data.name) p.authorName = data.name;
           changed = true;
         }
+        if (p.comments) {
+          p.comments.forEach(c => {
+            if (c.userId === userId) {
+              if (data.avatar) c.userAvatar = data.avatar;
+              if (data.name) c.userName = data.name;
+              changed = true;
+            }
+          });
+        }
       });
       if (changed) setStorage(STORAGE_KEYS.POSTS, posts);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sb_user_updated', { detail: users[idx] }));
     }
 
     return users[idx];

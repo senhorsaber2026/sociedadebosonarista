@@ -186,32 +186,44 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
           Comunidades em Destaque
         </h3>
 
-        <div className="space-y-2.5">
-          {featuredCommunities.map((c) => (
-            <div
-              key={c.id}
-              onClick={() => onNavigate('groups', c.id)}
-              className="flex items-center gap-2.5 cursor-pointer group hover:bg-[#15291F] p-1 rounded-xl transition"
+        {featuredCommunities.length === 0 ? (
+          <div className="py-3 px-2 text-center bg-[#0d1a14] rounded-xl border border-dashed border-[#263B30] text-[11px] text-[#A5B2A9]">
+            <span>Nenhuma comunidade criada ainda.</span>
+            <button
+              onClick={() => onNavigate('groups')}
+              className="block mx-auto mt-1.5 text-[#E5AC24] font-bold hover:underline"
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[#263B30] bg-[#07140F]">
-                <img
-                  src={c.image}
-                  alt={c.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition"
-                />
-              </div>
+              + Criar Comunidade
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {featuredCommunities.map((c) => (
+              <div
+                key={c.id}
+                onClick={() => onNavigate('groups', c.id)}
+                className="flex items-center gap-2.5 cursor-pointer group hover:bg-[#15291F] p-1 rounded-xl transition"
+              >
+                <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[#263B30] bg-[#07140F]">
+                  <img
+                    src={c.image}
+                    alt={c.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition"
+                  />
+                </div>
 
-              <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-bold text-[#F5F5F0] truncate group-hover:text-[#E8CC76] transition">
-                  {c.name}
-                </h4>
-                <p className="text-[10px] text-[#A5B2A9] truncate">
-                  {c.members}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-bold text-[#F5F5F0] truncate group-hover:text-[#E8CC76] transition">
+                    {c.name}
+                  </h4>
+                  <p className="text-[10px] text-[#A5B2A9] truncate">
+                    {c.members}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <button
           onClick={() => onNavigate('groups')}
@@ -225,7 +237,7 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
       {/* 4. PATRIOTIC BOTTOM BANNER CARD MATCHING SCREENSHOT */}
       <div 
         onClick={() => onOpenManifesto ? onOpenManifesto() : onNavigate('explore')}
-        className="relative overflow-hidden rounded-2xl border border-[#D4AF37]/50 shadow-lg cursor-pointer group h-28 flex items-center justify-center p-3"
+        className="relative overflow-hidden rounded-2xl border border-[#D4AF37]/50 shadow-lg cursor-pointer group min-h-[112px] h-28 shrink-0 flex items-center justify-center p-3"
       >
         <img
           src="/src/assets/images/brasil_bandeira_card_1793411895078.jpg"

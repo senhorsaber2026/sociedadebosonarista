@@ -33,7 +33,7 @@ export const DonationGratitudeBanner: React.FC<DonationGratitudeBannerProps> = (
     e.stopPropagation();
     navigator.clipboard.writeText(PIX_KEY);
     setCopied(true);
-    showToast('Chave PIX copiada: 81119119200');
+    showToast('Código PIX copiado com sucesso!');
     setTimeout(() => setCopied(false), 2500);
   };
 
@@ -61,29 +61,17 @@ export const DonationGratitudeBanner: React.FC<DonationGratitudeBannerProps> = (
           </p>
         </div>
 
-        {/* PIX Key and Action CTA */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto shrink-0">
-          {/* Quick Copy PIX key */}
-          <div
-            onClick={handleCopyPix}
-            className="px-3 py-2 bg-[#07140F] border border-[#D4AF37]/40 rounded-xl flex items-center justify-between gap-2.5 cursor-pointer hover:border-[#D4AF37] transition group"
-            title="Clique para copiar a chave PIX 81119119200"
+        {/* PIX Action Buttons - No CPF visible */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto shrink-0">
+          {/* Open QR Code modal */}
+          <button
+            onClick={onOpenDonationModal}
+            className="px-4 py-2.5 bg-[#07140F] border border-[#D4AF37]/60 hover:border-[#D4AF37] rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-[#E8CC76] hover:text-[#FFF5D0] hover:bg-[#15291F] transition shadow-md cursor-pointer"
+            title="Abrir QR Code para doação via PIX"
           >
-            <div>
-              <div className="text-[9px] text-[#A5B2A9] uppercase font-bold tracking-wider">
-                Chave PIX Voluntária
-              </div>
-              <div className="font-mono text-xs font-black text-[#E8CC76]">
-                {PIX_KEY}
-              </div>
-            </div>
-            <button
-              type="button"
-              className="p-1.5 rounded-lg bg-[#15291F] text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-[#07140F] transition"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-[#34A853]" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
-          </div>
+            <QrCode className="w-4 h-4 text-[#D4AF37]" />
+            <span>Ver QR Code PIX</span>
+          </button>
 
           {/* Donate and Rank Up CTA */}
           <button

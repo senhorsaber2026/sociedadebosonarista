@@ -71,6 +71,12 @@ export default function App() {
   useEffect(() => {
     storageService.init();
     refreshAllData();
+
+    const handleUserUpdated = () => {
+      refreshAllData();
+    };
+    window.addEventListener('sb_user_updated', handleUserUpdated);
+    return () => window.removeEventListener('sb_user_updated', handleUserUpdated);
   }, []);
 
   const refreshAllData = () => {

@@ -316,7 +316,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onOpenDonationModal}
               className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#102019] border border-[#D4AF37]/50 hover:bg-[#174D32] text-[#E8CC76] font-bold text-xs transition cursor-pointer"
-              title="Doação Voluntária via PIX (81119119200) - Suba de Patente"
+              title="Doação Voluntária via PIX - Suba de Patente"
             >
               <Heart className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37]" />
               <span>Apoiar PIX</span>
@@ -738,7 +738,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => { onOpenDonationModal(); setMobileMenuOpen(false); }}
               className="w-full text-left py-2 px-3 rounded-lg flex items-center justify-between text-[#E8CC76] font-bold"
             >
-              <span>Apoiar via PIX (81119119200)</span>
+              <span>Apoiar via PIX</span>
               <Heart className="w-4 h-4 fill-[#D4AF37] text-[#D4AF37]" />
             </button>
           )}

@@ -155,7 +155,24 @@ export const GroupsView: React.FC<GroupsViewProps> = ({
       </div>
 
       {/* GROUPS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {groups.length === 0 ? (
+        <div className="text-center py-12 px-4 bg-[#102019] rounded-2xl border border-[#263B30] space-y-3">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#174D32]/50 border border-[#D4AF37]/40 flex items-center justify-center text-[#E8CC76]">
+            <Users className="w-7 h-7" />
+          </div>
+          <h3 className="text-base font-bold text-[#F5F5F0]">Nenhuma comunidade encontrada</h3>
+          <p className="text-xs text-[#A5B2A9] max-w-sm mx-auto">
+            Ainda não há grupos cadastrados. Crie a primeira comunidade patriótica da plataforma!
+          </p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-bold text-xs rounded-xl hover:brightness-110 shadow-md cursor-pointer"
+          >
+            + Criar a Primeira Comunidade
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {groups.map((grp) => {
           const isMember = currentUser ? grp.memberUserIds.includes(currentUser.id) : false;
 
@@ -222,7 +239,8 @@ export const GroupsView: React.FC<GroupsViewProps> = ({
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* CREATE GROUP MODAL */}
       {showCreateModal && (

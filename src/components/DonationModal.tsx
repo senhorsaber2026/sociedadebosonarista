@@ -57,7 +57,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
   const handleCopyPix = () => {
     navigator.clipboard.writeText(PIX_KEY);
     setCopied(true);
-    showToast('Chave PIX copiada: 81119119200');
+    showToast('Código PIX copiado com sucesso!');
     setTimeout(() => setCopied(false), 2500);
   };
 
@@ -101,19 +101,19 @@ export const DonationModal: React.FC<DonationModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-[#0a1812] border-2 border-[#D4AF37]/60 rounded-3xl p-4 sm:p-6 shadow-2xl text-[#F5F5F0] my-4 sm:my-8 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-md">
+      <div className="relative w-full max-w-lg bg-[#0a1812] border-2 border-[#D4AF37]/60 rounded-3xl p-4 sm:p-6 shadow-2xl text-[#F5F5F0] max-h-[92vh] flex flex-col my-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-[#A5B2A9] hover:text-[#F5F5F0] hover:bg-[#15291F] rounded-xl transition"
+          className="absolute top-4 right-4 p-2 text-[#A5B2A9] hover:text-[#F5F5F0] hover:bg-[#15291F] rounded-xl transition z-10"
         >
           <X className="w-5 h-5" />
         </button>
 
         {celebrationData ? (
           /* CONGRATULATIONS / RANK PROMOTION CELEBRATION VIEW */
-          <div className="text-center py-4 space-y-4">
+          <div className="text-center py-4 space-y-4 overflow-y-auto pr-1">
             <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-[#D4AF37] to-[#AA8325] p-1 shadow-2xl animate-bounce">
               <div className="w-full h-full rounded-[22px] bg-[#07140F] flex items-center justify-center text-[#E8CC76]">
                 <Award className="w-10 h-10" />
@@ -158,7 +158,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
           </div>
         ) : (
           /* DONATION FORM VIEW */
-          <div className="space-y-4">
+          <div className="space-y-3.5 overflow-y-auto pr-1">
             {/* Header */}
             <div className="text-center space-y-1.5 pr-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#174D32] border border-[#D4AF37]/50 text-[#E8CC76] text-[11px] font-bold">
@@ -169,79 +169,67 @@ export const DonationModal: React.FC<DonationModalProps> = ({
                 Apoie a Sociedade Bosonarista
               </h2>
               <p className="text-xs text-[#A5B2A9] leading-relaxed">
-                Nossa rede é 100% independente, mantida por cidadãos livres. Qualquer contribuição via PIX nos ajuda a custear servidores de alta velocidade, segurança e novos recursos!
+                Nossa rede é 100% independente, mantida por cidadãos livres. Qualquer contribuição via PIX nos ajuda a custear servidores de alta velocidade e soberania!
               </p>
             </div>
 
             {/* RANK UPGRADE HIGHLIGHT PROMISE */}
-            <div className="p-3.5 bg-gradient-to-r from-[#102019] via-[#153424] to-[#102019] border border-[#D4AF37]/40 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37] flex items-center justify-center text-[#E8CC76] shrink-0">
-                <TrendingUp className="w-5 h-5" />
+            <div className="p-3 bg-gradient-to-r from-[#102019] via-[#153424] to-[#102019] border border-[#D4AF37]/40 rounded-2xl flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37] flex items-center justify-center text-[#E8CC76] shrink-0">
+                <TrendingUp className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-[#E8CC76] flex items-center gap-1.5">
-                  <span>🎖️ Quem Doa Sobe de Patente Imediatamente!</span>
+                <div className="text-xs font-bold text-[#E8CC76]">
+                  🎖️ Quem Doa Sobe de Patente Imediatamente!
                 </div>
-                <div className="text-[11px] text-[#A5B2A9] mt-0.5">
+                <div className="text-[11px] text-[#A5B2A9]">
                   {currentUser ? (
                     <span>
-                      Você subirá de <strong className="text-[#F5F5F0]">{RANK_DEFINITIONS[currentRank]?.title}</strong> para <strong className="text-[#E8CC76]">{projectedRankTitle}</strong> e terá seu nome imortalizado no Mural da Tela Inicial.
+                      Você subirá de <strong className="text-[#F5F5F0]">{RANK_DEFINITIONS[currentRank]?.title}</strong> para <strong className="text-[#E8CC76]">{projectedRankTitle}</strong> e terá condecoração na tela inicial.
                     </span>
                   ) : (
                     <span>
-                      Patriotas doadores ganham condecoração de patente e lugar de honra no Mural de Gratidão na tela inicial.
+                      Doadores ganham condecoração de patente e lugar no Mural de Gratidão na tela inicial.
                     </span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* PIX QR CODE SECTION - only QR code, no CPF visible */}
-            <div className="bg-[#0e1d16] border border-[#263B30] rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-4">
-              {/* QR Code centered */}
-              <div className="flex flex-col items-center gap-2 mx-auto sm:mx-0 shrink-0">
-                <div className="w-44 h-44 bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center border-2 border-[#D4AF37]">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=81119119200`}
-                    alt="QR Code Pix - Escaneie para apoiar"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div className="text-center">
-                  <span className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-wider flex items-center gap-1 justify-center">
-                    <QrCode className="w-3 h-3" /> Escaneie para apoiar via PIX
-                  </span>
-                </div>
+            {/* PIX QR CODE SECTION - ONLY QR CODE, NO CPF NUMBER VISIBLE */}
+            <div className="bg-[#0e1d16] border border-[#263B30] rounded-2xl p-3 sm:p-4 flex flex-col items-center gap-2.5 text-center">
+              {/* QR Code */}
+              <div className="w-40 h-40 sm:w-44 sm:h-44 bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center border-2 border-[#D4AF37]">
+                <img
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=81119119200"
+                  alt="QR Code PIX - Escaneie para apoiar"
+                  className="w-full h-full object-contain"
+                />
               </div>
 
-              {/* Instructions & Copy key */}
-              <div className="flex-1 w-full space-y-2">
-                <div className="text-[11px] text-[#A5B2A9] space-y-1.5 leading-relaxed bg-[#07140F]/60 p-3 rounded-xl border border-[#263B30]">
-                  <div className="flex items-center gap-1.5 text-[#E8CC76] font-semibold">
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Como doar:</span>
-                  </div>
-                  <ol className="list-decimal list-inside space-y-1 pl-1">
-                    <li>Abra o app do seu banco.</li>
-                    <li>Escolha <strong>PIX &gt; Ler QR Code</strong> e aponte a câmera.</li>
-                    <li>Confirme o valor e finalize o apoio!</li>
-                  </ol>
-                </div>
-
-                {/* Copy PIX key button */}
-                <button
-                  type="button"
-                  onClick={handleCopyPix}
-                  className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition active:scale-95 ${
-                    copied
-                      ? 'bg-[#34A853] text-[#F5F5F0]'
-                      : 'bg-[#15291F] border border-[#D4AF37]/40 text-[#E8CC76] hover:bg-[#1f3d28]'
-                  }`}
-                >
-                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? 'Chave PIX Copiada!' : 'Copiar Chave PIX (sem QR Code)'}</span>
-                </button>
+              <div className="text-center space-y-0.5">
+                <span className="text-xs text-[#E8CC76] font-bold flex items-center gap-1.5 justify-center">
+                  <QrCode className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  Aponte a câmera no app do seu banco
+                </span>
+                <p className="text-[10px] text-[#A5B2A9]">
+                  Abra o aplicativo bancário, selecione <strong>PIX &gt; Ler QR Code</strong> e escaneie a imagem acima.
+                </p>
               </div>
+
+              {/* Copy code button without showing CPF digits */}
+              <button
+                type="button"
+                onClick={handleCopyPix}
+                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition active:scale-95 ${
+                  copied
+                    ? 'bg-[#34A853] text-[#F5F5F0]'
+                    : 'bg-[#15291F] border border-[#D4AF37]/40 text-[#E8CC76] hover:bg-[#1f3d28]'
+                }`}
+              >
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? 'Código PIX Copiado!' : 'Copiar Código PIX'}</span>
+              </button>
             </div>
 
             {/* CONFIRMATION FORM */}
