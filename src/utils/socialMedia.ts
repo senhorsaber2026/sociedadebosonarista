@@ -1,7 +1,7 @@
 /**
- * Detecta links de redes sociais em um texto e retorna metadados para embed/preview
+ * Detecta links de redes sociais e imagens diretas em um texto e retorna metadados para embed/preview
  */
-export type SocialPlatform = 'youtube' | 'twitter' | 'instagram' | 'tiktok' | 'facebook' | 'unknown';
+export type SocialPlatform = 'youtube' | 'twitter' | 'instagram' | 'tiktok' | 'facebook' | 'image' | 'unknown';
 
 export interface SocialLink {
   platform: SocialPlatform;
@@ -11,6 +11,8 @@ export interface SocialLink {
   thumbnailUrl?: string;
 }
 
+const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|webp|gif|bmp|svg)(\?|#|$)/i;
+
 export function detectSocialLinks(text: string): SocialLink[] {
   const links: SocialLink[] = [];
   const urlRegex = /https?:\/\/[^\s<>"'()]+/g;
@@ -18,6 +20,16 @@ export function detectSocialLinks(text: string): SocialLink[] {
 
   while ((match = urlRegex.exec(text)) !== null) {
     const url = match[0];
+
+    // Imagem direta
+    if (IMAGE_EXTENSIONS.test(url)) {
+      links.push({
+        platform: 'image',
+        url,
+        thumbnailUrl: url
+      });
+      continue;
+    }
 
     // YouTube
     const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?|shorts)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -39,18 +51,22 @@ export function detectSocialLinks(text: string): SocialLink[] {
         platform: 'twitter',
         id: twMatch[1],
         url,
-        embedUrl: `https://twitter.com/i/status/${twMatch[1]}`
+        embedUrl: `https://platform.twitter.com/embed/tweet.html?url=https://twitter.com/i/status/${twMatch[1]}&theme=dark`,
+        thumbnailUrl: undefined
       });
       continue;
     }
 
     // Instagram
-    const igMatch = url.match(/instagram\.com\/(?:reel|p|tv)\/([a-zA-Z0-9_-]+)/);
+    const igMatch = url.match(/instagram\.com\/(?:reel|reels|p|tv)\/([a-zA-Z0-9_-]+)/);
     if (igMatch?.[1]) {
+      const isReel = /\/reel(?:s)?\//.test(url);
       links.push({
         platform: 'instagram',
         id: igMatch[1],
-        url
+        url,
+        embedUrl: `https://www.instagram.com/${isReel ? 'reel' : 'p'}/${igMatch[1]}/embed/captioned/`,
+        thumbnailUrl: undefined
       });
       continue;
     }
@@ -61,18 +77,22 @@ export function detectSocialLinks(text: string): SocialLink[] {
       links.push({
         platform: 'tiktok',
         id: ttMatch[1],
-        url
+        url,
+        embedUrl: `https://www.tiktok.com/embed/v2/${ttMatch[1]}`,
+        thumbnailUrl: undefined
       });
       continue;
     }
 
     // Facebook
-    const fbMatch = url.match(/facebook\.com\/(?:[\w.]+\/videos\/|\/watch\/?\?v=)(\d+)/);
+    const fbMatch = url.match(/facebook\.com\/(?:[\w.]+\/videos\/|\/watch\/?\?v=|[\w.]+\/posts\/|\/photo\?fbid=)(\d+)/);
     if (fbMatch?.[1]) {
       links.push({
         platform: 'facebook',
         id: fbMatch[1],
-        url
+        url,
+        embedUrl: `https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(url)}&show_text=true&width=500&height=280`,
+        thumbnailUrl: undefined
       });
       continue;
     }
