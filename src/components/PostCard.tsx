@@ -23,6 +23,8 @@ import { RankBadge } from './RankBadge';
 import { showToast } from './Toast';
 import { getYouTubeEmbedUrl, extractYouTubeId } from '../utils/youtube';
 import { detectSocialLinks } from '../utils/socialMedia';
+import { extractTwitterInfo } from '../utils/twitter';
+import { TwitterEmbed } from './TwitterEmbed';
 
 interface PostCardProps {
   post: Post;
@@ -257,22 +259,60 @@ export const PostCard: React.FC<PostCardProps> = ({
       {/* MEDIA ATTACHMENT */}
       {(() => {
         const ytFromContent = extractYouTubeId(post.content || '');
+        const twFromContent = extractTwitterInfo(post.content || '');
+        const twFromMedia = extractTwitterInfo(post.mediaUrl || '');
+        const twFromProp = post.twitterId ? {
+          id: post.twitterId,
+          username: post.authorUsername,
+          url: post.twitterUrl || `https://x.com/i/status/${post.twitterId}`,
+          embedUrl: `https://platform.twitter.com/embed/Tweet.html?id=${post.twitterId}&theme=dark`,
+          directVideoUrl: `https://d.fxtwitter.com/i/status/${post.twitterId}`,
+          isVideo: true
+        } : null;
+
         const socialLinksFromContent = detectSocialLinks(post.content || '');
         const socialLinksFromMedia = post.mediaUrl ? detectSocialLinks(post.mediaUrl) : [];
         const socialLinks = [...socialLinksFromContent, ...socialLinksFromMedia];
-        const hasMedia = Boolean(post.mediaUrl || post.youtubeId || ytFromContent || socialLinks.length > 0);
-        if (!hasMedia) return null;
+
+        const twitterSocial = socialLinks.find(l => l.platform === 'twitter');
+        const twitterInfo = twFromMedia || twFromContent || twFromProp || (twitterSocial && twitterSocial.id ? {
+          id: twitterSocial.id,
+          username: twitterSocial.username,
+          url: twitterSocial.url,
+          embedUrl: twitterSocial.embedUrl || `https://platform.twitter.com/embed/Tweet.html?id=${twitterSocial.id}&theme=dark`,
+          directVideoUrl: twitterSocial.directVideoUrl || `https://d.fxtwitter.com/${twitterSocial.username || 'i'}/status/${twitterSocial.id}`,
+          isVideo: true
+        } : null);
+
+        const isTwitter = post.mediaType === 'twitter' || Boolean(twitterInfo);
         const ytId = post.youtubeId || ytFromContent || extractYouTubeId(post.youtubeUrl || '');
-        const isYt = post.mediaType === 'youtube' || Boolean(post.youtubeId || ytFromContent);
-        const isVideo = !isYt && !socialLinks.length && (post.mediaType === 'video' || post.mediaUrl?.startsWith('data:video') || post.mediaUrl?.endsWith('.mp4'));
-        const imageLinks = socialLinks.filter(l => l.platform === 'image');
-        const videoSocialLinks = socialLinks.filter(l => l.platform !== 'image');
-        const firstSocial = videoSocialLinks[0];
+        const isYt = !isTwitter && (post.mediaType === 'youtube' || Boolean(post.youtubeId || ytFromContent));
+
+        const nonTwitterSocialLinks = socialLinks.filter(l => l.platform !== 'twitter');
+        const hasMedia = Boolean(post.mediaUrl || post.youtubeId || ytFromContent || isTwitter || socialLinks.length > 0);
+        if (!hasMedia) return null;
+
+        const isDirectVideoFile = post.mediaUrl && (
+          post.mediaUrl.startsWith('data:video') || 
+          post.mediaUrl.startsWith('blob:') ||
+          /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(post.mediaUrl)
+        );
+        const isVideo = !isTwitter && !isYt && !nonTwitterSocialLinks.length && Boolean(isDirectVideoFile);
+
+        const imageLinks = nonTwitterSocialLinks.filter(l => l.platform === 'image');
+        const otherSocialLinks = nonTwitterSocialLinks.filter(l => l.platform !== 'image');
+        const firstSocial = otherSocialLinks[0];
         const firstImage = imageLinks[0];
 
         return (
-          <div className="mb-3.5 rounded-2xl overflow-hidden border border-[#263B30] max-h-96 bg-[#07140F]">
-            {isYt ? (
+          <div className={`mb-3.5 rounded-2xl overflow-hidden border border-[#263B30] bg-[#07140F] ${isTwitter ? 'max-h-[640px]' : isYt ? 'aspect-video max-h-[460px]' : 'max-h-96'}`}>
+            {isTwitter && twitterInfo ? (
+              <TwitterEmbed
+                tweetId={twitterInfo.id}
+                username={twitterInfo.username}
+                originalUrl={twitterInfo.url}
+              />
+            ) : isYt ? (
               <div className="w-full h-full bg-black flex items-center justify-center">
                 <iframe
                   src={getYouTubeEmbedUrl(ytId || '', true)}
@@ -290,15 +330,23 @@ export const PostCard: React.FC<PostCardProps> = ({
                 muted
                 controls
                 className="w-full h-full object-contain"
+                onError={(e) => {
+                  // Se falhar o carregamento do vídeo, não deixa tela preta
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent) {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'p-4 text-center text-xs text-[#A5B2A9] flex flex-col items-center justify-center min-h-[160px]';
+                    fallback.innerHTML = `<span class="text-[#E8CC76] font-bold mb-1">Vídeo indisponível diretamente</span><a href="${post.mediaUrl}" target="_blank" rel="noopener noreferrer" class="text-xs text-[#1DA1F2] underline mt-1">Abrir link da mídia</a>`;
+                    parent.appendChild(fallback);
+                  }
+                }}
               />
             ) : firstSocial ? (
               <div className="w-full h-full bg-[#07140F] flex flex-col items-center justify-center p-4 text-center">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg border-2 border-[#263B30]">
-                  {firstSocial.platform === 'twitter' ? (
-                    <div className="w-10 h-10 rounded-full bg-[#000000] flex items-center justify-center text-[#1DA1F2]">
-                      <Share2 className="w-5 h-5" />
-                    </div>
-                  ) : firstSocial.platform === 'instagram' ? (
+                  {firstSocial.platform === 'instagram' ? (
                     <div className="w-10 h-10 rounded-full bg-conic-gradient from-[#833AB4] via-[#FD1D1D] via-[#FCB045] to-[#833AB4] flex items-center justify-center text-white">
                       <Camera className="w-5 h-5" />
                     </div>

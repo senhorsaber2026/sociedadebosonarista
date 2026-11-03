@@ -23,6 +23,8 @@ import { StoryItem, User } from '../types';
 import { storageService } from '../services/storageService';
 import { showToast } from './Toast';
 import { extractYouTubeId, getYouTubeThumbnail, getYouTubeEmbedUrl, getYouTubeWatchUrl } from '../utils/youtube';
+import { extractTwitterInfo } from '../utils/twitter';
+import { TwitterEmbed } from './TwitterEmbed';
 import { LiveAlert } from './LiveAlert';
 
 interface StoriesBarProps {
@@ -56,7 +58,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
   const [isAddingStory, setIsAddingStory] = useState(false);
   const [storyImage, setStoryImage] = useState('');
   const [storyYoutubeUrl, setStoryYoutubeUrl] = useState('');
-  const [storyMediaType, setStoryMediaType] = useState<'image' | 'video' | 'youtube'>('image');
+  const [storyMediaType, setStoryMediaType] = useState<'image' | 'video' | 'youtube' | 'twitter'>('image');
   const [storyCaption, setStoryCaption] = useState('');
   const [storyReply, setStoryReply] = useState('');
   const [hasLikedStory, setHasLikedStory] = useState(false);
@@ -150,7 +152,8 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
   // 1. AUTO-PROGRESS TIMER - usa ref para não causar re-render
   useEffect(() => {
     const isYt = activeStory?.mediaType === 'youtube' || Boolean(activeStory?.youtubeId);
-    if (activeStory === null || isPaused || isYt) {
+    const isTw = activeStory?.mediaType === 'twitter' || Boolean(activeStory?.twitterId) || Boolean(extractTwitterInfo(activeStory?.mediaUrl || ''));
+    if (activeStory === null || isPaused || isYt || isTw) {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
       return;
@@ -228,12 +231,21 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
     }
 
     const ytId = extractYouTubeId(storyYoutubeUrl);
+    const twInfo = extractTwitterInfo(storyYoutubeUrl) || extractTwitterInfo(storyImage);
+
     let finalMediaType = storyMediaType;
     let finalMediaUrl = storyImage.trim();
     let finalYoutubeUrl: string | undefined = undefined;
     let finalYoutubeId: string | undefined = undefined;
+    let finalTwitterUrl: string | undefined = undefined;
+    let finalTwitterId: string | undefined = undefined;
 
-    if (ytId) {
+    if (twInfo) {
+      finalMediaType = 'twitter';
+      finalTwitterId = twInfo.id;
+      finalTwitterUrl = twInfo.url;
+      finalMediaUrl = twInfo.url;
+    } else if (ytId) {
       finalMediaType = 'youtube';
       finalYoutubeId = ytId;
       finalYoutubeUrl = storyYoutubeUrl.trim();
@@ -248,12 +260,14 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
       userAvatar: currentUser.avatar,
       hasUnseenStory: true,
       isVerified: currentUser.verified,
-      isLive: finalMediaType === 'video' || finalMediaType === 'youtube',
+      isLive: finalMediaType === 'video' || finalMediaType === 'youtube' || finalMediaType === 'twitter',
       badgeType: 'verified',
       mediaUrl: finalMediaUrl,
       mediaType: finalMediaType,
       youtubeUrl: finalYoutubeUrl,
       youtubeId: finalYoutubeId,
+      twitterUrl: finalTwitterUrl,
+      twitterId: finalTwitterId,
       caption: storyCaption.trim() || 'Orgulho de ser brasileiro! 🇧🇷'
     });
 
@@ -360,7 +374,14 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
         {storyGroups.map((group, groupIdx) => {
           const latestStory = group.stories[0];
           const isYoutube = latestStory?.mediaType === 'youtube' || Boolean(latestStory?.youtubeId);
-          const isVideo = !isYoutube && (latestStory?.mediaType === 'video' || latestStory?.mediaUrl?.startsWith('data:video') || latestStory?.mediaUrl?.endsWith('.mp4'));
+          const twInfo = extractTwitterInfo(latestStory?.mediaUrl || '') || (latestStory?.twitterId ? { id: latestStory.twitterId, username: undefined } : null);
+          const isTwitter = latestStory?.mediaType === 'twitter' || Boolean(twInfo);
+          const isDirectVideo = latestStory?.mediaUrl && (
+            latestStory.mediaUrl.startsWith('data:video') ||
+            latestStory.mediaUrl.startsWith('blob:') ||
+            /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(latestStory.mediaUrl)
+          );
+          const isVideo = !isYoutube && !isTwitter && Boolean(isDirectVideo || (latestStory?.mediaType === 'video' && !latestStory?.mediaUrl?.includes('http')));
           const storyMedia = latestStory?.mediaUrl || (isYoutube && latestStory?.youtubeId ? getYouTubeThumbnail(latestStory.youtubeId) : '/assets/images/brasil_hero_banner_1793411883121.jpg');
 
           return (
@@ -392,6 +413,14 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                         <div className="w-5 h-5 rounded-full bg-[#FF0000] flex items-center justify-center text-white shadow-md">
                           <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
                         </div>
+                      </div>
+                    </div>
+                  ) : isTwitter ? (
+                    <div className="w-full h-full relative rounded-full overflow-hidden bg-black flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-full bg-black border border-[#263B30] flex items-center justify-center shadow-md">
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white" aria-hidden="true">
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                        </svg>
                       </div>
                     </div>
                   ) : isVideo ? (
@@ -467,7 +496,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
             onTouchStart={() => setIsPaused(true)}
             onTouchEnd={() => setIsPaused(false)}
           >
-            {/* Background Story Media (Photo, Video, or YouTube Player) */}
+            {/* Background Story Media (Photo, Video, YouTube Player, or X Player) */}
             <div className="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden">
               {activeStory.mediaType === 'youtube' || activeStory.youtubeId ? (
                 <div className="w-full h-full relative flex items-center justify-center bg-black">
@@ -479,24 +508,62 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                     allowFullScreen
                   />
                 </div>
-              ) : activeStory.mediaType === 'video' || activeStory.mediaUrl?.startsWith('data:video') || activeStory.mediaUrl?.endsWith('.mp4') ? (
-                <video
-                  src={activeStory.mediaUrl}
-                  autoPlay
-                  playsInline
-                  controls={false}
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <img
-                  src={activeStory.mediaUrl || '/assets/images/brasil_hero_banner_1793411883121.jpg'}
-                  alt="Story"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
-                  }}
-                  className="w-full h-full object-contain"
-                />
-              )}
+              ) : (() => {
+                const twInfo = extractTwitterInfo(activeStory.mediaUrl || '') || (activeStory.twitterId ? {
+                  id: activeStory.twitterId,
+                  username: undefined,
+                  url: activeStory.twitterUrl || `https://x.com/i/status/${activeStory.twitterId}`,
+                  embedUrl: `https://platform.twitter.com/embed/Tweet.html?id=${activeStory.twitterId}&theme=dark`,
+                  directVideoUrl: `https://d.fxtwitter.com/i/status/${activeStory.twitterId}`,
+                  isVideo: true
+                } : null);
+                const isTwitterStory = activeStory.mediaType === 'twitter' || Boolean(twInfo);
+
+                if (isTwitterStory && twInfo) {
+                  return (
+                    <div className="w-full h-full relative flex items-center justify-center bg-black overflow-y-auto p-2 pt-16 pb-16">
+                      <TwitterEmbed
+                        tweetId={twInfo.id}
+                        username={twInfo.username}
+                        originalUrl={activeStory.twitterUrl || activeStory.mediaUrl}
+                        className="max-w-[360px]"
+                      />
+                    </div>
+                  );
+                }
+
+                const isDirectVideo = activeStory.mediaUrl && (
+                  activeStory.mediaUrl.startsWith('data:video') ||
+                  activeStory.mediaUrl.startsWith('blob:') ||
+                  /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(activeStory.mediaUrl)
+                );
+
+                if (isDirectVideo || (activeStory.mediaType === 'video' && !activeStory.mediaUrl?.includes('http'))) {
+                  return (
+                    <video
+                      src={activeStory.mediaUrl}
+                      autoPlay
+                      playsInline
+                      controls={false}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLVideoElement).style.display = 'none';
+                      }}
+                    />
+                  );
+                }
+
+                return (
+                  <img
+                    src={activeStory.mediaUrl || '/assets/images/brasil_hero_banner_1793411883121.jpg'}
+                    alt="Story"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+                    }}
+                    className="w-full h-full object-contain"
+                  />
+                );
+              })()}
               {/* Subtle gradient overlay to guarantee text legibility */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/70 pointer-events-none" />
             </div>
@@ -595,40 +662,45 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
             </div>
 
             {/* Tap zones for left / right navigation */}
-            <div className={`relative z-10 flex-1 flex ${activeStory.mediaType === 'youtube' || activeStory.youtubeId ? 'pointer-events-none' : ''}`}>
-              <div 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePrevStory();
-                }}
-                className={`w-1/3 h-full cursor-pointer flex items-center justify-start pl-2 opacity-0 hover:opacity-80 transition-opacity ${activeStory.mediaType === 'youtube' || activeStory.youtubeId ? 'pointer-events-auto' : ''}`}
-                title="Story anterior"
-              >
-                <div className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center border border-white/20">
-                  <ChevronLeft className="w-4 h-4" />
+            {(() => {
+              const isInteractiveVideo = activeStory.mediaType === 'youtube' || Boolean(activeStory.youtubeId) || activeStory.mediaType === 'twitter' || Boolean(activeStory.twitterId) || Boolean(extractTwitterInfo(activeStory.mediaUrl || ''));
+              return (
+                <div className={`relative z-10 flex-1 flex ${isInteractiveVideo ? 'pointer-events-none' : ''}`}>
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePrevStory();
+                    }}
+                    className={`w-1/3 h-full cursor-pointer flex items-center justify-start pl-2 opacity-0 hover:opacity-80 transition-opacity ${isInteractiveVideo ? 'pointer-events-auto' : ''}`}
+                    title="Story anterior"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center border border-white/20">
+                      <ChevronLeft className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsPaused(prev => !prev);
+                    }}
+                    className={`w-1/3 h-full ${isInteractiveVideo ? 'pointer-events-none' : 'cursor-pointer'}`}
+                    title="Pressione para pausar"
+                  />
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleNextStory();
+                    }}
+                    className={`w-1/3 h-full cursor-pointer flex items-center justify-end pr-2 opacity-0 hover:opacity-80 transition-opacity ${isInteractiveVideo ? 'pointer-events-auto' : ''}`}
+                    title="Próximo story"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center border border-white/20">
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsPaused(prev => !prev);
-                }}
-                className={`w-1/3 h-full ${activeStory.mediaType === 'youtube' || activeStory.youtubeId ? 'pointer-events-none' : 'cursor-pointer'}`}
-                title="Pressione para pausar"
-              />
-              <div 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNextStory();
-                }}
-                className={`w-1/3 h-full cursor-pointer flex items-center justify-end pr-2 opacity-0 hover:opacity-80 transition-opacity ${activeStory.mediaType === 'youtube' || activeStory.youtubeId ? 'pointer-events-auto' : ''}`}
-                title="Próximo story"
-              >
-                <div className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center border border-white/20">
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Bottom Caption & Interactive Reply Bar */}
             <div className="relative z-20 p-3.5 space-y-2.5 bg-gradient-to-t from-black via-black/85 to-transparent">
@@ -636,6 +708,32 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 <div className="flex items-center justify-between">
                   <a
                     href={activeStory.youtubeUrl || getYouTubeWatchUrl(activeStory.youtubeId!)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FF0000]/20 hover:bg-[#FF0000]/30 text-[#FF5555] text-xs font-bold transition border border-[#FF0000]/40"
+                  >
+                    <Youtube className="w-3.5 h-3.5" />
+                    <span>Assistir no YouTube</span>
+                    <ExternalLink className="w-3 h-3 ml-0.5" />
+                  </a>
+                </div>
+              )}
+              {(activeStory.mediaType === 'twitter' || activeStory.twitterId || extractTwitterInfo(activeStory.mediaUrl || '')) && (
+                <div className="flex items-center justify-between">
+                  <a
+                    href={activeStory.twitterUrl || activeStory.mediaUrl || (activeStory.twitterId ? `https://x.com/i/status/${activeStory.twitterId}` : '#')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/80 hover:bg-black text-[#E8CC76] text-xs font-bold transition border border-[#263B30]"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white" aria-hidden="true">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    <span>Assistir no X</span>
+                    <ExternalLink className="w-3 h-3 ml-0.5" />
+                  </a>
+                </div>
+              )}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}

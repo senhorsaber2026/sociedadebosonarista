@@ -13,6 +13,7 @@ import { User, Post } from '../types';
 import { storageService } from '../services/storageService';
 import { showToast } from './Toast';
 import { extractYouTubeId, getYouTubeThumbnail } from '../utils/youtube';
+import { extractTwitterInfo } from '../utils/twitter';
 
 interface CreatePostCardProps {
   currentUser: User | null;
@@ -28,7 +29,7 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('Brasil');
   const [mediaUrl, setMediaUrl] = useState('');
-  const [mediaType, setMediaType] = useState<'image' | 'video' | 'youtube'>('image');
+  const [mediaType, setMediaType] = useState<'image' | 'video' | 'youtube' | 'twitter'>('image');
   const [showMediaInput, setShowMediaInput] = useState(false);
   const [showPollCreator, setShowPollCreator] = useState(false);
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
@@ -104,32 +105,56 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
     setIsSubmitting(true);
 
     try {
-      const ytFromMedia = extractYouTubeId(mediaUrl.trim());
-      const ytFromContent = extractYouTubeId(content.trim());
+      const trimmedMedia = mediaUrl.trim();
+      const trimmedContent = content.trim();
+
+      const ytFromMedia = extractYouTubeId(trimmedMedia);
+      const ytFromContent = extractYouTubeId(trimmedContent);
       const ytId = ytFromMedia || ytFromContent;
-      const finalMediaType = ytId ? 'youtube' : mediaType;
-      const finalMediaUrl = ytId ? getYouTubeThumbnail(ytId) : (mediaUrl.trim() || undefined);
+
+      const twFromMedia = extractTwitterInfo(trimmedMedia);
+      const twFromContent = extractTwitterInfo(trimmedContent);
+      const twInfo = twFromMedia || twFromContent;
+
+      let finalMediaType: 'image' | 'video' | 'youtube' | 'twitter' = mediaType;
+      let finalMediaUrl = trimmedMedia || undefined;
+
+      if (twInfo) {
+        finalMediaType = 'twitter';
+        finalMediaUrl = twInfo.url;
+      } else if (ytId) {
+        finalMediaType = 'youtube';
+        finalMediaUrl = getYouTubeThumbnail(ytId);
+      }
 
       const newPost = storageService.createPost({
         author: currentUser,
-        content: content.trim(),
+        content: trimmedContent,
         category,
         mediaUrl: finalMediaUrl,
         mediaType: finalMediaType,
-        youtubeUrl: ytId ? (ytFromMedia ? mediaUrl.trim() : `https://www.youtube.com/watch?v=${ytFromContent}`) : undefined,
+        youtubeUrl: ytId ? (ytFromMedia ? trimmedMedia : `https://www.youtube.com/watch?v=${ytFromContent}`) : undefined,
         youtubeId: ytId || undefined,
+        twitterUrl: twInfo ? twInfo.url : undefined,
+        twitterId: twInfo ? twInfo.id : undefined,
         pollOptions: showPollCreator ? pollOptions.filter(o => o.trim()) : undefined
       });
 
       // Share to Stories if checkbox is checked
       if (shareToStories && currentUser) {
-        const rawMedia = mediaUrl.trim();
-        const rawContent = content.trim();
-        const ytId = extractYouTubeId(rawMedia) || extractYouTubeId(rawContent);
-        const isYt = !!ytId;
-        const storyMedia = isYt 
-          ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
-          : (rawMedia || '/assets/images/brasil_hero_banner_1793411883121.jpg');
+        const storyYtId = extractYouTubeId(trimmedMedia) || extractYouTubeId(trimmedContent);
+        const storyTwInfo = extractTwitterInfo(trimmedMedia) || extractTwitterInfo(trimmedContent);
+
+        let storyMedia = trimmedMedia || '/assets/images/brasil_hero_banner_1793411883121.jpg';
+        let storyMediaType: 'image' | 'video' | 'youtube' | 'twitter' = trimmedMedia ? mediaType : 'image';
+
+        if (storyTwInfo) {
+          storyMediaType = 'twitter';
+          storyMedia = storyTwInfo.url;
+        } else if (storyYtId) {
+          storyMediaType = 'youtube';
+          storyMedia = `https://img.youtube.com/vi/${storyYtId}/hqdefault.jpg`;
+        }
 
         storageService.addStory({
           userId: currentUser.id,
@@ -139,10 +164,12 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
           isVerified: currentUser.verified ?? false,
           badgeType: 'verified',
           mediaUrl: storyMedia,
-          mediaType: isYt ? 'youtube' : (rawMedia ? mediaType : 'image'),
-          youtubeUrl: isYt ? (rawMedia && extractYouTubeId(rawMedia) ? rawMedia : `https://www.youtube.com/watch?v=${ytId}`) : undefined,
-          youtubeId: ytId || undefined,
-          caption: rawContent.slice(0, 280)
+          mediaType: storyMediaType,
+          youtubeUrl: storyYtId ? (trimmedMedia && extractYouTubeId(trimmedMedia) ? trimmedMedia : `https://www.youtube.com/watch?v=${storyYtId}`) : undefined,
+          youtubeId: storyYtId || undefined,
+          twitterUrl: storyTwInfo ? storyTwInfo.url : undefined,
+          twitterId: storyTwInfo ? storyTwInfo.id : undefined,
+          caption: trimmedContent.slice(0, 280)
         });
       }
 
@@ -206,7 +233,7 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
                   type="url"
                   value={mediaUrl.startsWith('data:') ? '' : mediaUrl}
                   onChange={(e) => setMediaUrl(e.target.value)}
-                  placeholder={mediaType === 'video' ? 'Cole a URL do vídeo (YouTube ou MP4)...' : 'Cole a URL da imagem (JPG, PNG)...'}
+                  placeholder={mediaType === 'video' ? 'Cole a URL do vídeo (X / Twitter, YouTube ou MP4)...' : 'Cole a URL da imagem (JPG, PNG)...'}
                   className="flex-1 bg-[#0b1712] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] px-3 py-2 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
                 />
                 <button
@@ -228,7 +255,47 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              {mediaUrl && mediaType === 'image' && (
+
+              {/* Preview de Vídeo do X / Twitter */}
+              {mediaUrl && extractTwitterInfo(mediaUrl) && (
+                <div className="p-2.5 bg-[#0b1712] rounded-xl border border-[#263B30] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-black border border-[#263B30] flex items-center justify-center shrink-0">
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white" aria-hidden="true">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#E8CC76] block">
+                        Vídeo do X detectado {extractTwitterInfo(mediaUrl)?.username ? `(@${extractTwitterInfo(mediaUrl)?.username})` : ''}
+                      </span>
+                      <span className="text-[10px] text-[#A5B2A9]">
+                        ID: {extractTwitterInfo(mediaUrl)?.id} • Será exibido no player interativo
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-semibold text-[#22C55E] bg-[#22C55E]/10 px-2 py-0.5 rounded-full border border-[#22C55E]/20">
+                    Pronto
+                  </span>
+                </div>
+              )}
+
+              {/* Preview de Vídeo do YouTube */}
+              {mediaUrl && extractYouTubeId(mediaUrl) && (
+                <div className="p-2.5 bg-[#0b1712] rounded-xl border border-[#263B30] flex items-center gap-2">
+                  <img
+                    src={getYouTubeThumbnail(extractYouTubeId(mediaUrl)!)}
+                    alt="YouTube preview"
+                    className="w-14 h-9 object-cover rounded-md border border-[#FF0000]/40"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-[#F5F5F0] block">Vídeo do YouTube detectado</span>
+                    <span className="text-[10px] text-[#A5B2A9]">ID: {extractYouTubeId(mediaUrl)}</span>
+                  </div>
+                </div>
+              )}
+
+              {mediaUrl && mediaType === 'image' && !extractTwitterInfo(mediaUrl) && !extractYouTubeId(mediaUrl) && (
                 <div className="relative w-full max-h-40 rounded-xl overflow-hidden border border-[#263B30]">
                   <img src={mediaUrl} alt="Preview" className="w-full h-full object-cover" />
                 </div>

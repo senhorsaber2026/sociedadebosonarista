@@ -1,3 +1,5 @@
+import { extractTwitterInfo } from './twitter';
+
 /**
  * Detecta links de redes sociais e imagens diretas em um texto e retorna metadados para embed/preview
  */
@@ -6,8 +8,11 @@ export type SocialPlatform = 'youtube' | 'twitter' | 'instagram' | 'tiktok' | 'f
 export interface SocialLink {
   platform: SocialPlatform;
   id?: string;
+  username?: string;
+  isVideo?: boolean;
   url: string;
   embedUrl?: string;
+  directVideoUrl?: string;
   thumbnailUrl?: string;
 }
 
@@ -44,15 +49,17 @@ export function detectSocialLinks(text: string): SocialLink[] {
       continue;
     }
 
-    // X / Twitter
-    const twMatch = url.match(/(?:twitter\.com|x\.com)\/(?:i\/)?status\/(\d+)/);
-    if (twMatch?.[1]) {
-      const cleanUrl = `https://x.com/i/status/${twMatch[1]}`;
+    // X / Twitter (suporta links com usuário, /video/, etc.)
+    const twInfo = extractTwitterInfo(url);
+    if (twInfo) {
       links.push({
         platform: 'twitter',
-        id: twMatch[1],
-        url: cleanUrl,
-        embedUrl: `https://platform.twitter.com/embed/tweet.html?url=https://twitter.com/i/status/${twMatch[1]}&theme=dark`,
+        id: twInfo.id,
+        username: twInfo.username,
+        isVideo: twInfo.isVideo,
+        url: twInfo.url,
+        embedUrl: twInfo.embedUrl,
+        directVideoUrl: twInfo.directVideoUrl,
         thumbnailUrl: undefined
       });
       continue;

@@ -1018,9 +1018,9 @@ export const storageService = {
         }
         if (p.comments) {
           p.comments.forEach(c => {
-            if (c.userId === userId) {
-              if (data.avatar) c.userAvatar = data.avatar;
-              if (data.name) c.userName = data.name;
+            if (c.authorId === userId) {
+              if (data.avatar) c.authorAvatar = data.avatar;
+              if (data.name) c.authorName = data.name;
               changed = true;
             }
           });
@@ -1121,9 +1121,11 @@ export const storageService = {
     content: string;
     category?: string;
     mediaUrl?: string;
-    mediaType?: 'image' | 'video' | 'youtube';
+    mediaType?: 'image' | 'video' | 'youtube' | 'twitter';
     youtubeUrl?: string;
     youtubeId?: string;
+    twitterUrl?: string;
+    twitterId?: string;
     pollOptions?: string[];
   }): Post {
     const posts = this.getPosts();
@@ -1153,11 +1155,13 @@ export const storageService = {
       authorVerified: data.author.verified,
       content: data.content,
       category: data.category || 'Política',
-    mediaUrl: data.mediaUrl,
-    mediaType: data.mediaType || 'image',
-    youtubeUrl: data.youtubeUrl,
-    youtubeId: data.youtubeId,
-    poll,
+      mediaUrl: data.mediaUrl,
+      mediaType: data.mediaType || 'image',
+      youtubeUrl: data.youtubeUrl,
+      youtubeId: data.youtubeId,
+      twitterUrl: data.twitterUrl,
+      twitterId: data.twitterId,
+      poll,
       likesCount: 0,
       likedUserIds: [],
       commentsCount: 0,

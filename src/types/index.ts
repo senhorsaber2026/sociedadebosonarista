@@ -121,9 +121,11 @@ export interface Post {
   content: string;
   category: string;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video' | 'youtube';
+  mediaType?: 'image' | 'video' | 'youtube' | 'twitter';
   youtubeUrl?: string;
   youtubeId?: string;
+  twitterUrl?: string;
+  twitterId?: string;
   poll?: Poll;
   likesCount: number;
   likedUserIds: string[];
@@ -324,9 +326,11 @@ export interface StoryItem {
   isCurrentUser?: boolean;
   isLive?: boolean;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video' | 'youtube';
+  mediaType?: 'image' | 'video' | 'youtube' | 'twitter';
   youtubeUrl?: string;
   youtubeId?: string;
+  twitterUrl?: string;
+  twitterId?: string;
   caption?: string;
   createdAt?: string;
   badgeType?: 'verified' | 'flag' | 'star';
