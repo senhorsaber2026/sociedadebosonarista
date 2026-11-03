@@ -174,7 +174,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#07140F]/95 backdrop-blur-md border-b border-[#263B30] transition-all">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="relative max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* LOGO & BRAND (ROUND EMBLEM + GOLD TITLES) */}
         <div 
@@ -326,7 +326,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {currentUser ? (
             <>
               {/* Notifications Dropdown */}
-              <div className="relative" ref={notifRef}>
+              <div ref={notifRef}>
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
                   title="Notificações"
@@ -341,7 +341,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
 
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#102019] border border-[#263B30] rounded-2xl shadow-2xl overflow-hidden z-50 animate-fade-in">
+                  <div className="absolute right-0 mt-2 w-[250px] sm:w-80 max-w-[calc(100vw-2rem)] bg-[#102019] border border-[#263B30] rounded-2xl shadow-2xl overflow-hidden z-50 animate-fade-in">
                     <div className="p-3 border-b border-[#263B30] flex items-center justify-between bg-[#0b1712]">
                       <div className="flex items-center gap-2">
                         <Bell className="w-4 h-4 text-[#D4AF37]" />
