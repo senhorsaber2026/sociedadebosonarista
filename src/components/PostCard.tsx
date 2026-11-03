@@ -12,13 +12,16 @@ import {
   Trash2, 
   Check,
   Calendar,
-  Globe
+  Globe,
+  Camera,
+  Music
 } from 'lucide-react';
 import { Post, User } from '../types';
 import { storageService } from '../services/storageService';
 import { RankBadge } from './RankBadge';
 import { showToast } from './Toast';
 import { getYouTubeEmbedUrl, extractYouTubeId } from '../utils/youtube';
+import { detectSocialLinks } from '../utils/socialMedia';
 
 interface PostCardProps {
   post: Post;
@@ -253,11 +256,14 @@ export const PostCard: React.FC<PostCardProps> = ({
       {/* MEDIA ATTACHMENT */}
       {(() => {
         const ytFromContent = extractYouTubeId(post.content || '');
-        const hasMedia = Boolean(post.mediaUrl || post.youtubeId || ytFromContent);
+        const socialLinks = detectSocialLinks(post.content || '');
+        const hasMedia = Boolean(post.mediaUrl || post.youtubeId || ytFromContent || socialLinks.length > 0);
         if (!hasMedia) return null;
         const ytId = post.youtubeId || ytFromContent || extractYouTubeId(post.youtubeUrl || '');
         const isYt = post.mediaType === 'youtube' || Boolean(post.youtubeId || ytFromContent);
         const isVideo = !isYt && (post.mediaType === 'video' || post.mediaUrl?.startsWith('data:video') || post.mediaUrl?.endsWith('.mp4'));
+        const firstSocial = socialLinks[0];
+
         return (
           <div className="mb-3.5 rounded-2xl overflow-hidden border border-[#263B30] max-h-96 bg-[#07140F]">
             {isYt ? (
@@ -279,6 +285,33 @@ export const PostCard: React.FC<PostCardProps> = ({
                 controls
                 className="w-full h-full object-contain"
               />
+            ) : firstSocial && firstSocial.platform === 'twitter' ? (
+              <iframe
+                src={firstSocial.embedUrl || firstSocial.url}
+                title="Post do X/Twitter"
+                className="w-full max-w-[500px] h-[600px] border-0"
+                referrerPolicy="origin"
+              />
+            ) : firstSocial ? (
+              <div className="w-full h-full bg-[#07140F] flex flex-col items-center justify-center p-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-[#174D32] flex items-center justify-center text-[#E8CC76] mx-auto mb-2">
+                  {firstSocial.platform === 'instagram' ? (
+                    <Camera className="w-6 h-6" />
+                  ) : firstSocial.platform === 'tiktok' ? (
+                    <Music className="w-6 h-6" />
+                  ) : (
+                    <Share2 className="w-6 h-6" />
+                  )}
+                </div>
+                <a
+                  href={firstSocial.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs sm:text-sm text-[#D4AF37] underline hover:text-[#E8CC76] transition"
+                >
+                  Abrir na {firstSocial.platform.charAt(0).toUpperCase() + firstSocial.platform.slice(1)}
+                </a>
+              </div>
             ) : (
               <img
                 src={post.mediaUrl?.replace('/src/assets/', '/assets/')}
