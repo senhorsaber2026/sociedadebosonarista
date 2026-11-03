@@ -255,7 +255,31 @@ export type NotificationType =
   | 'follow'
   | 'message'
   | 'group_invite'
-  | 'admin_notice';
+  | 'admin_notice'
+  | 'live_started';
+
+export interface LiveSession {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  title: string;
+  description?: string;
+  viewerCount: number;
+  isActive: boolean;
+  startedAt: string;
+  endedAt?: string;
+}
+
+export interface LiveChatMessage {
+  id: string;
+  liveId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  message: string;
+  createdAt: string;
+}
 
 export interface NotificationItem {
   id: string;

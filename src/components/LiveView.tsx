@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Video, 
-  Mic, 
-  Send, 
-  Users, 
-  ThumbsUp, 
-  ThumbsDown, 
-  Heart, 
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Video,
+  Mic,
+  Send,
+  Users,
+  ThumbsUp,
+  Heart,
   ArrowLeft,
   Shield,
   Play,
@@ -14,12 +13,11 @@ import {
   X,
   Film,
   Smartphone,
-  Laptop,
-  Globe,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCw
 } from 'lucide-react';
-import { User } from '../types';
+import { User, LiveSession, LiveChatMessage } from '../types';
 import { storageService } from '../services/storageService';
 import { showToast } from './Toast';
 
@@ -34,31 +32,81 @@ export const LiveView: React.FC<LiveViewProps> = ({
   onNavigate,
   onOpenAuth
 }) => {
-  const [isLiveActive, setIsLiveActive] = useState(false);
+  const [isMyLive, setIsMyLive] = useState(false);
+  [isMyLive];
   const [isStreaming, setIsStreaming] = useState(false);
+  [isStreaming];
   const [liveTitle, setLiveTitle] = useState('');
   const [liveDescription, setLiveDescription] = useState('');
-  const [viewerCount, setViewerCount] = useState(0);
-  const [likes, setLikes] = useState(0);
-  const [chatMessages, setChatMessages] = useState<{ id: string; user: string; message: string; time: string }[]>([]);
+  const [activeLives, setActiveLives] = useState<LiveSession[]>([]);
+  [activeLives];
+  const [selectedLive, setSelectedLive] = useState<LiveSession | null>(null);
+  [selectedLive];
+  const [chatMessages, setChatMessages] = useState<LiveChatMessage[]>([]);
+  [chatMessages];
   const [chatInput, setChatInput] = useState('');
+  [chatInput];
   const [selectedCamera, setSelectedCamera] = useState<'front' | 'back'>('front');
+  [selectedCamera];
   const [micEnabled, setMicEnabled] = useState(true);
-  const [isMyLive, setIsMyLive] = useState(false);
+  [micEnabled];
   const [isLiked, setIsLiked] = useState(false);
+  [isLiked];
+  const [likes, setLikes] = useState(0);
+  [likes];
+  const [viewerCount, setViewerCount] = useState(0);
+  [viewerCount];
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const currentLiveIdRef = useRef<string | null>(null);
+  const viewerIntervalRef = useRef<number | null>(null);
 
-  const streamers = [
-    { id: '1', name: 'Coronel Silva', avatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png', viewers: 1240, title: 'Brasil Acima de Tudo!', live: true, verified: true },
-    { id: '2', name: 'Patriota RJ', avatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png', viewers: 560, title: 'Debate sobre Liberdade', live: true, verified: false },
-    { id: '3', name: 'Direita SP', avatar: '/assets/aistudio/P_ster_Patri_tico_com_Brasil_e_Sociedade_de_Bosonarista_7068039e.png', viewers: 320, title: 'Notícias do Congresso', live: true, verified: true },
-  ];
+  const refreshLives = useCallback(() => {
+    setActiveLives(storageService.getActiveLives());
+  }, []);
 
   useEffect(() => {
-    setViewerCount(isMyLive ? Math.floor(Math.random() * 500) + 50 : 0);
-  }, [isMyLive]);
+    refreshLives();
+  }, [refreshLives]);
+
+  useEffect(() => {
+    if (currentUser) {
+      const myLive = activeLives.find(l => l.userId === currentUser.id && l.isActive);
+      setIsMyLive(!!myLive);
+      if (myLive) {
+        setSelectedLive(myLive);
+        currentLiveIdRef.current = myLive.id;
+        setViewerCount(myLive.viewerCount);
+        setChatMessages(storageService.getLiveChatMessages(myLive.id));
+        setLikes(0);
+      } else {
+        setIsMyLive(false);
+        setSelectedLive(null);
+        currentLiveIdRef.current = null;
+      }
+    } else {
+      setIsMyLive(false);
+      setSelectedLive(null);
+      currentLiveIdRef.current = null;
+    }
+  }, [currentUser, activeLives]);
+
+  useEffect(() => {
+    if (selectedLive && selectedLive.id !== currentLiveIdRef.current) {
+      currentLiveIdRef.current = selectedLive.id;
+      setViewerCount(selectedLive.viewerCount);
+      setChatMessages(storageService.getLiveChatMessages(selectedLive.id));
+      storageService.incrementLiveViewers(selectedLive.id);
+      setLikes(0);
+      setIsLiked(false);
+    }
+    return () => {
+      if (currentLiveIdRef.current) {
+        storageService.decrementLiveViewers(currentLiveIdRef.current);
+      }
+    };
+  }, [selectedLive]);
 
   const handleStartLive = async () => {
     if (!currentUser) {
@@ -75,9 +123,15 @@ export const LiveView: React.FC<LiveViewProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+      const newLive = storageService.startLive(currentUser.id, liveTitle, liveDescription || undefined);
       setIsStreaming(true);
       setIsMyLive(true);
-      setIsLiveActive(true);
+      setSelectedLive(newLive);
+      currentLiveIdRef.current = newLive.id;
+      setViewerCount(newLive.viewerCount);
+      setChatMessages([]);
+      setLikes(0);
+      setIsLiked(false);
       showToast('Transmissão ao vivo iniciada!');
     } catch (err) {
       showToast('Não foi possível acessar câmera/microfone.');
@@ -92,28 +146,42 @@ export const LiveView: React.FC<LiveViewProps> = ({
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+    if (currentLiveIdRef.current) {
+      storageService.stopLive(currentLiveIdRef.current);
+      storageService.decrementLiveViewers(currentLiveIdRef.current);
+    }
+    if (viewerIntervalRef.current) {
+      clearInterval(viewerIntervalRef.current);
+      viewerIntervalRef.current = null;
+    }
     setIsStreaming(false);
     setIsMyLive(false);
-    setIsLiveActive(false);
+    setSelectedLive(null);
+    currentLiveIdRef.current = null;
+    setViewerCount(0);
+    setChatMessages([]);
+    setLikes(0);
+    setIsLiked(false);
+    refreshLives();
     showToast('Transmissão encerrada.');
   };
 
-  const handleJoinLive = (streamer: any) => {
-    setIsLiveActive(true);
-    setIsMyLive(false);
-    setViewerCount(streamer.viewers);
-    showToast(`Assistindo: ${streamer.title}`);
+  const handleJoinLive = (live: LiveSession) => {
+    setSelectedLive(live);
+    currentLiveIdRef.current = live.id;
+    setViewerCount(live.viewerCount);
+    setChatMessages(storageService.getLiveChatMessages(live.id));
+    setLikes(0);
+    setIsLiked(false);
+    storageService.incrementLiveViewers(live.id);
+    showToast(`Assistindo: ${live.title}`);
   };
 
   const handleSendChat = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim() || !currentUser) return;
-    setChatMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      user: currentUser.name,
-      message: chatInput,
-      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    }]);
+    if (!chatInput.trim() || !currentUser || !currentLiveIdRef.current) return;
+    storageService.sendLiveChatMessage(currentLiveIdRef.current, currentUser.id, chatInput);
+    setChatMessages(storageService.getLiveChatMessages(currentLiveIdRef.current));
     setChatInput('');
   };
 
@@ -124,6 +192,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   const handleToggleMic = () => setMicEnabled(!micEnabled);
   const handleSwitchCamera = () => setSelectedCamera(selectedCamera === 'front' ? 'back' : 'front');
+
+  useEffect(() => {
+    if (isStreaming && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [isStreaming]);
 
   return (
     <div className="min-h-screen bg-[#07140F] text-[#F5F5F0] flex flex-col">
@@ -156,7 +230,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
         {currentUser ? (
           <>
             {/* Minha transmissão ao vivo */}
-            {isMyLive && (
+            {isMyLive && selectedLive && (
               <div className="mb-6 bg-[#102019] border border-[#263B30] rounded-3xl shadow-2xl overflow-hidden">
                 <div className="relative w-full aspect-video bg-black">
                   <video
@@ -167,19 +241,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     playsInline
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    {streamRef.current ? (
-                      <div className="text-center">
-                        <div className="w-16 h-16 rounded-full bg-[#07140F]/80 border border-[#D4AF37] flex items-center justify-center mx-auto mb-3 shadow-[0_0_20px_rgba(212,175,55,0.6)]">
-                          <Video className="w-8 h-8 text-[#D4AF37]" />
-                        </div>
-                        <p className="text-xs text-[#A5B2A9]">Sua transmissão ao vivo</p>
+                    <div className="text-center">
+                      <div className="w-16 h-16 rounded-full bg-[#07140F]/80 border border-[#D4AF37] flex items-center justify-center mx-auto mb-3 shadow-[0_0_20px_rgba(212,175,55,0.6)]">
+                        <Video className="w-8 h-8 text-[#D4AF37]" />
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-[#A5B2A9]">
-                        <Video className="w-12 h-12 mb-3 opacity-50" />
-                        <p className="text-sm">Conectando câmera...</p>
-                      </div>
-                    )}
+                      <p className="text-xs text-[#A5B2A9]">Sua transmissão ao vivo</p>
+                    </div>
                   </div>
                   <div className="absolute top-4 left-4 flex items-center gap-2 bg-[#07140F]/80 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50">
                     <div className="w-2 h-2 rounded-full bg-[#D94B4B] animate-pulse" />
@@ -190,16 +257,16 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-bold text-[#F5F5F0]">{liveTitle || 'Minha Transmissão'}</h3>
-                      <p className="text-xs text-[#A5B2A9]">{currentUser.name} • {new Date().toLocaleDateString('pt-BR')}</p>
+                      <h3 className="text-lg font-bold text-[#F5F5F0]">{selectedLive.title}</h3>
+                      <p className="text-xs text-[#A5B2A9]">{currentUser.name} • {new Date(selectedLive.startedAt).toLocaleDateString('pt-BR')}</p>
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#174D32] text-[#E8CC76] font-bold">
-                      {viewerCount} espectadores
+                      {selectedLive.viewerCount} espectadores
                     </span>
                   </div>
 
-                  {liveDescription && (
-                    <p className="text-sm text-[#F5F5F0] line-clamp-2">{liveDescription}</p>
+                  {selectedLive.description && (
+                    <p className="text-sm text-[#F5F5F0] line-clamp-2">{selectedLive.description}</p>
                   )}
 
                   <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#263B30]">
@@ -235,7 +302,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
             )}
 
             {/* Form para iniciar live */}
-            {!isMyLive && !isLiveActive && (
+            {!isMyLive && (
               <div className="mb-6 bg-[#102019] border border-[#263B30] rounded-3xl shadow-xl p-6">
                 <h3 className="text-sm font-bold text-[#E5AC24] mb-4 flex items-center gap-2">
                   <Film className="w-4 h-4" />
@@ -270,21 +337,21 @@ export const LiveView: React.FC<LiveViewProps> = ({
               </div>
             )}
 
-            {/* Lives em andamento */}
-            {!isMyLive && (
+            {/* Lives em andamento de outros usuários */}
+            {!isMyLive && activeLives.length > 0 && (
               <section className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-[#E5AC24] flex items-center gap-2">
                     <Users className="w-4 h-4" />
                     Lives em Andamento
                   </h3>
-                  <span className="text-[10px] text-[#A5B2A9]">{streamers.filter(s => s.live).length} ao vivo</span>
+                  <span className="text-[10px] text-[#A5B2A9]">{activeLives.length} ao vivo</span>
                 </div>
                 <div className="space-y-3">
-                  {streamers.filter(s => s.live).map((s) => (
+                  {activeLives.map((live) => (
                     <div
-                      key={s.id}
-                      onClick={() => handleJoinLive(s)}
+                      key={live.id}
+                      onClick={() => handleJoinLive(live)}
                       className="bg-[#102019] border border-[#263B30] rounded-2xl overflow-hidden cursor-pointer transition hover:border-[#D4AF37]/50 group"
                     >
                       <div className="relative aspect-video bg-black">
@@ -298,21 +365,20 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           <span className="text-[10px] font-bold text-[#E8CC76]">AO VIVO</span>
                         </div>
                         <div className="absolute bottom-2 right-2 bg-[#07140F]/80 px-2 py-0.5 rounded-lg">
-                          <span className="text-[10px] font-bold text-[#F5F5F0]">{s.viewers}</span>
+                          <span className="text-[10px] font-bold text-[#F5F5F0]">{live.viewerCount}</span>
                         </div>
                       </div>
                       <div className="p-3">
                         <div className="flex items-center gap-2 mb-1">
-                          <img src={s.avatar} alt={s.name} className="w-8 h-8 rounded-full object-cover border border-[#263B30]" />
+                          <img src={live.userAvatar} alt={live.userName} className="w-8 h-8 rounded-full object-cover border border-[#263B30]" />
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-xs font-bold text-[#F5F5F0] truncate">{s.name}</h4>
-                            {s.verified && <Shield className="w-3 h-3 text-[#D4AF37] text-[#D4AF37]" />}
+                            <h4 className="text-xs font-bold text-[#F5F5F0] truncate">{live.userName}</h4>
                           </div>
                         </div>
-                        <h5 className="text-sm font-semibold text-[#F5F5F0] line-clamp-1 mb-1">{s.title}</h5>
+                        <h5 className="text-sm font-semibold text-[#F5F5F0] line-clamp-1 mb-1">{live.title}</h5>
                         <div className="flex items-center gap-1 text-[10px] text-[#A5B2A9]">
                           <Users className="w-3 h-3" />
-                          <span>{s.viewers} assistindo</span>
+                          <span>{live.viewerCount} assistindo</span>
                         </div>
                       </div>
                     </div>
@@ -321,8 +387,17 @@ export const LiveView: React.FC<LiveViewProps> = ({
               </section>
             )}
 
+            {!isMyLive && activeLives.length === 0 && (
+              <div className="mb-6 flex flex-col items-center justify-center text-center py-12 bg-[#102019] border border-[#263B30] rounded-3xl">
+                <Video className="w-16 h-16 text-[#263B30] mb-4" />
+                <p className="text-xs text-[#A5B2A9] max-w-md">
+                  Nenhuma transmissão ao vivo no momento. Seja o primeiro a fazer uma live patriótica!
+                </p>
+              </div>
+            )}
+
             {/* Sala de chat da live ativa */}
-            {isLiveActive && !isMyLive && (
+            {selectedLive && !isMyLive && (
               <div className="bg-[#102019] border border-[#263B30] rounded-3xl shadow-xl flex flex-col h-[60vh]">
                 <div className="p-4 border-b border-[#263B30] flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -330,7 +405,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <h3 className="text-sm font-bold text-[#F5F5F0]">Chat ao Vivo</h3>
                   </div>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#174D32] text-[#E8CC76] font-bold">
-                    {viewerCount} espectadores
+                    {selectedLive.viewerCount} espectadores
                   </span>
                 </div>
 
@@ -346,12 +421,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     chatMessages.map((msg) => (
                       <div key={msg.id} className="flex gap-2">
                         <div className="w-6 h-6 rounded-full bg-[#174D32] flex items-center justify-center text-[10px] font-bold shrink-0">
-                          {msg.user.charAt(0)}
+                          {msg.userName.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-bold text-[#F5F5F0]">{msg.user}</div>
+                          <div className="text-xs font-bold text-[#F5F5F0]">{msg.userName}</div>
                           <div className="text-[11px] text-[#A5B2A9]">{msg.message}</div>
-                          <div className="text-[9px] text-[#A5B2A9]/60 mt-0.5">{msg.time}</div>
+                          <div className="text-[9px] text-[#A5B2A9]/60 mt-0.5">{new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
                         </div>
                       </div>
                     ))

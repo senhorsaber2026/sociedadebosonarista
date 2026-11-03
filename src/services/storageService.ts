@@ -15,7 +15,9 @@ import {
   UserRank,
   StoryItem,
   Company,
-  Donation
+  Donation,
+  LiveSession,
+  LiveChatMessage
 } from '../types';
 import { calculateRankFromPoints, RANK_DEFINITIONS, getNextRank } from './rankService';
 
@@ -33,6 +35,8 @@ const STORAGE_KEYS = {
   STORIES: 'sb_stories_v2',
   COMPANIES: 'sb_companies_v2',
   DONATIONS: 'sb_donations_v2',
+  LIVES: 'sb_lives_v2',
+  LIVE_CHAT: 'sb_live_chat_v2',
 };
 
 // Initial Seed Data
@@ -279,6 +283,9 @@ const DEFAULT_STORIES: StoryItem[] = [
 
 const DEFAULT_MESSAGES: ChatMessage[] = [];
 
+const DEFAULT_LIVES: LiveSession[] = [];
+const DEFAULT_LIVE_CHAT: LiveChatMessage[] = [];
+
 const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'notif_welcome',
@@ -353,6 +360,8 @@ export const storageService = {
     getStorage(STORAGE_KEYS.DEBATES, DEFAULT_DEBATES);
     getStorage(STORAGE_KEYS.GROUPS, DEFAULT_GROUPS);
     getStorage(STORAGE_KEYS.MESSAGES, DEFAULT_MESSAGES);
+    getStorage(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
+    getStorage(STORAGE_KEYS.LIVE_CHAT, DEFAULT_LIVE_CHAT);
     getStorage(STORAGE_KEYS.NOTIFICATIONS, DEFAULT_NOTIFICATIONS);
     getStorage(STORAGE_KEYS.REPORTS, DEFAULT_REPORTS);
     getStorage(STORAGE_KEYS.AUDIT_LOGS, DEFAULT_AUDIT_LOGS);
@@ -1760,6 +1769,112 @@ export const storageService = {
       }
     });
     setStorage(STORAGE_KEYS.MESSAGES, messages);
+  },
+
+  // ---------------- LIVE STREAMS ----------------
+  getActiveLives(): LiveSession[] {
+    const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
+    return lives.filter(l => l.isActive).sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  },
+
+  getLiveSession(liveId: string): LiveSession | undefined {
+    const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
+    return lives.find(l => l.id === liveId);
+  },
+
+  startLive(userId: string, title: string, description?: string): LiveSession {
+    const users = getStorage<User[]>(STORAGE_KEYS.USERS, DEFAULT_USERS);
+    const user = users.find(u => u.id === userId);
+    if (!user) throw new Error('Usuário não encontrado');
+
+    // Encerra lives ativas do mesmo usuário
+    const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
+    lives.forEach(l => { if (l.userId === userId && l.isActive) { l.isActive = false; l.endedAt = new Date().toISOString(); } });
+
+    const newLive: LiveSession = {
+      id: `live_${Date.now()}`,
+      userId,
+      userName: user.name,
+      userAvatar: user.avatar,
+      title: title.trim(),
+      description,
+      viewerCount: 0,
+      isActive: true,
+      startedAt: new Date().toISOString()
+    };
+
+    lives.push(newLive);
+    setStorage(STORAGE_KEYS.LIVES, lives);
+
+    // Notifica todos os usuários sobre a nova live
+    const allUsers = users.filter(u => u.id !== userId);
+    allUsers.forEach(u => {
+      this.createNotification({
+        userId: u.id,
+        fromUserId: user.id,
+        fromUserName: user.name,
+        fromUserAvatar: user.avatar,
+        type: 'live_started',
+        title: 'Nova transmissão ao vivo',
+        message: `${user.name} iniciou uma live: ${title}`,
+        link: '/live'
+      });
+    });
+
+    return newLive;
+  },
+
+  stopLive(liveId: string): void {
+    const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
+    const live = lives.find(l => l.id === liveId);
+    if (live) {
+      live.isActive = false;
+      live.endedAt = new Date().toISOString();
+      setStorage(STORAGE_KEYS.LIVES, lives);
+    }
+  },
+
+  getLiveChatMessages(liveId: string): LiveChatMessage[] {
+    const msgs = getStorage<LiveChatMessage[]>(STORAGE_KEYS.LIVE_CHAT, DEFAULT_LIVE_CHAT);
+    return msgs.filter(m => m.liveId === liveId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  },
+
+  sendLiveChatMessage(liveId: string, userId: string, message: string): LiveChatMessage {
+    const users = getStorage<User[]>(STORAGE_KEYS.USERS, DEFAULT_USERS);
+    const user = users.find(u => u.id === userId);
+    if (!user) throw new Error('Usuário não encontrado');
+
+    const msgs = getStorage<LiveChatMessage[]>(STORAGE_KEYS.LIVE_CHAT, DEFAULT_LIVE_CHAT);
+    const newMsg: LiveChatMessage = {
+      id: `lmsg_${Date.now()}`,
+      liveId,
+      userId,
+      userName: user.name,
+      userAvatar: user.avatar,
+      message: message.trim(),
+      createdAt: new Date().toISOString()
+    };
+    msgs.push(newMsg);
+    setStorage(STORAGE_KEYS.LIVE_CHAT, msgs);
+    return newMsg;
+  },
+
+  incrementLiveViewers(liveId: string): void {
+    const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
+    const live = lives.find(l => l.id === liveId);
+    if (live) {
+      live.viewerCount = (live.viewerCount || 0) + 1;
+      setStorage(STORAGE_KEYS.LIVES, lives);
+    }
+  },
+
+  decrementLiveViewers(liveId: string): void {
+    const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
+    const live = lives.find(l => l.id === liveId);
+    if (live && (live.viewerCount || 0) > 0) {
+      live.viewerCount = (live.viewerCount || 0) - 1;
+      setStorage(STORAGE_KEYS.LIVES, lives);
+    }
   },
 
   // ---------------- NOTIFICATIONS ----------------
