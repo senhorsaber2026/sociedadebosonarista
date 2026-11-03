@@ -734,6 +734,20 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                   </a>
                 </div>
               )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-md cursor-pointer active:scale-95"
+                  >
+                    <Youtube className="w-4 h-4 fill-current" />
+                    <span>Assistir no YouTube</span>
+                    <ExternalLink className="w-3 h-3 ml-0.5" />
+                  </a>
+                  <span className="text-[10px] text-white/80 bg-black/60 px-2 py-0.5 rounded-full border border-white/20 font-medium">
+                    YouTube Vídeo
+                  </span>
+                </div>
+              )}
 
               {activeStory.caption && (
                 <div className="p-3 rounded-2xl bg-black/80 backdrop-blur-md border border-[#D4AF37]/40 text-xs sm:text-sm font-semibold text-white leading-relaxed shadow-lg">
