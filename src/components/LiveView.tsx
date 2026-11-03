@@ -68,6 +68,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   useEffect(() => {
     refreshLives();
+    // Atualiza lista de lives a cada 10s para captar lives iniciadas por outros membros
+    const interval = setInterval(refreshLives, 10000);
+    return () => clearInterval(interval);
   }, [refreshLives]);
 
   useEffect(() => {
@@ -330,7 +333,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
             )}
 
             {/* Lives em andamento de outros usuários */}
-            {!isMyLive && activeLives.length > 0 && (
+            {activeLives.length > 0 && (
               <section className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-[#E5AC24] flex items-center gap-2">
