@@ -1772,7 +1772,16 @@ export const storageService = {
   },
 
   // ---------------- LIVE STREAMS ----------------
-  getActiveLives(): LiveSession[] {
+  async getActiveLives(): Promise<LiveSession[]> {
+    try {
+      const response = await fetch('/api/lives');
+      if (response.ok) {
+        const lives = await response.json();
+        return lives.sort((a: LiveSession, b: LiveSession) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+      }
+    } catch (e) {
+      console.error('Erro ao buscar lives:', e);
+    }
     const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
     return lives.filter(l => l.isActive).sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
   },
@@ -1782,10 +1791,23 @@ export const storageService = {
     return lives.find(l => l.id === liveId);
   },
 
-  startLive(userId: string, title: string, description?: string): LiveSession {
+  async startLive(userId: string, title: string, description?: string): Promise<LiveSession> {
     const users = getStorage<User[]>(STORAGE_KEYS.USERS, DEFAULT_USERS);
     const user = users.find(u => u.id === userId);
     if (!user) throw new Error('Usuário não encontrado');
+
+    try {
+      const response = await fetch('/api/lives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, userName: user.name, userAvatar: user.avatar, title, description })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.error('Erro ao iniciar live:', e);
+    }
 
     // Encerra lives ativas do mesmo usuário
     const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);

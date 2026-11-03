@@ -63,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const refreshNotificationState = () => {
+  const refreshNotificationState = async () => {
     if (currentUser) {
       const notifs = storageService.getNotifications(currentUser.id);
       setNotifications(notifs);
@@ -75,7 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       setUnreadMessagesCount(0);
     }
 
-    const lives = storageService.getActiveLives();
+    const lives = await storageService.getActiveLives();
     setActiveLivesCount(lives.length);
   };
 

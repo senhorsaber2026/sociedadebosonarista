@@ -62,8 +62,8 @@ export const LiveView: React.FC<LiveViewProps> = ({
   const currentLiveIdRef = useRef<string | null>(null);
   const viewerIntervalRef = useRef<number | null>(null);
 
-  const refreshLives = useCallback(() => {
-    setActiveLives(storageService.getActiveLives());
+  const refreshLives = useCallback(async () => {
+    setActiveLives(await storageService.getActiveLives());
   }, []);
 
   useEffect(() => {
@@ -144,7 +144,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-      const newLive = storageService.startLive(currentUser.id, liveTitle, liveDescription || undefined);
+      const newLive = await storageService.startLive(currentUser.id, liveTitle, liveDescription || undefined);
       setIsStreaming(true);
       setIsMyLive(true);
       setSelectedLive(newLive);
