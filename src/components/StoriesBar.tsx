@@ -734,20 +734,6 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                   </a>
                 </div>
               )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FF0000] hover:bg-[#CC0000] text-white text-xs font-bold transition shadow-md cursor-pointer active:scale-95"
-                  >
-                    <Youtube className="w-4 h-4 fill-current" />
-                    <span>Assistir no YouTube</span>
-                    <ExternalLink className="w-3 h-3 ml-0.5" />
-                  </a>
-                  <span className="text-[10px] text-white/80 bg-black/60 px-2 py-0.5 rounded-full border border-white/20 font-medium">
-                    YouTube Vídeo
-                  </span>
-                </div>
-              )}
 
               {activeStory.caption && (
                 <div className="p-3 rounded-2xl bg-black/80 backdrop-blur-md border border-[#D4AF37]/40 text-xs sm:text-sm font-semibold text-white leading-relaxed shadow-lg">
@@ -923,11 +909,11 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                 </div>
               )}
 
-              {/* YouTube Video Link Input */}
+              {/* Video Link Input (X / Twitter ou YouTube) */}
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-[#A5B2A9] mb-1.5 flex items-center gap-1.5">
-                  <Youtube className="w-4 h-4 sm:w-5 sm:h-5 text-[#FF0000]" />
-                  <span>Link de Vídeo do YouTube (Vídeo normal ou Shorts)</span>
+                  <Film className="w-4 h-4 sm:w-5 sm:h-5 text-[#E5AC24]" />
+                  <span>Link de Vídeo do X (Twitter) ou YouTube</span>
                 </label>
                 <div className="relative">
                   <input
@@ -936,16 +922,44 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({ currentUser, onOpenAuth 
                     onChange={(e) => {
                       const val = e.target.value;
                       setStoryYoutubeUrl(val);
+                      const twInfo = extractTwitterInfo(val);
                       const yId = extractYouTubeId(val);
-                      if (yId) {
+                      if (twInfo) {
+                        setStoryMediaType('twitter');
+                        setStoryImage(twInfo.url);
+                      } else if (yId) {
                         setStoryMediaType('youtube');
                         setStoryImage(getYouTubeThumbnail(yId));
                       }
                     }}
-                    placeholder="https://www.youtube.com/watch?v=... ou youtu.be/..."
+                    placeholder="Cole o link do vídeo do X (x.com/.../status/...) ou YouTube..."
                     className="w-full bg-[#15291F] border border-[#263B30] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#F5F5F0] focus:border-[#D4AF37] focus:outline-none"
                   />
                 </div>
+
+                {/* Twitter Video Preview Badge */}
+                {extractTwitterInfo(storyYoutubeUrl) && (
+                  <div className="mt-2 flex items-center gap-2.5 p-2 rounded-xl bg-black/60 border border-[#263B30]">
+                    <div className="w-9 h-9 rounded-lg bg-black border border-[#263B30] flex items-center justify-center shrink-0">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white" aria-hidden="true">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] font-bold text-[#E8CC76] flex items-center gap-1">
+                        Vídeo do X Detectado {extractTwitterInfo(storyYoutubeUrl)?.username ? `(@${extractTwitterInfo(storyYoutubeUrl)?.username})` : ''}
+                      </span>
+                      <span className="text-[10px] text-[#A5B2A9] truncate block">
+                        ID: {extractTwitterInfo(storyYoutubeUrl)?.id}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-[#22C55E] bg-[#22C55E]/10 px-2 py-0.5 rounded-full border border-[#22C55E]/20 shrink-0">
+                      Pronto
+                    </span>
+                  </div>
+                )}
+
+                {/* YouTube Video Preview Badge */}
                 {extractYouTubeId(storyYoutubeUrl) && (
                   <div className="mt-2 flex items-center gap-2.5 p-2 rounded-xl bg-black/40 border border-[#FF0000]/40">
                     <img
