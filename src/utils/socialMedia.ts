@@ -47,10 +47,11 @@ export function detectSocialLinks(text: string): SocialLink[] {
     // X / Twitter
     const twMatch = url.match(/(?:twitter\.com|x\.com)\/(?:i\/)?status\/(\d+)/);
     if (twMatch?.[1]) {
+      const cleanUrl = `https://x.com/i/status/${twMatch[1]}`;
       links.push({
         platform: 'twitter',
         id: twMatch[1],
-        url,
+        url: cleanUrl,
         embedUrl: `https://platform.twitter.com/embed/tweet.html?url=https://twitter.com/i/status/${twMatch[1]}&theme=dark`,
         thumbnailUrl: undefined
       });
