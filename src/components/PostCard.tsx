@@ -257,12 +257,14 @@ export const PostCard: React.FC<PostCardProps> = ({
       {/* MEDIA ATTACHMENT */}
       {(() => {
         const ytFromContent = extractYouTubeId(post.content || '');
-        const socialLinks = detectSocialLinks(post.content || '');
+        const socialLinksFromContent = detectSocialLinks(post.content || '');
+        const socialLinksFromMedia = post.mediaUrl ? detectSocialLinks(post.mediaUrl) : [];
+        const socialLinks = [...socialLinksFromContent, ...socialLinksFromMedia];
         const hasMedia = Boolean(post.mediaUrl || post.youtubeId || ytFromContent || socialLinks.length > 0);
         if (!hasMedia) return null;
         const ytId = post.youtubeId || ytFromContent || extractYouTubeId(post.youtubeUrl || '');
         const isYt = post.mediaType === 'youtube' || Boolean(post.youtubeId || ytFromContent);
-        const isVideo = !isYt && (post.mediaType === 'video' || post.mediaUrl?.startsWith('data:video') || post.mediaUrl?.endsWith('.mp4'));
+        const isVideo = !isYt && !socialLinks.length && (post.mediaType === 'video' || post.mediaUrl?.startsWith('data:video') || post.mediaUrl?.endsWith('.mp4'));
         const imageLinks = socialLinks.filter(l => l.platform === 'image');
         const videoSocialLinks = socialLinks.filter(l => l.platform !== 'image');
         const firstSocial = videoSocialLinks[0];
