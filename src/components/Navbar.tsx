@@ -312,6 +312,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden sm:inline">Publicar</span>
           </button>
 
+          {/* Fazer Live Button (desktop) */}
+          {currentUser && (
+            <button
+              onClick={() => onNavigate('live')}
+              className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#D94B4B] via-[#b93a3a] to-[#8e2a2a] hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-[0_0_15px_rgba(217,75,75,0.5)] animate-pulse transition-all active:scale-95 cursor-pointer"
+              title="Fazer transmissão ao vivo"
+            >
+              <Video className="w-4 h-4 stroke-[2.5]" />
+              <span className="hidden sm:inline">Ao Vivo</span>
+            </button>
+          )}
+
           {/* Doação PIX Button */}
           {onOpenDonationModal && (
             <button
