@@ -73,6 +73,24 @@ export const LiveView: React.FC<LiveViewProps> = ({
     return () => clearInterval(interval);
   }, [refreshLives]);
 
+  // Recarrega lives sempre que o usuário logado muda (detecta live ativa ao entrar na página)
+  useEffect(() => {
+    if (currentUser) {
+      refreshLives();
+    }
+  }, [currentUser, refreshLives]);
+
+  // Sincroniza lives em tempo real entre abas/janelas (desktop)
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEYS.LIVES || e.key === STORAGE_KEYS.LIVE_CHAT) {
+        refreshLives();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [refreshLives]);
+
   useEffect(() => {
     if (currentUser) {
       const myLive = activeLives.find(l => l.userId === currentUser.id && l.isActive);
@@ -83,7 +101,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
         setViewerCount(myLive.viewerCount);
         setChatMessages(storageService.getLiveChatMessages(myLive.id));
         setLikes(0);
-      } else {
+      } else if (!isStreaming) {
         setIsMyLive(false);
         setSelectedLive(null);
         currentLiveIdRef.current = null;
@@ -93,7 +111,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       setSelectedLive(null);
       currentLiveIdRef.current = null;
     }
-  }, [currentUser, activeLives]);
+  }, [currentUser, activeLives, isStreaming]);
 
   useEffect(() => {
     if (selectedLive && selectedLive.id !== currentLiveIdRef.current) {
