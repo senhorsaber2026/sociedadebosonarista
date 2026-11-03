@@ -232,27 +232,19 @@ export const LiveView: React.FC<LiveViewProps> = ({
             {/* Minha transmissão ao vivo */}
             {isMyLive && selectedLive && (
               <div className="mb-6 bg-[#102019] border border-[#263B30] rounded-3xl shadow-2xl overflow-hidden">
-                <div className="relative w-full aspect-video bg-black">
-                  <video
-                    ref={videoRef}
-                    className="w-full h-full object-cover"
-                    autoPlay
-                    muted
-                    playsInline
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-16 h-16 rounded-full bg-[#07140F]/80 border border-[#D4AF37] flex items-center justify-center mx-auto mb-3 shadow-[0_0_20px_rgba(212,175,55,0.6)]">
-                        <Video className="w-8 h-8 text-[#D4AF37]" />
-                      </div>
-                      <p className="text-xs text-[#A5B2A9]">Sua transmissão ao vivo</p>
+                  <div className="relative w-full aspect-video bg-black">
+                    <video
+                      ref={videoRef}
+                      className="w-full h-full object-cover"
+                      autoPlay
+                      muted
+                      playsInline
+                    />
+                    <div className="absolute top-4 left-4 flex items-center gap-2 bg-[#07140F]/80 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50">
+                      <div className="w-2 h-2 rounded-full bg-[#D94B4B] animate-pulse" />
+                      <span className="text-xs font-bold text-[#E8CC76]">AO VIVO</span>
                     </div>
                   </div>
-                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-[#07140F]/80 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50">
-                    <div className="w-2 h-2 rounded-full bg-[#D94B4B] animate-pulse" />
-                    <span className="text-xs font-bold text-[#E8CC76]">AO VIVO</span>
-                  </div>
-                </div>
 
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">

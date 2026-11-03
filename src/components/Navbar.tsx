@@ -57,6 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [activeLivesCount, setActiveLivesCount] = useState(0);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -73,6 +74,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       setNotifications([]);
       setUnreadMessagesCount(0);
     }
+
+    const lives = storageService.getActiveLives();
+    setActiveLivesCount(lives.length);
   };
 
   useEffect(() => {
@@ -314,14 +318,26 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Fazer Live Button (desktop) */}
           {currentUser && (
-            <button
-              onClick={() => onNavigate('live')}
-              className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#D94B4B] via-[#b93a3a] to-[#8e2a2a] hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-[0_0_15px_rgba(217,75,75,0.5)] animate-pulse transition-all active:scale-95 cursor-pointer"
-              title="Fazer transmissão ao vivo"
-            >
-              <Video className="w-4 h-4 stroke-[2.5]" />
-              <span className="hidden sm:inline">Ao Vivo</span>
-            </button>
+            <>
+              {activeLivesCount > 0 && (
+                <button
+                  onClick={() => onNavigate('live')}
+                  className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#07140F] border border-[#D4AF37] animate-pulse text-[#D4AF37] font-bold text-xs shadow-[0_0_15px_rgba(212,175,55,0.5)] transition-all cursor-pointer"
+                  title="Uma transmissão ao vivo está acontecendo agora"
+                >
+                  <Video className="w-4 h-4 animate-pulse" />
+                  <span className="hidden sm:inline">AO VIVO AGORA</span>
+                </button>
+              )}
+              <button
+                onClick={() => onNavigate('live')}
+                className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#D94B4B] via-[#b93a3a] to-[#8e2a2a] hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-[0_0_15px_rgba(217,75,75,0.5)] animate-pulse transition-all active:scale-95 cursor-pointer"
+                title="Fazer transmissão ao vivo"
+              >
+                <Video className="w-4 h-4 stroke-[2.5]" />
+                <span className="hidden sm:inline">Ao Vivo</span>
+              </button>
+            </>
           )}
 
           {/* Doação PIX Button */}
@@ -738,7 +754,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             className={`w-full text-left py-2 px-3 rounded-lg ${currentView === 'live' ? 'bg-[#174D32] text-[#E8CC76] font-bold' : 'text-[#F5F5F0]'}`}
           >
             <Video className="w-4 h-4 text-[#D4AF37] mr-2" />
-            Lives Patrióticas
+            <span>Lives Patrióticas</span>
+            {activeLivesCount > 0 && (
+              <span className="ml-auto px-2 py-0.5 rounded-full bg-[#D94B4B] text-white text-[10px] font-bold animate-pulse">
+                AO VIVO
+              </span>
+            )}
           </button>
           <button
             onClick={() => { onNavigate('groups'); setMobileMenuOpen(false); }}
