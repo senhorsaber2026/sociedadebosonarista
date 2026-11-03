@@ -251,39 +251,47 @@ export const PostCard: React.FC<PostCardProps> = ({
       </div>
 
       {/* MEDIA ATTACHMENT */}
-      {post.mediaUrl || post.youtubeId && (
-        <div className="mb-3.5 rounded-2xl overflow-hidden border border-[#263B30] max-h-96 bg-[#07140F]">
-          {post.mediaType === 'youtube' || post.youtubeId ? (
-            <div className="w-full h-full bg-black flex items-center justify-center">
-              <iframe
-                src={getYouTubeEmbedUrl(post.youtubeId || extractYouTubeId(post.youtubeUrl || '') || '', true)}
-                title="Vídeo do YouTube"
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
+      {(() => {
+        const ytFromContent = extractYouTubeId(post.content || '');
+        const hasMedia = Boolean(post.mediaUrl || post.youtubeId || ytFromContent);
+        if (!hasMedia) return null;
+        const ytId = post.youtubeId || ytFromContent || extractYouTubeId(post.youtubeUrl || '');
+        const isYt = post.mediaType === 'youtube' || Boolean(post.youtubeId || ytFromContent);
+        const isVideo = !isYt && (post.mediaType === 'video' || post.mediaUrl?.startsWith('data:video') || post.mediaUrl?.endsWith('.mp4'));
+        return (
+          <div className="mb-3.5 rounded-2xl overflow-hidden border border-[#263B30] max-h-96 bg-[#07140F]">
+            {isYt ? (
+              <div className="w-full h-full bg-black flex items-center justify-center">
+                <iframe
+                  src={getYouTubeEmbedUrl(ytId || '', true)}
+                  title="Vídeo do YouTube"
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            ) : isVideo ? (
+              <video
+                src={post.mediaUrl}
+                autoPlay
+                playsInline
+                muted
+                controls
+                className="w-full h-full object-contain"
               />
-            </div>
-          ) : post.mediaType === 'video' || post.mediaUrl?.startsWith('data:video') || post.mediaUrl?.endsWith('.mp4') ? (
-            <video
-              src={post.mediaUrl}
-              autoPlay
-              playsInline
-              muted
-              controls
-              className="w-full h-full object-contain"
-            />
-          ) : (
-            <img
-              src={post.mediaUrl?.replace('/src/assets/', '/assets/')}
-              alt="Mídia da publicação"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
-              }}
-              className="w-full h-full object-cover hover:scale-101 transition-transform"
-            />
-          )}
-        </div>
-      )}
+            ) : (
+              <img
+                src={post.mediaUrl?.replace('/src/assets/', '/assets/')}
+                alt="Mídia da publicação"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/assets/images/brasil_hero_banner_1793411883121.jpg';
+                }}
+                className="w-full h-full object-cover hover:scale-101 transition-transform"
+              />
+            )}
+          </div>
+        );
+      })()}
 
       {/* INTERACTIVE POLL */}
       {post.poll && (

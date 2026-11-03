@@ -104,7 +104,9 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
     setIsSubmitting(true);
 
     try {
-      const ytId = extractYouTubeId(mediaUrl.trim());
+      const ytFromMedia = extractYouTubeId(mediaUrl.trim());
+      const ytFromContent = extractYouTubeId(content.trim());
+      const ytId = ytFromMedia || ytFromContent;
       const finalMediaType = ytId ? 'youtube' : mediaType;
       const finalMediaUrl = ytId ? getYouTubeThumbnail(ytId) : (mediaUrl.trim() || undefined);
 
@@ -114,7 +116,7 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
         category,
         mediaUrl: finalMediaUrl,
         mediaType: finalMediaType,
-        youtubeUrl: ytId ? mediaUrl.trim() : undefined,
+        youtubeUrl: ytId ? (ytFromMedia ? mediaUrl.trim() : `https://www.youtube.com/watch?v=${ytFromContent}`) : undefined,
         youtubeId: ytId || undefined,
         pollOptions: showPollCreator ? pollOptions.filter(o => o.trim()) : undefined
       });
