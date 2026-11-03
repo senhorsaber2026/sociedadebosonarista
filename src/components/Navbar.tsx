@@ -23,7 +23,8 @@ import {
   Mail,
   CheckCircle2,
   Store,
-  Heart
+  Heart,
+  Video
 } from 'lucide-react';
 import { User, NotificationItem } from '../types';
 import { storageService } from '../services/storageService';
@@ -719,6 +720,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             className={`w-full text-left py-2 px-3 rounded-lg ${currentView === 'debates' ? 'bg-[#174D32] text-[#E8CC76] font-bold' : 'text-[#F5F5F0]'}`}
           >
             Debates Políticos
+          </button>
+          <button
+            onClick={() => { onNavigate('live'); setMobileMenuOpen(false); }}
+            className={`w-full text-left py-2 px-3 rounded-lg ${currentView === 'live' ? 'bg-[#174D32] text-[#E8CC76] font-bold' : 'text-[#F5F5F0]'}`}
+          >
+            <Video className="w-4 h-4 text-[#D4AF37] mr-2" />
+            Lives Patrióticas
           </button>
           <button
             onClick={() => { onNavigate('groups'); setMobileMenuOpen(false); }}

@@ -27,6 +27,7 @@ import { RegisterView } from './components/RegisterView';
 import { MembersView } from './components/MembersView';
 import { FriendsView } from './components/FriendsView';
 import { MemorialView } from './components/MemorialView';
+import { LiveView } from './components/LiveView';
 import { AuthModal } from './components/AuthModal';
 import { ReportModal } from './components/ReportModal';
 import { RankSystemModal } from './components/RankSystemModal';
@@ -39,7 +40,7 @@ import { CompaniesView } from './components/CompaniesView';
 import { CompanyModal } from './components/CompanyModal';
 import { MobileNav } from './components/MobileNav';
 import { ToastContainer, showToast } from './components/Toast';
-import { Flame, Clock, BarChart2, Filter, X } from 'lucide-react';
+import { Flame, Clock, BarChart2, Filter, X, Video } from 'lucide-react';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -429,6 +430,15 @@ export default function App() {
           {/* REDE DE AMIGOS & PATRIOTAS */}
           {currentView === 'friends' && (
             <FriendsView
+              currentUser={currentUser}
+              onNavigate={handleNavigate}
+              onOpenAuth={() => handleOpenAuth('login')}
+            />
+          )}
+
+          {/* LIVES PATRIÓTICAS — TRANSMISSÕES AO VIVO */}
+          {currentView === 'live' && (
+            <LiveView
               currentUser={currentUser}
               onNavigate={handleNavigate}
               onOpenAuth={() => handleOpenAuth('login')}

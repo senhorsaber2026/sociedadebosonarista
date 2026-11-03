@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Compass, PlusCircle, Flame, User as UserIcon, ShieldCheck } from 'lucide-react';
+import { Home, Compass, PlusCircle, Flame, User as UserIcon, ShieldCheck, Video } from 'lucide-react';
 import { User } from '../types';
 
 interface MobileNavProps {
@@ -58,6 +58,16 @@ export const MobileNav: React.FC<MobileNavProps> = ({
       >
         <Flame className="w-5 h-5" />
         <span className="text-[10px] font-semibold">Debates</span>
+      </button>
+
+      <button
+        onClick={() => onNavigate('live')}
+        className={`flex flex-col items-center gap-1 transition ${
+          currentView === 'live' ? 'text-[#D4AF37]' : 'text-[#A5B2A9]'
+        }`}
+      >
+        <Video className="w-5 h-5" />
+        <span className="text-[10px] font-semibold">Lives</span>
       </button>
 
       <button
