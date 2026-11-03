@@ -14,7 +14,8 @@ import {
   Calendar,
   Globe,
   Camera,
-  Music
+  Music,
+  ExternalLink
 } from 'lucide-react';
 import { Post, User } from '../types';
 import { storageService } from '../services/storageService';
@@ -285,32 +286,40 @@ export const PostCard: React.FC<PostCardProps> = ({
                 controls
                 className="w-full h-full object-contain"
               />
-            ) : firstSocial && firstSocial.platform === 'twitter' ? (
-              <iframe
-                src={firstSocial.embedUrl || firstSocial.url}
-                title="Post do X/Twitter"
-                className="w-full max-w-[500px] h-[600px] border-0"
-                referrerPolicy="origin"
-              />
             ) : firstSocial ? (
               <div className="w-full h-full bg-[#07140F] flex flex-col items-center justify-center p-4 text-center">
-                <div className="w-12 h-12 rounded-full bg-[#174D32] flex items-center justify-center text-[#E8CC76] mx-auto mb-2">
-                  {firstSocial.platform === 'instagram' ? (
-                    <Camera className="w-6 h-6" />
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg border-2 border-[#263B30]">
+                  {firstSocial.platform === 'twitter' ? (
+                    <div className="w-10 h-10 rounded-full bg-[#000000] flex items-center justify-center text-[#1DA1F2]">
+                      <Share2 className="w-5 h-5" />
+                    </div>
+                  ) : firstSocial.platform === 'instagram' ? (
+                    <div className="w-10 h-10 rounded-full bg-conic-gradient from-[#833AB4] via-[#FD1D1D] via-[#FCB045] to-[#833AB4] flex items-center justify-center text-white">
+                      <Camera className="w-5 h-5" />
+                    </div>
                   ) : firstSocial.platform === 'tiktok' ? (
-                    <Music className="w-6 h-6" />
+                    <div className="w-10 h-10 rounded-full bg-[#000000] flex items-center justify-center text-[#FE2C55]">
+                      <Music className="w-5 h-5" />
+                    </div>
                   ) : (
-                    <Share2 className="w-6 h-6" />
+                    <div className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center text-white">
+                      <Share2 className="w-5 h-5" />
+                    </div>
                   )}
                 </div>
+                <span className="text-xs font-bold text-[#D4AF37] mb-1 uppercase tracking-wider">
+                  Vídeo na {firstSocial.platform.charAt(0).toUpperCase() + firstSocial.platform.slice(1)}
+                </span>
                 <a
                   href={firstSocial.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs sm:text-sm text-[#D4AF37] underline hover:text-[#E8CC76] transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#174D32] hover:bg-[#1f6341] text-[#E8CC76] text-xs font-bold transition border border-[#263B30] shadow-sm"
                 >
-                  Abrir na {firstSocial.platform.charAt(0).toUpperCase() + firstSocial.platform.slice(1)}
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Assistir na rede social</span>
                 </a>
+                <p className="text-[10px] text-[#A5B2A9] mt-2 truncate max-w-[200px]">{firstSocial.url}</p>
               </div>
             ) : (
               <img
