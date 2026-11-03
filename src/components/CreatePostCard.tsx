@@ -12,7 +12,7 @@ import {
 import { User, Post } from '../types';
 import { storageService } from '../services/storageService';
 import { showToast } from './Toast';
-import { extractYouTubeId } from '../utils/youtube';
+import { extractYouTubeId, getYouTubeThumbnail } from '../utils/youtube';
 
 interface CreatePostCardProps {
   currentUser: User | null;
@@ -28,7 +28,7 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('Brasil');
   const [mediaUrl, setMediaUrl] = useState('');
-  const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
+  const [mediaType, setMediaType] = useState<'image' | 'video' | 'youtube'>('image');
   const [showMediaInput, setShowMediaInput] = useState(false);
   const [showPollCreator, setShowPollCreator] = useState(false);
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
@@ -104,12 +104,18 @@ export const CreatePostCard: React.FC<CreatePostCardProps> = ({
     setIsSubmitting(true);
 
     try {
+      const ytId = extractYouTubeId(mediaUrl.trim());
+      const finalMediaType = ytId ? 'youtube' : mediaType;
+      const finalMediaUrl = ytId ? getYouTubeThumbnail(ytId) : (mediaUrl.trim() || undefined);
+
       const newPost = storageService.createPost({
         author: currentUser,
         content: content.trim(),
         category,
-        mediaUrl: mediaUrl.trim() || undefined,
-        mediaType,
+        mediaUrl: finalMediaUrl,
+        mediaType: finalMediaType,
+        youtubeUrl: ytId ? mediaUrl.trim() : undefined,
+        youtubeId: ytId || undefined,
         pollOptions: showPollCreator ? pollOptions.filter(o => o.trim()) : undefined
       });
 

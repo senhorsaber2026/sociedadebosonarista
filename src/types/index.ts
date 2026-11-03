@@ -121,7 +121,9 @@ export interface Post {
   content: string;
   category: string;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video';
+  mediaType?: 'image' | 'video' | 'youtube';
+  youtubeUrl?: string;
+  youtubeId?: string;
   poll?: Poll;
   likesCount: number;
   likedUserIds: string[];

@@ -1121,7 +1121,9 @@ export const storageService = {
     content: string;
     category?: string;
     mediaUrl?: string;
-    mediaType?: 'image' | 'video';
+    mediaType?: 'image' | 'video' | 'youtube';
+    youtubeUrl?: string;
+    youtubeId?: string;
     pollOptions?: string[];
   }): Post {
     const posts = this.getPosts();
@@ -1151,9 +1153,11 @@ export const storageService = {
       authorVerified: data.author.verified,
       content: data.content,
       category: data.category || 'Política',
-      mediaUrl: data.mediaUrl,
-      mediaType: data.mediaType || 'image',
-      poll,
+    mediaUrl: data.mediaUrl,
+    mediaType: data.mediaType || 'image',
+    youtubeUrl: data.youtubeUrl,
+    youtubeId: data.youtubeId,
+    poll,
       likesCount: 0,
       likedUserIds: [],
       commentsCount: 0,
