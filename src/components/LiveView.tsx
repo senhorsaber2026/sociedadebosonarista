@@ -146,14 +146,6 @@ export const LiveView: React.FC<LiveViewProps> = ({
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamRef.current = stream;
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          setVideoReady(true);
-          videoRef.current?.play().catch(() => {});
-        };
-      }
-
       const newLive = await storageService.startLive(currentUser.id, liveTitle, liveDescription || undefined);
       setIsStreaming(true);
       setIsMyLive(true);
@@ -228,9 +220,35 @@ export const LiveView: React.FC<LiveViewProps> = ({
   const handleSwitchCamera = () => setSelectedCamera(selectedCamera === 'front' ? 'back' : 'front');
 
   useEffect(() => {
-    if (isStreaming && streamRef.current && videoRef.current) {
-      videoRef.current.srcObject = streamRef.current;
+    if (!isStreaming || !streamRef.current) return;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.srcObject = streamRef.current;
+
+    const tryPlay = () => {
+      video.play().catch((err) => {
+        console.warn('Autoplay bloqueado, tentando novamente:', err);
+        setTimeout(tryPlay, 500);
+      });
+    };
+
+    video.onloadedmetadata = () => {
+      setVideoReady(true);
+      tryPlay();
+    };
+
+    // Se já tem metadata, tenta tocar imediatamente
+    if (video.readyState >= 1) {
+      setVideoReady(true);
+      tryPlay();
     }
+
+    return () => {
+      video.srcObject = null;
+      video.onloadedmetadata = null;
+    };
   }, [isStreaming]);
 
   return (
