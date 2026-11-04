@@ -46,6 +46,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
   const [likes, setLikes] = useState(0);
   const [viewerCount, setViewerCount] = useState(0);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [streamInfo, setStreamInfo] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -103,6 +104,10 @@ export const LiveView: React.FC<LiveViewProps> = ({
       setCameraError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamRef.current = stream;
+
+      const videoTracks = stream.getVideoTracks();
+      const audioTracks = stream.getAudioTracks();
+      setStreamInfo(`Vídeo: ${videoTracks.length} track(s) | Áudio: ${audioTracks.length} track(s) | Ativo: ${videoTracks.every(t => t.enabled)}`);
 
       const newLive = await storageService.startLive(currentUser.id, liveTitle, liveDescription || undefined);
       setIsStreaming(true);
@@ -254,6 +259,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       >
                         Tentar Novamente
                       </button>
+                    </div>
+                  )}
+                  {!cameraError && streamInfo && (
+                    <div className="absolute bottom-2 left-2 bg-[#07140F]/80 px-2 py-1 rounded border border-[#D4AF37]/30">
+                      <p className="text-[10px] text-[#A5B2A9]">{streamInfo}</p>
                     </div>
                   )}
                   <div className="absolute top-4 left-4 flex items-center gap-2 bg-[#07140F]/80 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50">
