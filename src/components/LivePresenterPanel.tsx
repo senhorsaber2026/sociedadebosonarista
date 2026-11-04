@@ -38,8 +38,8 @@ interface LivePresenterPanelProps {
   onClose: () => void;
 }
 
-const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL || process.env.LIVEKIT_URL || '';
-const API_BASE = import.meta.env.VITE_API_BASE || process.env.APP_URL || '';
+const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL || '';
+const API_BASE = import.meta.env.VITE_API_BASE || '';
 
 export const LivePresenterPanel: React.FC<LivePresenterPanelProps> = ({
   currentUser,

@@ -89,7 +89,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [liveModeration, setLiveModeration] = useState<LiveModerationAction[]>([]);
   const [livesLoading, setLivesLoading] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_API_BASE || process.env.APP_URL || '';
+  const API_BASE = import.meta.env.VITE_API_BASE || '';
 
   const loadLiveData = async () => {
     setLivesLoading(true);
