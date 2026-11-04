@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Video,
   Send,
@@ -243,7 +243,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     <div className="bg-[#15291F] border border-[#263B30] rounded-xl p-3">
                       <p className="text-xs text-[#A5B2A9] mb-2">Link da transmissão:</p>
                       <a
-                        href={selectedLive.description}
+                        href={selectedLive.description || ''}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-[#D4AF37] break-all hover:underline"
@@ -251,7 +251,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         {selectedLive.description}
                       </a>
                       <button
-                        onClick={() => navigator.clipboard.writeText(selectedLive.description)}
+                        onClick={() => navigator.clipboard.writeText(selectedLive.description || '')}
                         className="ml-2 text-xs text-[#A5B2A9] hover:text-[#F5F5F0]"
                       >
                         Copiar
@@ -302,7 +302,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                         {isYoutubeUrl(live.description || '') ? (
                           <iframe
                             className="w-full h-full"
-                            src={getYoutubeEmbedUrl(live.description)}
+                            src={getYoutubeEmbedUrl(live.description || '')}
                             title="Transmissão ao vivo"
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
