@@ -1788,7 +1788,7 @@ export const storageService = {
     const byId = new Map<string, LiveSession>();
     [...localLives, ...apiLives].forEach(l => byId.set(l.id, l));
 
-    return [...byId.values()].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+    return [...byId.values()].sort((a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime());
   },
 
   getLiveSession(liveId: string): LiveSession | undefined {
@@ -1803,10 +1803,10 @@ export const storageService = {
 
     let apiLive: LiveSession | null = null;
     try {
-      const response = await fetch('/api/lives', {
+      const response = await fetch('/api/live-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, userName: user.name, userAvatar: user.avatar, title, description })
+        body: JSON.stringify({ title, description, hostUserId: userId, roomName: `live_${Date.now()}`, hostUserName: user.name, hostUserAvatar: user.avatar })
       });
       if (response.ok) {
         apiLive = await response.json();
@@ -1817,18 +1817,22 @@ export const storageService = {
 
     // Encerra lives ativas do mesmo usuário (localStorage)
     const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
-    lives.forEach(l => { if (l.userId === userId && l.isActive) { l.isActive = false; l.endedAt = new Date().toISOString(); } });
+    lives.forEach(l => { if (l.hostUserId === userId && l.status === 'live') { l.status = 'ended'; l.endedAt = new Date().toISOString(); } });
 
     const newLive: LiveSession = {
       id: apiLive?.id || `live_${Date.now()}`,
-      userId,
-      userName: user.name,
-      userAvatar: user.avatar,
+      hostUserId: userId,
+      hostUserName: user.name,
+      hostUserAvatar: user.avatar,
       title: title.trim(),
       description,
+      roomName: `live_${Date.now()}`,
+      status: 'live',
       viewerCount: 0,
-      isActive: true,
-      startedAt: new Date().toISOString()
+      peakViewers: 0,
+      startedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     const filtered = lives.filter(l => l.id !== newLive.id);
@@ -1865,7 +1869,7 @@ export const storageService = {
 
   getLiveChatMessages(liveId: string): LiveChatMessage[] {
     const msgs = getStorage<LiveChatMessage[]>(STORAGE_KEYS.LIVE_CHAT, DEFAULT_LIVE_CHAT);
-    return msgs.filter(m => m.liveId === liveId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    return msgs.filter(m => m.liveSessionId === liveId || m.liveId === liveId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   },
 
   sendLiveChatMessage(liveId: string, userId: string, message: string): LiveChatMessage {
@@ -1876,11 +1880,12 @@ export const storageService = {
     const msgs = getStorage<LiveChatMessage[]>(STORAGE_KEYS.LIVE_CHAT, DEFAULT_LIVE_CHAT);
     const newMsg: LiveChatMessage = {
       id: `lmsg_${Date.now()}`,
+      liveSessionId: liveId,
       liveId,
-      userId,
-      userName: user.name,
-      userAvatar: user.avatar,
+      senderUserId: userId,
+      displayName: user.name,
       message: message.trim(),
+      messageType: 'user',
       createdAt: new Date().toISOString()
     };
     msgs.push(newMsg);

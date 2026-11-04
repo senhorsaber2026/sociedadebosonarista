@@ -260,25 +260,82 @@ export type NotificationType =
 
 export interface LiveSession {
   id: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
   title: string;
   description?: string;
+  coverImage?: string;
+  category?: string;
+  roomName: string;
+  hostUserId: string;
+  hostUserName: string;
+  hostUserAvatar: string;
+  status: 'scheduled' | 'live' | 'ended' | 'cancelled';
   viewerCount: number;
-  isActive: boolean;
-  startedAt: string;
+  peakViewers: number;
+  startedAt?: string;
   endedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  isActive?: boolean;
 }
 
 export interface LiveChatMessage {
   id: string;
+  liveSessionId: string;
   liveId: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
+  senderUserId?: string;
+  visitorId?: string;
+  displayName: string;
   message: string;
+  messageType?: 'user' | 'system' | 'moderator';
+  isDeleted?: boolean;
   createdAt: string;
+}
+
+export interface LiveViewerPresence {
+  id: string;
+  liveSessionId: string;
+  participantIdentity: string;
+  joinedAt: string;
+  lastSeenAt: string;
+  leftAt?: string;
+}
+
+export interface LiveChatReport {
+  id: string;
+  liveSessionId: string;
+  messageId: string;
+  reporterIdentity: string;
+  reason: string;
+  details?: string;
+  status: 'pending' | 'reviewed' | 'dismissed';
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+export interface LiveModerationAction {
+  id: string;
+  liveSessionId: string;
+  participantIdentity: string;
+  action: string;
+  reason?: string;
+  moderatorUserId: string;
+  createdAt: string;
+}
+
+export type LiveSessionStatus = 'scheduled' | 'live' | 'ended' | 'cancelled';
+
+export interface LiveKitTokenRequest {
+  roomName: string;
+  identity: string;
+  role: 'presenter' | 'viewer';
+}
+
+export interface LiveKitTokenResponse {
+  token: string;
+  url: string;
+  roomName: string;
+  identity: string;
 }
 
 export interface NotificationItem {

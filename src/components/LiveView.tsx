@@ -75,14 +75,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
   useEffect(() => {
     if (currentUser) {
-      const myLive = activeLives.find(l => l.userId === currentUser.id && l.isActive);
+      const myLive = activeLives.find(l => l.hostUserId === currentUser.id && l.status === 'live');
       setIsMyLive(!!myLive);
       if (myLive) {
         setSelectedLive(myLive);
         currentLiveIdRef.current = myLive.id;
         setViewerCount(myLive.viewerCount);
         setChatMessages(storageService.getLiveChatMessages(myLive.id));
-        setLikes(0);
       } else {
         setIsMyLive(false);
         setSelectedLive(null);
@@ -491,7 +490,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-bold text-[#F5F5F0]">{selectedLive.title}</h3>
-                      <p className="text-xs text-[#A5B2A9]">{currentUser.name} • {new Date(selectedLive.startedAt).toLocaleDateString('pt-BR')}</p>
+                      <p className="text-xs text-[#A5B2A9]">{currentUser.name} • {new Date(selectedLive.startedAt || Date.now()).toLocaleDateString('pt-BR')}</p>
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#174D32] text-[#E8CC76] font-bold">
                       {selectedLive.viewerCount} espectadores
@@ -602,9 +601,9 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       </div>
                       <div className="p-3">
                         <div className="flex items-center gap-2 mb-1">
-                          <img src={live.userAvatar} alt={live.userName} className="w-8 h-8 rounded-full object-cover border border-[#263B30]" />
+                          <img src={live.hostUserAvatar} alt={live.hostUserName} className="w-8 h-8 rounded-full object-cover border border-[#263B30]" />
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-xs font-bold text-[#F5F5F0] truncate">{live.userName}</h4>
+                            <h4 className="text-xs font-bold text-[#F5F5F0] truncate">{live.hostUserName}</h4>
                           </div>
                         </div>
                         <h5 className="text-sm font-semibold text-[#F5F5F0] line-clamp-1 mb-1">{live.title}</h5>
@@ -653,10 +652,10 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     chatMessages.map((msg) => (
                       <div key={msg.id} className="flex gap-2">
                         <div className="w-6 h-6 rounded-full bg-[#174D32] flex items-center justify-center text-[10px] font-bold shrink-0">
-                          {msg.userName.charAt(0)}
+                          {msg.displayName.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-bold text-[#F5F5F0]">{msg.userName}</div>
+                          <div className="text-xs font-bold text-[#F5F5F0]">{msg.displayName}</div>
                           <div className="text-[11px] text-[#A5B2A9]">{msg.message}</div>
                           <div className="text-[9px] text-[#A5B2A9]/60 mt-0.5">{new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
                         </div>

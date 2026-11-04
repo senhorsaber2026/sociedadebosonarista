@@ -28,6 +28,8 @@ import { MembersView } from './components/MembersView';
 import { FriendsView } from './components/FriendsView';
 import { MemorialView } from './components/MemorialView';
 import { LiveView } from './components/LiveView';
+import { LivePresenterPanel } from './components/LivePresenterPanel';
+import { LivePlayerView } from './components/LivePlayerView';
 import { AuthModal } from './components/AuthModal';
 import { ReportModal } from './components/ReportModal';
 import { RankSystemModal } from './components/RankSystemModal';
@@ -68,6 +70,26 @@ export default function App() {
   const [isManifestoOpen, setIsManifestoOpen] = useState(false);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+  const [isPresenterPanelOpen, setIsPresenterPanelOpen] = useState(false);
+  const [isLivePlayerOpen, setIsLivePlayerOpen] = useState(false);
+  const [activeLiveSession, setActiveLiveSession] = useState<any>(null);
+
+  const handleOpenPresenter = () => {
+    if (!currentUser) {
+      handleOpenAuth('login');
+      return;
+    }
+    if (currentUser.role !== 'admin' && currentUser.role !== 'moderator') {
+      showToast('Apenas administradores e moderadores podem transmitir.', 'error');
+      return;
+    }
+    setIsPresenterPanelOpen(true);
+  };
+
+  const handleOpenLivePlayer = (session: any) => {
+    setActiveLiveSession(session);
+    setIsLivePlayerOpen(true);
+  };
 
   // Initialize data on mount
   useEffect(() => {
@@ -142,6 +164,8 @@ export default function App() {
         onOpenRanksModal={() => setIsRankModalOpen(true)}
         onOpenDonationModal={() => setIsDonationModalOpen(true)}
         currentView={currentView}
+        onOpenPresenter={handleOpenPresenter}
+        onOpenLivePlayer={handleOpenLivePlayer}
       />
 
       {/* MAIN CONTAINER: THREE-COLUMN LAYOUT */}
@@ -372,6 +396,7 @@ export default function App() {
                 currentUser={currentUser}
                 onRefresh={refreshAllData}
                 onOpenArticle={(item) => setSelectedNewsArticle(item)}
+                onOpenLivePlayer={handleOpenLivePlayer}
               />
             ) : (
               <div className="p-8 sm:p-12 text-center rounded-3xl bg-[#102019] border border-[#D94B4B]/50 shadow-2xl space-y-4">
@@ -436,7 +461,30 @@ export default function App() {
             />
           )}
 
-          {/* LIVES PATRIÓTICAS — TRANSMISSÕES AO VIVO */}
+          {/* PAINEL DE TRANSMISSÃO DO APRESENTADOR (ADMIN/MODERADOR) */}
+          {isPresenterPanelOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+              <LivePresenterPanel
+                currentUser={currentUser}
+                onNavigate={handleNavigate}
+                onClose={() => setIsPresenterPanelOpen(false)}
+              />
+            </div>
+          )}
+
+          {/* PLAYER PÚBLICO DE TRANSMISSÃO AO VIVO */}
+          {isLivePlayerOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+              <LivePlayerView
+                currentUser={currentUser}
+                onNavigate={handleNavigate}
+                onOpenAuth={() => handleOpenAuth('login')}
+                liveSession={activeLiveSession}
+              />
+            </div>
+          )}
+
+          {/* LIVES PATRIÓTICAS — LISTAGEM PÚBLICA */}
           {currentView === 'live' && (
             <LiveView
               currentUser={currentUser}

@@ -39,6 +39,8 @@ interface NavbarProps {
   onOpenRanksModal: () => void;
   onOpenDonationModal?: () => void;
   currentView: string;
+  onOpenPresenter?: () => void;
+  onOpenLivePlayer?: (session: any) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -48,7 +50,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onOpenRanksModal,
   onOpenDonationModal,
-  currentView
+  currentView,
+  onOpenPresenter,
+  onOpenLivePlayer
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -316,12 +320,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden sm:inline">Publicar</span>
           </button>
 
-          {/* Fazer Live Button (desktop) */}
+          {/* Fazer Live / AO VIVO Button (desktop) */}
           {currentUser && (
             <>
               {activeLivesCount > 0 && (
                 <button
-                  onClick={() => onNavigate('live')}
+                  onClick={() => {
+                    onNavigate('live');
+                  }}
                   className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#07140F] border border-[#D4AF37] animate-pulse text-[#D4AF37] font-bold text-xs shadow-[0_0_15px_rgba(212,175,55,0.5)] transition-all cursor-pointer"
                   title="Uma transmissão ao vivo está acontecendo agora"
                 >
@@ -329,14 +335,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="hidden sm:inline">AO VIVO AGORA</span>
                 </button>
               )}
-              <button
-                onClick={() => onNavigate('live')}
-                className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#D94B4B] via-[#b93a3a] to-[#8e2a2a] hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-[0_0_15px_rgba(217,75,75,0.5)] animate-pulse transition-all active:scale-95 cursor-pointer"
-                title="Fazer transmissão ao vivo"
-              >
-                <Video className="w-4 h-4 stroke-[2.5]" />
-                <span className="hidden sm:inline">Ao Vivo</span>
-              </button>
+              {(currentUser.role === 'admin' || currentUser.role === 'moderator') && onOpenPresenter ? (
+                <button
+                  onClick={onOpenPresenter}
+                  className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#D94B4B] via-[#b93a3a] to-[#8e2a2a] hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-[0_0_15px_rgba(217,75,75,0.5)] animate-pulse transition-all active:scale-95 cursor-pointer"
+                  title="Iniciar transmissão ao vivo com câmera e microfone"
+                >
+                  <Video className="w-4 h-4 stroke-[2.5]" />
+                  <span className="hidden sm:inline">Fazer Live</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => onNavigate('live')}
+                  className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#D94B4B] via-[#b93a3a] to-[#8e2a2a] hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-[0_0_15px_rgba(217,75,75,0.5)] animate-pulse transition-all active:scale-95 cursor-pointer"
+                  title="Ver transmissões ao vivo"
+                >
+                  <Video className="w-4 h-4 stroke-[2.5]" />
+                  <span className="hidden sm:inline">Ao Vivo</span>
+                </button>
+              )}
             </>
           )}
 

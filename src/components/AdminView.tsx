@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Shield, 
   Users, 
@@ -16,9 +16,13 @@ import {
   ArrowRight,
   ShieldCheck,
   UserX,
-  UserCheck
+  UserCheck,
+  Video,
+  StopCircle,
+  RefreshCw,
+  Flag,
 } from 'lucide-react';
-import { User, NewsItem, ReportItem, AuditLogItem, UserRank } from '../types';
+import { User, NewsItem, ReportItem, AuditLogItem, UserRank, LiveSession, LiveChatMessage, LiveViewerPresence, LiveChatReport, LiveModerationAction } from '../types';
 import { storageService } from '../services/storageService';
 import { showToast } from './Toast';
 import { RankBadge } from './RankBadge';
@@ -28,14 +32,16 @@ interface AdminViewProps {
   currentUser: User | null;
   onRefresh: () => void;
   onOpenArticle: (newsItem: NewsItem) => void;
+  onOpenLivePlayer?: (session: any) => void;
 }
 
 export const AdminView: React.FC<AdminViewProps> = ({
   currentUser,
   onRefresh,
-  onOpenArticle
+  onOpenArticle,
+  onOpenLivePlayer
 }) => {
-  const [activeTab, setActiveTab] = useState<'stats' | 'news' | 'users' | 'reports' | 'logs'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'news' | 'users' | 'reports' | 'logs' | 'lives'>('stats');
   const [userSearch, setUserSearch] = useState('');
   const [reportFilter, setReportFilter] = useState<'pending' | 'resolved' | 'dismissed'>('pending');
 
@@ -75,6 +81,41 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const newsList = storageService.getNews();
   const reportsList = storageService.getReports(reportFilter);
   const auditLogs = storageService.getAuditLogs();
+
+  // Dados de transmissões ao vivo (busca via API)
+  const [liveSessions, setLiveSessions] = useState<LiveSession[]>([]);
+  const [livePresence, setLivePresence] = useState<LiveViewerPresence[]>([]);
+  const [liveReports, setLiveReports] = useState<LiveChatReport[]>([]);
+  const [liveModeration, setLiveModeration] = useState<LiveModerationAction[]>([]);
+  const [livesLoading, setLivesLoading] = useState(false);
+
+  const API_BASE = import.meta.env.VITE_API_BASE || process.env.APP_URL || '';
+
+  const loadLiveData = async () => {
+    setLivesLoading(true);
+    try {
+      const [sessionsRes, presenceRes, reportsRes, modRes] = await Promise.all([
+        fetch(`${API_BASE}/api/live-sessions`),
+        fetch(`${API_BASE}/api/live-viewer-presence`),
+        fetch(`${API_BASE}/api/live-chat/reports`),
+        fetch(`${API_BASE}/api/live-sessions/moderation`),
+      ]);
+      if (sessionsRes.ok) setLiveSessions(await sessionsRes.json());
+      if (presenceRes.ok) setLivePresence(await presenceRes.json());
+      if (reportsRes.ok) setLiveReports(await reportsRes.json());
+      if (modRes.ok) setLiveModeration(await modRes.json());
+    } catch (e) {
+      console.error('Erro ao carregar dados de lives:', e);
+    } finally {
+      setLivesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLiveData();
+    const interval = setInterval(loadLiveData, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const filteredUsers = allUsers.filter(u => 
     u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -250,6 +291,21 @@ export const AdminView: React.FC<AdminViewProps> = ({
           }`}
         >
           Registros de Auditoria (Logs)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('lives')}
+          className={`py-2.5 px-4 rounded-xl transition whitespace-nowrap flex items-center gap-1.5 ${
+            activeTab === 'lives' ? 'bg-[#174D32] text-[#E8CC76]' : 'text-[#A5B2A9] hover:text-[#F5F5F0]'
+          }`}
+        >
+          <Video className="w-4 h-4" />
+          <span>Gerenciar Transmissões</span>
+          {liveSessions.filter(s => s.status === 'live').length > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full bg-[#D94B4B] text-[#F5F5F0] text-[10px] font-bold">
+              AO VIVO
+            </span>
+          )}
         </button>
       </div>
 
@@ -581,6 +637,225 @@ export const AdminView: React.FC<AdminViewProps> = ({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* TAB 6: GERENCIAR TRANSMISSÕES */}
+      {activeTab === 'lives' && (
+        <div className="space-y-6">
+          <div className="p-5 rounded-3xl bg-[#102019] border border-[#263B30] space-y-4">
+            <h3 className="font-serif-patriotic text-lg font-bold text-[#F5F5F0]">
+              Gerenciamento de Transmissões ao Vivo
+            </h3>
+            <p className="text-xs text-[#A5B2A9]">
+              Acompanhe transmissões ativas, agende novas, modere o chat e controle participantes.
+            </p>
+
+            {livesLoading && (
+              <div className="text-center py-4 text-xs text-[#A5B2A9]">
+                <RefreshCw className="w-4 h-4 animate-spin mr-1" />
+                Carregando transmissões...
+              </div>
+            )}
+
+            {/* Transmissões Ativas */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold text-[#E8CC76] flex items-center gap-1.5">
+                  <Video className="w-3 h-3 text-[#D4AF37]" />
+                  Transmissões Ativas ({liveSessions.filter(s => s.status === 'live').length})
+                </h4>
+              </div>
+              {liveSessions.filter(s => s.status === 'live').length > 0 ? (
+                <div className="space-y-2">
+                  {liveSessions.filter(s => s.status === 'live').map(s => (
+                    <div key={s.id} className="p-3 rounded-2xl bg-[#15291F] border border-[#263B30] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D94B4B]/20 text-[#D94B4B] text-[10px] border border-[#D94B4B]/40 animate-pulse">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#D94B4B] animate-pulse" />
+                            AO VIVO
+                          </span>
+                          <span className="text-[10px] text-[#A5B2A9]">{s.category || 'Sem categoria'}</span>
+                        </div>
+                        <h5 className="font-bold text-[#F5F5F0]">{s.title}</h5>
+                        <p className="text-[10px] text-[#A5B2A9] truncate">{s.description || ''}</p>
+                        <div className="mt-2 flex items-center gap-3">
+                          <span className="text-[#A5B2A9]">Por {s.hostUserName || 'Desconhecido'}</span>
+                          <span className="text-[#A5B2A9]">•</span>
+                          <span className="text-[#E8CC76] font-bold">{s.viewerCount} espectadores</span>
+                          <span className="text-[#A5B2A9]">•</span>
+                          <span className="text-[#A5B2A9]">{s.roomName}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 sm:gap-2">
+                        <button
+                          onClick={() => {
+                            showToast('Funcionalidade de encerramento via painel em breve.');
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-[#D94B4B] text-white text-[10px] font-bold hover:bg-[#b93a3a] transition"
+                        >
+                          Encerrar
+                        </button>
+                        <button
+                          onClick={() => onOpenLivePlayer?.(s)}
+                          className="px-3 py-1.5 rounded-xl bg-[#174D32] text-[#E8CC76] text-[10px] font-bold hover:bg-[#1f6643] transition"
+                        >
+                          Assistir
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center rounded-xl bg-[#15291F] border border-[#263B30]/50 text-xs text-[#A5B2A9]">
+                  Nenhuma transmissão ao vivo no momento.
+                </div>
+              )}
+            </div>
+
+            {/* Todas as transmissões */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold text-[#E8CC76] flex items-center gap-1.5">
+                  <FileText className="w-3 h-3 text-[#D4AF37]" />
+                  Histórico e Agendadas
+                </h4>
+              </div>
+              {liveSessions.filter(s => s.status !== 'live').length > 0 ? (
+                <div className="space-y-2">
+                  {liveSessions.filter(s => s.status !== 'live').map(s => (
+                    <div key={s.id} className="p-3 rounded-2xl bg-[#15291F] border border-[#263B30] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            s.status === 'scheduled' ? 'bg-[#174D32]/20 text-[#E8CC76] border border-[#174D32]/40' : 'bg-[#6b7280]/20 text-[#A5B2A9] border border-[#6b7280]/40'
+                          }`}>
+                            {s.status === 'scheduled' ? 'Agendada' : s.status === 'ended' ? 'Encerrada' : 'Cancelada'}
+                          </span>
+                          <span className="text-[10px] text-[#A5B2A9]">{s.category || 'Sem categoria'}</span>
+                        </div>
+                        <h5 className="font-bold text-[#F5F5F0]">{s.title}</h5>
+                        <div className="mt-1 flex items-center gap-3 text-[10px] text-[#A5B2A9]">
+                          <span>Por {s.hostUserName || 'Desconhecido'}</span>
+                          <span>•</span>
+                          <span>{new Date(s.createdAt).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 sm:gap-2">
+                        {s.status === 'scheduled' && (
+                          <button
+                            onClick={() => showToast('Iniciar agendada em breve.')}
+                            className="px-3 py-1.5 rounded-xl bg-[#174D32] text-[#E8CC76] text-[10px] font-bold hover:bg-[#1f6643] transition"
+                          >
+                            Iniciar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onOpenLivePlayer?.(s)}
+                          className="px-3 py-1.5 rounded-xl bg-[#15291F] border border-[#263B30] text-[#A5B2A9] text-[10px] font-bold hover:bg-[#174D32] transition"
+                        >
+                          Detalhes
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center rounded-xl bg-[#15291F] border border-[#263B30]/50 text-xs text-[#A5B2A9]">
+                  Nenhuma transmissão agendada ou encerrada.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Presença de espectadores */}
+          <div className="p-5 rounded-3xl bg-[#102019] border border-[#263B30]">
+            <h4 className="text-xs font-bold text-[#E8CC76] mb-3 flex items-center gap-1.5">
+              <Users className="w-3 h-3 text-[#D4AF37]" />
+              Espectadores Conectados ({livePresence.length})
+            </h4>
+            {livePresence.length > 0 ? (
+              <div className="space-y-1">
+                {livePresence.map(p => (
+                  <div key={p.id} className="flex items-center justify-between p-2 rounded-xl bg-[#15291F] border border-[#263B30]/50 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-full bg-[#174D32] flex items-center justify-center text-[10px] font-bold">
+                        {p.participantIdentity.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-[#F5F5F0] truncate">{p.participantIdentity}</span>
+                    </div>
+                      <span className="text-[10px] text-[#A5B2A9]">
+                        {new Date(p.joinedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-xs text-[#A5B2A9]">
+                Nenhum espectador conectado no momento.
+              </div>
+            )}
+          </div>
+
+          {/* Denúncias de chat */}
+          <div className="p-5 rounded-3xl bg-[#102019] border border-[#263B30]">
+            <h4 className="text-xs font-bold text-[#E8CC76] mb-3 flex items-center gap-1.5">
+              <Flag className="w-3 h-3 text-[#D94B4B]" />
+              Denúncias de Chat ({liveReports.filter(r => r.status === 'pending').length} pendentes)
+            </h4>
+            {liveReports.length > 0 ? (
+              <div className="space-y-2">
+                {liveReports.map(r => (
+                  <div key={r.id} className="p-3 rounded-xl bg-[#15291F] border border-[#263B30] text-xs">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        r.status === 'pending' ? 'bg-[#2a1414] text-[#D94B4B]' : 'bg-[#174D32]/20 text-[#E8CC76]'
+                      }`}>
+                        {r.status === 'pending' ? 'Pendente' : r.status === 'reviewed' ? 'Revisado' : 'Descartado'}
+                      </span>
+                      <span className="text-[#A5B2A9]">{r.reason}</span>
+                    </div>
+                    <div className="text-[#F5F5F0] truncate">{r.details || 'Sem detalhes'}</div>
+                    <div className="mt-1 flex items-center gap-2 text-[10px] text-[#A5B2A9]">
+                      <span>Mensagem: {r.messageId}</span>
+                      <span>•</span>
+                      <span>Repórter: {r.reporterIdentity}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-xs text-[#A5B2A9]">
+                Nenhuma denúncia de chat no momento.
+              </div>
+            )}
+          </div>
+
+          {/* Ações de moderação */}
+          <div className="p-5 rounded-3xl bg-[#102019] border border-[#263B30]">
+            <h4 className="text-xs font-bold text-[#E8CC76] mb-3 flex items-center gap-1.5">
+              <Shield className="w-3 h-3 text-[#D4AF37]" />
+              Ações de Moderação Recentes
+            </h4>
+            {liveModeration.length > 0 ? (
+              <div className="space-y-1">
+                {liveModeration.map(m => (
+                  <div key={m.id} className="flex items-center justify-between p-2 rounded-xl bg-[#15291F] border border-[#263B30]/50 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#F5F5F0]">{m.action}</span>
+                      <span className="text-[10px] text-[#A5B2A9]">{m.participantIdentity}</span>
+                    </div>
+                    <span className="text-[10px] text-[#A5B2A9]">{new Date(m.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-xs text-[#A5B2A9]">
+                Nenhuma ação de moderação registrada.
+              </div>
+            )}
+          </div>
         </div>
       )}
 
