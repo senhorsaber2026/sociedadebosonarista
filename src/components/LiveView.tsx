@@ -43,12 +43,18 @@ export const LiveView: React.FC<LiveViewProps> = ({
   const [newLiveUrl, setNewLiveUrl] = useState('');
   const [cameraVideoFile, setCameraVideoFile] = useState<File | null>(null);
   const [cameraVideoUrl, setCameraVideoUrl] = useState<string | null>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isCameraRecording, setIsCameraRecording] = useState(false);
+  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [isMyLive, setIsMyLive] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
   const [likes, setLikes] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
 
   const currentLiveIdRef = useRef<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const refreshLives = useCallback(async () => {
     const lives = await storageService.getActiveLives();
@@ -89,8 +95,83 @@ export const LiveView: React.FC<LiveViewProps> = ({
     }
   }, [currentUser, activeLives]);
 
+  // Cleanup câmera ao desmontar
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, [cameraStream]);
+
+  const startCamera = async () => {
+    try {
+      setCameraError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: true
+      });
+      setCameraStream(stream);
+      setIsCameraActive(true);
+    } catch (err: any) {
+      console.error('[LiveView] Erro ao acessar câmera:', err);
+      setCameraError('Não foi possível acessar a câmera. Certifique-se de permitir o acesso.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setIsCameraActive(false);
+    setCameraVideoFile(null);
+    setCameraVideoUrl(null);
+    setRecordedChunks([]);
+    setIsCameraRecording(false);
+  };
+
+  const startRecording = () => {
+    if (!cameraStream) return;
+    const chunks: Blob[] = [];
+    const recorder = new MediaRecorder(cameraStream, {
+      mimeType: 'video/webm; codecs=vp9'
+    });
+    mediaRecorderRef.current = recorder;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+      setRecordedChunks(chunks);
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      setCameraVideoFile(new File([blob], 'camera-live.webm', { type: 'video/webm' }));
+      setCameraVideoUrl(url);
+      setIsCameraRecording(false);
+      setIsCameraActive(false);
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+      }
+    };
+
+    recorder.start(1000);
+    setIsCameraRecording(true);
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
   const handleAddLive = async () => {
-    console.log('[LiveView] handleAddLive chamado', { liveType, newLiveTitle, newLiveUrl, cameraVideoFile, currentUser });
+    console.log('[LiveView] handleAddLive chamado', { liveType, newLiveTitle, newLiveUrl, cameraVideoFile, currentUser, isCameraRecording });
     if (!currentUser) {
       console.log('[LiveView] Sem usuário logado, abrindo auth');
       onOpenAuth();
@@ -108,8 +189,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
       }
       finalDescription = newLiveUrl;
     } else {
+      if (isCameraRecording) {
+        stopRecording();
+        // Aguarda um pouco para o onstop processar o blob
+        await new Promise(r => setTimeout(r, 500));
+      }
       if (!cameraVideoFile) {
-        showToast('Selecione ou grave um vídeo da câmera.');
+        showToast('Grave um vídeo da câmera para iniciar a transmissão.');
         return;
       }
       finalDescription = cameraVideoUrl || '';
@@ -126,6 +212,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       setCameraVideoFile(null);
       setCameraVideoUrl(null);
       setLiveType('link');
+      setRecordedChunks([]);
       setIsMyLive(true);
       setSelectedLive(newLive);
       currentLiveIdRef.current = newLive.id;
@@ -133,7 +220,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       setChatMessages([]);
       setLikes(0);
       setIsLiked(false);
-      showToast('Transmissão ao vivo adicionada!');
+      showToast('Transmissão ao vivo iniciada!');
     } catch (err: any) {
       console.error('[LiveView] Erro ao criar live:', err);
       showToast('Erro ao criar transmissão: ' + (err?.message || 'Erro desconhecido'));
@@ -268,38 +355,101 @@ export const LiveView: React.FC<LiveViewProps> = ({
                     />
                   ) : (
                     <>
-                      <label className="block text-xs text-[#A5B2A9] mb-1">
-                        Selecionar ou gravar vídeo da câmera
-                      </label>
-                      <input
-                        type="file"
-                        accept="video/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] || null;
-                          if (file) {
-                            setCameraVideoFile(file);
-                            setCameraVideoUrl(URL.createObjectURL(file));
-                          }
-                        }}
-                        className="w-full bg-[#15291F] text-xs text-[#F5F5F0] px-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none cursor-pointer"
-                      />
-                      {cameraVideoUrl && (
-                        <div className="mt-2 bg-[#07140F] border border-[#263B30] rounded-xl overflow-hidden">
+                      {cameraError && (
+                        <div className="p-3 rounded-xl bg-[#2b1414] border border-[#D94B4B] text-xs text-[#F5F5F0]">
+                          {cameraError}
+                          <button
+                            onClick={() => setCameraError(null)}
+                            className="ml-2 text-xs text-[#D4AF37] hover:underline"
+                          >
+                            Fechar
+                          </button>
+                        </div>
+                      )}
+                      {!isCameraActive && !cameraVideoUrl ? (
+                        <div className="space-y-3">
+                          <label className="block text-xs text-[#A5B2A9] mb-1">
+                            Câmera ao vivo do celular
+                          </label>
+                          <button
+                            onClick={startCamera}
+                            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
+                          >
+                            <Video className="w-4 h-4 text-[#07140F]" />
+                            <span>Ativar Câmera ao Vivo</span>
+                          </button>
+                        </div>
+                      )}
+                      {isCameraActive && cameraStream && !isCameraRecording ? (
+                        <div className="space-y-3">
+                          <label className="block text-xs text-[#A5B2A9] mb-1">
+                            Pré-visualização da Câmera (Ao Vivo)
+                          </label>
                           <video
-                            src={cameraVideoUrl}
-                            className="w-full h-40 object-cover"
-                            controls
+                            autoPlay
+                            muted
+                            playsInline
+                            srcObject={cameraStream}
+                            className="w-full h-64 object-cover rounded-xl bg-black"
                           />
                           <button
-                            onClick={() => {
-                              setCameraVideoFile(null);
-                              if (cameraVideoUrl) URL.revokeObjectURL(cameraVideoUrl);
-                              setCameraVideoUrl(null);
-                            }}
-                            className="w-full py-1.5 text-[10px] text-[#D94B4B] bg-[#2b1414] border-t border-[#263B30] hover:text-white transition"
+                            onClick={startRecording}
+                            className="w-full py-3 rounded-xl bg-[#D94B4B] text-white text-xs font-bold shadow-lg hover:bg-[#b93a3a] active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
                           >
-                            Remover vídeo
+                            <span className="w-2 h-2 rounded-full bg-white animate-pulse mr-1" />
+                            <span>Iniciar Gravação ao Vivo</span>
                           </button>
+                          <button
+                            onClick={stopCamera}
+                            className="w-full py-2 rounded-xl border border-[#A5B2A9] text-xs text-[#A5B2A9] hover:text-white hover:bg-[#174D32] transition cursor-pointer"
+                          >
+                            Desativar Câmera
+                          </button>
+                        </div>
+                      )}
+                      {isCameraRecording && cameraStream ? (
+                        <div className="space-y-3">
+                          <label className="block text-xs text-[#A5B2A9] mb-1">
+                            Gravando ao Vivo... <span className="text-[#D94B4B] font-bold animate-pulse">● AO VIVO</span>
+                          </label>
+                          <video
+                            autoPlay
+                            muted
+                            playsInline
+                            srcObject={cameraStream}
+                            className="w-full h-64 object-cover rounded-xl bg-black"
+                          />
+                          <button
+                            onClick={handleAddLive}
+                            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
+                          >
+                            <span className="w-2 h-2 rounded-full bg-[#07140F] animate-pulse mr-1" />
+                            <span>Parar e Iniciar Live</span>
+                          </button>
+                        </div>
+                      )}
+                      {cameraVideoUrl && !isCameraActive && !isCameraRecording ? (
+                        <div className="space-y-3 mt-2">
+                          <label className="block text-xs text-[#A5B2A9] mb-1">
+                            Vídeo Gravado da Câmera
+                          </label>
+                          <div className="mt-2 bg-[#07140F] border border-[#263B30] rounded-xl overflow-hidden">
+                            <video
+                              src={cameraVideoUrl}
+                              className="w-full h-40 object-cover"
+                              controls
+                            />
+                            <button
+                              onClick={() => {
+                                setCameraVideoFile(null);
+                                if (cameraVideoUrl) URL.revokeObjectURL(cameraVideoUrl);
+                                setCameraVideoUrl(null);
+                              }}
+                              className="w-full py-1.5 text-[10px] text-[#D94B4B] bg-[#2b1414] border-t border-[#263B30] hover:text-white transition"
+                            >
+                              Gravar Novamente
+                            </button>
+                          </div>
                         </div>
                       )}
                     </>
