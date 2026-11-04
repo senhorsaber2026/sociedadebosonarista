@@ -141,9 +141,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamRef.current = stream;
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {});
       }
+
       const newLive = await storageService.startLive(currentUser.id, liveTitle, liveDescription || undefined);
       setIsStreaming(true);
       setIsMyLive(true);
