@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Video,
-  Mic,
   Send,
   Users,
   ThumbsUp,
@@ -12,7 +11,8 @@ import {
   Pause,
   X,
   Film,
-  Smartphone,
+  Link,
+  ExternalLink,
   Clock,
   CheckCircle2,
   RefreshCw
@@ -32,24 +32,18 @@ export const LiveView: React.FC<LiveViewProps> = ({
   onNavigate,
   onOpenAuth
 }) => {
-  const [isMyLive, setIsMyLive] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [liveTitle, setLiveTitle] = useState('');
-  const [liveDescription, setLiveDescription] = useState('');
   const [activeLives, setActiveLives] = useState<LiveSession[]>([]);
   const [selectedLive, setSelectedLive] = useState<LiveSession | null>(null);
   const [chatMessages, setChatMessages] = useState<LiveChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
-  const [selectedCamera, setSelectedCamera] = useState<'front' | 'back'>('front');
-  const [micEnabled, setMicEnabled] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likes, setLikes] = useState(0);
+  const [isAddingLive, setIsAddingLive] = useState(false);
+  const [newLiveTitle, setNewLiveTitle] = useState('');
+  const [newLiveUrl, setNewLiveUrl] = useState('');
+  const [isMyLive, setIsMyLive] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [streamInfo, setStreamInfo] = useState<string | null>(null);
+  const [likes, setLikes] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
   const currentLiveIdRef = useRef<string | null>(null);
 
   const refreshLives = useCallback(async () => {
@@ -79,7 +73,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
         setViewerCount(myLive.viewerCount);
         setChatMessages(storageService.getLiveChatMessages(myLive.id));
         setLikes(0);
-      } else if (!isStreaming) {
+      } else {
         setIsMyLive(false);
         setSelectedLive(null);
         currentLiveIdRef.current = null;
@@ -89,28 +83,23 @@ export const LiveView: React.FC<LiveViewProps> = ({
       setSelectedLive(null);
       currentLiveIdRef.current = null;
     }
-  }, [currentUser, activeLives, isStreaming]);
+  }, [currentUser, activeLives]);
 
-  const handleStartLive = async () => {
+  const handleAddLive = async () => {
     if (!currentUser) {
       onOpenAuth();
       return;
     }
-    if (!liveTitle.trim()) {
-      showToast('Informe o título da sua transmissão.');
+    if (!newLiveTitle.trim() || !newLiveUrl.trim()) {
+      showToast('Informe o título e o link da transmissão.');
       return;
     }
     try {
-      setCameraError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      streamRef.current = stream;
-
-      const videoTracks = stream.getVideoTracks();
-      const audioTracks = stream.getAudioTracks();
-      setStreamInfo(`Vídeo: ${videoTracks.length} track(s) | Áudio: ${audioTracks.length} track(s) | Ativo: ${videoTracks.every(t => t.enabled)}`);
-
-      const newLive = await storageService.startLive(currentUser.id, liveTitle, liveDescription || undefined);
-      setIsStreaming(true);
+      const newLive = await storageService.startLive(currentUser.id, newLiveTitle, newLiveUrl);
+      setActiveLives([newLive, ...activeLives]);
+      setIsAddingLive(false);
+      setNewLiveTitle('');
+      setNewLiveUrl('');
       setIsMyLive(true);
       setSelectedLive(newLive);
       currentLiveIdRef.current = newLive.id;
@@ -118,36 +107,24 @@ export const LiveView: React.FC<LiveViewProps> = ({
       setChatMessages([]);
       setLikes(0);
       setIsLiked(false);
-      showToast('Transmissão ao vivo iniciada!');
+      showToast('Link de transmissão adicionado!');
     } catch (err: any) {
-      setCameraError(err?.message || 'Não foi possível acessar câmera/microfone.');
-      showToast('Não foi possível acessar câmera/microfone.');
+      showToast('Erro ao adicionar link: ' + (err?.message || 'Erro desconhecido'));
     }
   };
 
-  const handleStopLive = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    if (currentLiveIdRef.current) {
-      storageService.stopLive(currentLiveIdRef.current);
-      storageService.decrementLiveViewers(currentLiveIdRef.current);
-    }
-    setIsStreaming(false);
+  const handleRemoveLive = () => {
+    if (!currentLiveIdRef.current) return;
+    storageService.stopLive(currentLiveIdRef.current);
     setIsMyLive(false);
     setSelectedLive(null);
     currentLiveIdRef.current = null;
     setViewerCount(0);
-    setCameraError(null);
     setChatMessages([]);
     setLikes(0);
     setIsLiked(false);
     refreshLives();
-    showToast('Transmissão encerrada.');
+    showToast('Link de transmissão removido.');
   };
 
   const handleJoinLive = (live: LiveSession) => {
@@ -174,41 +151,15 @@ export const LiveView: React.FC<LiveViewProps> = ({
     setLikes(isLiked ? likes - 1 : likes + 1);
   };
 
-  const handleToggleMic = () => setMicEnabled(!micEnabled);
-  const handleSwitchCamera = () => setSelectedCamera(selectedCamera === 'front' ? 'back' : 'front');
+  const isYoutubeUrl = (url: string) => {
+    return url.includes('youtube.com') || url.includes('youtu.be');
+  };
 
-  useEffect(() => {
-    if (!streamRef.current || !isMyLive) return;
-
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.srcObject = streamRef.current;
-    video.muted = true;
-    video.playsInline = true;
-    video.autoPlay = true;
-
-    const playVideo = () => {
-      video.play().catch((err) => {
-        console.log('Autoplay bloqueado, tentando novamente:', err);
-        setTimeout(playVideo, 1000);
-      });
-    };
-
-    video.onloadedmetadata = () => {
-      playVideo();
-    };
-
-    if (video.readyState >= 1) {
-      playVideo();
-    }
-
-    return () => {
-      video.srcObject = null;
-      video.onloadedmetadata = null;
-      video.pause();
-    };
-  }, [streamRef.current, isMyLive]);
+  const getYoutubeEmbedUrl = (url: string) => {
+    const match = url.match(/(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (match) return `https://www.youtube.com/embed/${match[1]}?autoplay=1`;
+    return url;
+  };
 
   return (
     <div className="min-h-screen bg-[#07140F] text-[#F5F5F0] flex flex-col">
@@ -224,60 +175,59 @@ export const LiveView: React.FC<LiveViewProps> = ({
           <Video className="w-5 h-5 text-[#D4AF37]" />
           Lives Patrióticas
         </h1>
-        <button
-          onClick={isMyLive ? handleStopLive : handleStartLive}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-            isMyLive
-              ? 'bg-[#D94B4B] text-white hover:bg-[#b93a3a] shadow-[0_0_15px_rgba(217,75,75,0.5)] animate-pulse'
-              : 'bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] shadow-lg hover:brightness-110'
-          }`}
-          disabled={!currentUser && !isMyLive}
-        >
-          {isMyLive ? 'Encerrar Live' : <><Video className="w-4 h-4 mr-1" /> Fazer Live</>}
-        </button>
+        {currentUser && (
+          <button
+            onClick={() => setIsAddingLive(!isAddingLive)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+              isAddingLive
+                ? 'bg-[#D94B4B] text-white hover:bg-[#b93a3a]'
+                : 'bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] shadow-lg hover:brightness-110'
+            }`}
+          >
+            {isAddingLive ? 'Cancelar' : <><Link className="w-4 h-4 mr-1" /> Adicionar Link</>}
+          </button>
+        )}
       </header>
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6">
         {currentUser ? (
           <>
-            {/* Minha transmissão ao vivo */}
+            {/* Formulário para adicionar link de live */}
+            {isAddingLive && (
+              <div className="mb-6 bg-[#102019] border border-[#263B30] rounded-3xl shadow-xl p-6">
+                <h3 className="text-sm font-bold text-[#E5AC24] mb-4 flex items-center gap-2">
+                  <Link className="w-4 h-4" />
+                  Adicionar Link de Transmissão
+                </h3>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={newLiveTitle}
+                    onChange={(e) => setNewLiveTitle(e.target.value)}
+                    placeholder="Título da live (ex: Live no YouTube)"
+                    className="w-full bg-[#15291F] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] px-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={newLiveUrl}
+                    onChange={(e) => setNewLiveUrl(e.target.value)}
+                    placeholder="Link da transmissão (YouTube, etc.)"
+                    className="w-full bg-[#15291F] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] px-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
+                  />
+                  <button
+                    onClick={handleAddLive}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Play className="w-4 h-4 text-[#07140F]" />
+                    <span>Adicionar Link</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Minha transmissão (link adicionado pelo usuário logado) */}
             {isMyLive && selectedLive && (
               <div className="mb-6 bg-[#102019] border border-[#263B30] rounded-3xl shadow-2xl overflow-hidden">
-                <div className="relative w-full aspect-video bg-black cursor-pointer" onClick={() => videoRef.current?.play().catch(() => {})}>
-                  <video
-                    ref={videoRef}
-                    className="w-full h-full object-cover"
-                    autoPlay
-                    muted
-                    playsInline
-                  />
-                  {cameraError && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-[#07140F]/90">
-                      <div className="w-12 h-12 rounded-full bg-[#D94B4B]/20 border border-[#D94B4B]/50 flex items-center justify-center mb-3">
-                        <X className="w-6 h-6 text-[#D94B4B]" />
-                      </div>
-                      <p className="text-xs text-[#D94B4B] font-medium max-w-xs leading-tight">
-                        Câmera não disponível: {cameraError}
-                      </p>
-                      <button
-                        onClick={handleStartLive}
-                        className="mt-3 px-3 py-1.5 rounded-lg bg-[#D4AF37] text-[#07140F] text-xs font-bold hover:brightness-110 transition"
-                      >
-                        Tentar Novamente
-                      </button>
-                    </div>
-                  )}
-                  {!cameraError && streamInfo && (
-                    <div className="absolute bottom-2 left-2 bg-[#07140F]/80 px-2 py-1 rounded border border-[#D4AF37]/30">
-                      <p className="text-[10px] text-[#A5B2A9]">{streamInfo}</p>
-                    </div>
-                  )}
-                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-[#07140F]/80 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50">
-                    <div className="w-2 h-2 rounded-full bg-[#D94B4B] animate-pulse" />
-                    <span className="text-xs font-bold text-[#E8CC76]">AO VIVO</span>
-                  </div>
-                </div>
-
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -290,74 +240,44 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   </div>
 
                   {selectedLive.description && (
-                    <p className="text-sm text-[#F5F5F0] line-clamp-2">{selectedLive.description}</p>
+                    <div className="bg-[#15291F] border border-[#263B30] rounded-xl p-3">
+                      <p className="text-xs text-[#A5B2A9] mb-2">Link da transmissão:</p>
+                      <a
+                        href={selectedLive.description}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#D4AF37] break-all hover:underline"
+                      >
+                        {selectedLive.description}
+                      </a>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(selectedLive.description)}
+                        className="ml-2 text-xs text-[#A5B2A9] hover:text-[#F5F5F0]"
+                      >
+                        Copiar
+                      </button>
+                    </div>
                   )}
 
-                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#263B30]">
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#263B30]">
                     <button
-                      onClick={handleToggleMic}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition ${
-                        micEnabled ? 'border-[#263B30] text-[#A5B2A9] hover:text-[#F5F5F0]' : 'border-[#D94B4B] text-[#D94B4B] bg-[#2b1414]'
-                      }`}
-                      title={micEnabled ? 'Desligar microfone' : 'Ligar microfone'}
-                    >
-                      <Mic className={`w-5 h-5 ${!micEnabled ? 'text-[#D94B4B]' : ''}`} />
-                      <span className="text-[10px]">{micEnabled ? 'Mic' : 'Mic Off'}</span>
-                    </button>
-                    <button
-                      onClick={handleSwitchCamera}
-                      className="flex flex-col items-center gap-1 p-2 rounded-xl border border-[#263B30] text-[#A5B2A9] hover:text-[#F5F5F0] transition"
-                      title="Trocar câmera"
-                    >
-                      <Smartphone className="w-5 h-5" />
-                      <span className="text-[10px]">Câmera</span>
-                    </button>
-                    <button
-                      onClick={handleStopLive}
+                      onClick={handleRemoveLive}
                       className="flex flex-col items-center gap-1 p-2 rounded-xl border border-[#D94B4B] text-[#D94B4B] hover:bg-[#2b1414] transition"
-                      title="Encerrar transmissão"
+                      title="Remover link"
                     >
                       <X className="w-5 h-5" />
-                      <span className="text-[10px]">Encerrar</span>
+                      <span className="text-[10px]">Remover</span>
+                    </button>
+                    <button
+                      onClick={() => window.open(selectedLive.description, '_blank')}
+                      className="flex flex-col items-center gap-1 p-2 rounded-xl border border-[#D4AF37] text-[#D4AF37] hover:bg-[#1a2e25] transition"
+                      title="Abrir transmissão"
+                    >
+                      <ExternalLink className="w-5 h-5" />
+                      <span className="text-[10px]">Abrir</span>
                     </button>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Form para iniciar live */}
-            {!isMyLive && (
-              <div className="mb-6 bg-[#102019] border border-[#263B30] rounded-3xl shadow-xl p-6">
-                <h3 className="text-sm font-bold text-[#E5AC24] mb-4 flex items-center gap-2">
-                  <Film className="w-4 h-4" />
-                  Iniciar Transmissão ao Vivo
-                </h3>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={liveTitle}
-                    onChange={(e) => setLiveTitle(e.target.value)}
-                    placeholder="Título da sua live (ex: Brasil Acima de Tudo!)"
-                    className="w-full bg-[#15291F] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] px-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
-                  />
-                  <textarea
-                    value={liveDescription}
-                    onChange={(e) => setLiveDescription(e.target.value)}
-                    placeholder="Descrição (opcional)"
-                    rows={2}
-                    className="w-full bg-[#15291F] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] px-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
-                  />
-                  <button
-                    onClick={handleStartLive}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <Play className="w-4 h-4 text-[#07140F]" />
-                    <span>Ir ao Vivo Agora</span>
-                  </button>
-                </div>
-                <p className="text-[10px] text-[#A5B2A9] mt-3 text-center">
-                  Somente membros cadastrados podem fazer transmissões ao vivo.
-                </p>
               </div>
             )}
 
@@ -379,11 +299,22 @@ export const LiveView: React.FC<LiveViewProps> = ({
                       className="bg-[#102019] border border-[#263B30] rounded-2xl overflow-hidden cursor-pointer transition hover:border-[#D4AF37]/50 group"
                     >
                       <div className="relative aspect-video bg-black">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-12 h-12 rounded-full bg-[#07140F]/90 border border-[#D4AF37] flex items-center justify-center shadow-lg">
-                            <Play className="w-6 h-6 text-[#D4AF37]" />
+                        {isYoutubeUrl(live.description || '') ? (
+                          <iframe
+                            className="w-full h-full"
+                            src={getYoutubeEmbedUrl(live.description)}
+                            title="Transmissão ao vivo"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-[#07140F]/90 border border-[#D4AF37] flex items-center justify-center shadow-lg">
+                              <Play className="w-6 h-6 text-[#D4AF37]" />
+                            </div>
                           </div>
-                        </div>
+                        )}
                         <div className="absolute top-2 left-2 flex items-center gap-1 bg-[#07140F]/80 px-2 py-0.5 rounded-lg border border-[#D4AF37]/40">
                           <div className="w-2 h-2 rounded-full bg-[#D94B4B] animate-pulse" />
                           <span className="text-[10px] font-bold text-[#E8CC76]">AO VIVO</span>
@@ -415,7 +346,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
               <div className="mb-6 flex flex-col items-center justify-center text-center py-12 bg-[#102019] border border-[#263B30] rounded-3xl">
                 <Video className="w-16 h-16 text-[#263B30] mb-4" />
                 <p className="text-xs text-[#A5B2A9] max-w-md">
-                  Nenhuma transmissão ao vivo no momento. Seja o primeiro a fazer uma live patriótica!
+                  Nenhuma transmissão ao vivo no momento. Adicione um link de live para compartilhar com a comunidade!
                 </p>
               </div>
             )}
@@ -485,7 +416,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
               Faça login para acessar Lives
             </h3>
             <p className="text-xs text-[#A5B2A9] mb-6 max-w-md">
-              Entre com sua conta de membro para assistir e fazer transmissões ao vivo patrióticas.
+              Entre com sua conta de membro para adicionar e assistir transmissões ao vivo.
             </p>
             <button
               onClick={onOpenAuth}
