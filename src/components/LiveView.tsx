@@ -366,7 +366,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           </button>
                         </div>
                       )}
-                      {!isCameraActive && !cameraVideoUrl ? (
+                      {!isCameraActive && !cameraVideoUrl && (
                         <div className="space-y-3">
                           <label className="block text-xs text-[#A5B2A9] mb-1">
                             Câmera ao vivo do celular
@@ -380,7 +380,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           </button>
                         </div>
                       )}
-                      {isCameraActive && cameraStream && !isCameraRecording ? (
+                      {isCameraActive && cameraStream && !isCameraRecording && (
                         <div className="space-y-3">
                           <label className="block text-xs text-[#A5B2A9] mb-1">
                             Pré-visualização da Câmera (Ao Vivo)
@@ -389,6 +389,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                             autoPlay
                             muted
                             playsInline
+                            // @ts-ignore
                             srcObject={cameraStream}
                             className="w-full h-64 object-cover rounded-xl bg-black"
                           />
@@ -407,7 +408,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           </button>
                         </div>
                       )}
-                      {isCameraRecording && cameraStream ? (
+                      {isCameraRecording && cameraStream && (
                         <div className="space-y-3">
                           <label className="block text-xs text-[#A5B2A9] mb-1">
                             Gravando ao Vivo... <span className="text-[#D94B4B] font-bold animate-pulse">● AO VIVO</span>
@@ -416,6 +417,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                             autoPlay
                             muted
                             playsInline
+                            // @ts-ignore
                             srcObject={cameraStream}
                             className="w-full h-64 object-cover rounded-xl bg-black"
                           />
@@ -428,7 +430,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                           </button>
                         </div>
                       )}
-                      {cameraVideoUrl && !isCameraActive && !isCameraRecording ? (
+                      {cameraVideoUrl && !isCameraActive && !isCameraRecording && (
                         <div className="space-y-3 mt-2">
                           <label className="block text-xs text-[#A5B2A9] mb-1">
                             Vídeo Gravado da Câmera
