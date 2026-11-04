@@ -37,8 +37,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
   const [chatMessages, setChatMessages] = useState<LiveChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isAddingLive, setIsAddingLive] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [liveType, setLiveType] = useState<'link' | 'camera'>('link');
   const [newLiveTitle, setNewLiveTitle] = useState('');
   const [newLiveUrl, setNewLiveUrl] = useState('');
+  const [cameraVideoFile, setCameraVideoFile] = useState<File | null>(null);
+  const [cameraVideoUrl, setCameraVideoUrl] = useState<string | null>(null);
   const [isMyLive, setIsMyLive] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
   const [likes, setLikes] = useState(0);
@@ -86,20 +90,42 @@ export const LiveView: React.FC<LiveViewProps> = ({
   }, [currentUser, activeLives]);
 
   const handleAddLive = async () => {
+    console.log('[LiveView] handleAddLive chamado', { liveType, newLiveTitle, newLiveUrl, cameraVideoFile, currentUser });
     if (!currentUser) {
+      console.log('[LiveView] Sem usuário logado, abrindo auth');
       onOpenAuth();
       return;
     }
-    if (!newLiveTitle.trim() || !newLiveUrl.trim()) {
-      showToast('Informe o título e o link da transmissão.');
+    if (!newLiveTitle.trim()) {
+      showToast('Informe o título da transmissão.');
       return;
     }
+    let finalDescription: string | undefined;
+    if (liveType === 'link') {
+      if (!newLiveUrl.trim()) {
+        showToast('Informe o link da transmissão.');
+        return;
+      }
+      finalDescription = newLiveUrl;
+    } else {
+      if (!cameraVideoFile) {
+        showToast('Selecione ou grave um vídeo da câmera.');
+        return;
+      }
+      finalDescription = cameraVideoUrl || '';
+    }
+    setIsSubmitting(true);
     try {
-      const newLive = await storageService.startLive(currentUser.id, newLiveTitle, newLiveUrl);
+      console.log('[LiveView] Chamando storageService.startLive...');
+      const newLive = await storageService.startLive(currentUser.id, newLiveTitle, finalDescription);
+      console.log('[LiveView] Live criada:', newLive);
       setActiveLives([newLive, ...activeLives]);
       setIsAddingLive(false);
       setNewLiveTitle('');
       setNewLiveUrl('');
+      setCameraVideoFile(null);
+      setCameraVideoUrl(null);
+      setLiveType('link');
       setIsMyLive(true);
       setSelectedLive(newLive);
       currentLiveIdRef.current = newLive.id;
@@ -107,9 +133,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
       setChatMessages([]);
       setLikes(0);
       setIsLiked(false);
-      showToast('Link de transmissão adicionado!');
+      showToast('Transmissão ao vivo adicionada!');
     } catch (err: any) {
-      showToast('Erro ao adicionar link: ' + (err?.message || 'Erro desconhecido'));
+      console.error('[LiveView] Erro ao criar live:', err);
+      showToast('Erro ao criar transmissão: ' + (err?.message || 'Erro desconhecido'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -184,7 +213,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 : 'bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] shadow-lg hover:brightness-110'
             }`}
           >
-            {isAddingLive ? 'Cancelar' : <><Link className="w-4 h-4 mr-1" /> Adicionar Link</>}
+            {isAddingLive ? 'Cancelar' : <><Link className="w-4 h-4 mr-1" /> Nova Live</>}
           </button>
         )}
       </header>
@@ -192,34 +221,112 @@ export const LiveView: React.FC<LiveViewProps> = ({
       <main className="flex-1 overflow-y-auto p-4 sm:p-6">
         {currentUser ? (
           <>
-            {/* Formulário para adicionar link de live */}
+            {/* Formulário para adicionar transmissão ao vivo */}
             {isAddingLive && (
               <div className="mb-6 bg-[#102019] border border-[#263B30] rounded-3xl shadow-xl p-6">
                 <h3 className="text-sm font-bold text-[#E5AC24] mb-4 flex items-center gap-2">
                   <Link className="w-4 h-4" />
-                  Adicionar Link de Transmissão
+                  Nova Transmissão ao Vivo
                 </h3>
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setLiveType('link')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                      liveType === 'link'
+                        ? 'bg-[#D4AF37] text-[#07140F] shadow'
+                        : 'bg-[#15291F] text-[#A5B2A9] border border-[#263B30] hover:bg-[#174D32]'
+                    }`}
+                  >
+                    🔗 Link
+                  </button>
+                  <button
+                    onClick={() => setLiveType('camera')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                      liveType === 'camera'
+                        ? 'bg-[#D4AF37] text-[#07140F] shadow'
+                        : 'bg-[#15291F] text-[#A5B2A9] border border-[#263B30] hover:bg-[#174D32]'
+                    }`}
+                  >
+                    📹 Câmera
+                  </button>
+                </div>
                 <div className="space-y-3">
                   <input
                     type="text"
                     value={newLiveTitle}
                     onChange={(e) => setNewLiveTitle(e.target.value)}
-                    placeholder="Título da live (ex: Live no YouTube)"
+                    placeholder="Título da transmissão ao vivo"
                     className="w-full bg-[#15291F] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] px-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
                   />
-                  <input
-                    type="text"
-                    value={newLiveUrl}
-                    onChange={(e) => setNewLiveUrl(e.target.value)}
-                    placeholder="Link da transmissão (YouTube, etc.)"
-                    className="w-full bg-[#15291F] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] px-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
-                  />
+                  {liveType === 'link' ? (
+                    <input
+                      type="text"
+                      value={newLiveUrl}
+                      onChange={(e) => setNewLiveUrl(e.target.value)}
+                      placeholder="Link da transmissão (YouTube, etc.)"
+                      className="w-full bg-[#15291F] text-xs text-[#F5F5F0] placeholder-[#A5B2A9] px-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none"
+                    />
+                  ) : (
+                    <>
+                      <label className="block text-xs text-[#A5B2A9] mb-1">
+                        Selecionar ou gravar vídeo da câmera
+                      </label>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          if (file) {
+                            setCameraVideoFile(file);
+                            setCameraVideoUrl(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="w-full bg-[#15291F] text-xs text-[#F5F5F0] px-3 py-2.5 rounded-xl border border-[#263B30] focus:border-[#D4AF37] focus:outline-none cursor-pointer"
+                      />
+                      {cameraVideoUrl && (
+                        <div className="mt-2 bg-[#07140F] border border-[#263B30] rounded-xl overflow-hidden">
+                          <video
+                            src={cameraVideoUrl}
+                            className="w-full h-40 object-cover"
+                            controls
+                          />
+                          <button
+                            onClick={() => {
+                              setCameraVideoFile(null);
+                              if (cameraVideoUrl) URL.revokeObjectURL(cameraVideoUrl);
+                              setCameraVideoUrl(null);
+                            }}
+                            className="w-full py-1.5 text-[10px] text-[#D94B4B] bg-[#2b1414] border-t border-[#263B30] hover:text-white transition"
+                          >
+                            Remover vídeo
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
                   <button
                     onClick={handleAddLive}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-black text-xs shadow-lg hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                    className={`w-full py-3 rounded-xl text-xs font-bold shadow-lg hover:brightness-110 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2 ${
+                      isSubmitting
+                        ? 'bg-[#6b7280] text-[#F5F5F0] cursor-not-allowed'
+                        : 'bg-gradient-to-r from-[#D4AF37] to-[#AA8325] text-[#07140F] font-black hover:brightness-110'
+                    }`}
                   >
-                    <Play className="w-4 h-4 text-[#07140F]" />
-                    <span>Adicionar Link</span>
+                    {isSubmitting ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin text-[#07140F]" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Iniciando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 text-[#07140F]" />
+                        <span>Iniciar Transmissão</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -241,21 +348,39 @@ export const LiveView: React.FC<LiveViewProps> = ({
 
                   {selectedLive.description && (
                     <div className="bg-[#15291F] border border-[#263B30] rounded-xl p-3">
-                      <p className="text-xs text-[#A5B2A9] mb-2">Link da transmissão:</p>
-                      <a
-                        href={selectedLive.description || ''}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-[#D4AF37] break-all hover:underline"
-                      >
-                        {selectedLive.description}
-                      </a>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(selectedLive.description || '')}
-                        className="ml-2 text-xs text-[#A5B2A9] hover:text-[#F5F5F0]"
-                      >
-                        Copiar
-                      </button>
+                      <p className="text-xs text-[#A5B2A9] mb-2">Transmissão ao vivo:</p>
+                      {isYoutubeUrl(selectedLive.description || '') || selectedLive.description.startsWith('http') ? (
+                        <>
+                          <a
+                            href={selectedLive.description}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-[#D4AF37] break-all hover:underline block mb-2"
+                          >
+                            {selectedLive.description}
+                          </a>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(selectedLive.description || '')}
+                            className="ml-2 text-xs text-[#A5B2A9] hover:text-[#F5F5F0]"
+                          >
+                            Copiar
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <video
+                            src={selectedLive.description}
+                            className="w-full h-48 object-cover rounded-lg bg-black"
+                            controls
+                          />
+                          <button
+                            onClick={() => window.open(selectedLive.description, '_blank')}
+                            className="mt-2 w-full py-2 rounded-xl border border-[#D4AF37] text-[#D4AF37] text-xs font-bold hover:bg-[#1a2e25] transition"
+                          >
+                            Abrir em nova janela
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
 
