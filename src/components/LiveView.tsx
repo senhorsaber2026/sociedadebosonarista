@@ -33,65 +33,40 @@ export const LiveView: React.FC<LiveViewProps> = ({
   onOpenAuth
 }) => {
   const [isMyLive, setIsMyLive] = useState(false);
-  [isMyLive];
   const [isStreaming, setIsStreaming] = useState(false);
-  [isStreaming];
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [videoReady, setVideoReady] = useState(false);
   const [liveTitle, setLiveTitle] = useState('');
   const [liveDescription, setLiveDescription] = useState('');
   const [activeLives, setActiveLives] = useState<LiveSession[]>([]);
-  [activeLives];
   const [selectedLive, setSelectedLive] = useState<LiveSession | null>(null);
-  [selectedLive];
   const [chatMessages, setChatMessages] = useState<LiveChatMessage[]>([]);
-  [chatMessages];
   const [chatInput, setChatInput] = useState('');
-  [chatInput];
   const [selectedCamera, setSelectedCamera] = useState<'front' | 'back'>('front');
-  [selectedCamera];
   const [micEnabled, setMicEnabled] = useState(true);
-  [micEnabled];
   const [isLiked, setIsLiked] = useState(false);
-  [isLiked];
   const [likes, setLikes] = useState(0);
-  [likes];
   const [viewerCount, setViewerCount] = useState(0);
-  [viewerCount];
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const currentLiveIdRef = useRef<string | null>(null);
-  const viewerIntervalRef = useRef<number | null>(null);
 
   const refreshLives = useCallback(async () => {
-    setActiveLives(await storageService.getActiveLives());
+    const lives = await storageService.getActiveLives();
+    setActiveLives(lives);
   }, []);
 
   useEffect(() => {
     refreshLives();
-    // Atualiza lista de lives a cada 10s para captar lives iniciadas por outros membros
     const interval = setInterval(refreshLives, 10000);
     return () => clearInterval(interval);
   }, [refreshLives]);
 
-  // Recarrega lives sempre que o usuário logado muda (detecta live ativa ao entrar na página)
   useEffect(() => {
     if (currentUser) {
       refreshLives();
     }
   }, [currentUser, refreshLives]);
-
-  // Sincroniza lives em tempo real entre abas/janelas (desktop)
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEYS.LIVES || e.key === STORAGE_KEYS.LIVE_CHAT) {
-        refreshLives();
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [refreshLives]);
 
   useEffect(() => {
     if (currentUser) {
@@ -115,22 +90,6 @@ export const LiveView: React.FC<LiveViewProps> = ({
     }
   }, [currentUser, activeLives, isStreaming]);
 
-  useEffect(() => {
-    if (selectedLive && selectedLive.id !== currentLiveIdRef.current) {
-      currentLiveIdRef.current = selectedLive.id;
-      setViewerCount(selectedLive.viewerCount);
-      setChatMessages(storageService.getLiveChatMessages(selectedLive.id));
-      storageService.incrementLiveViewers(selectedLive.id);
-      setLikes(0);
-      setIsLiked(false);
-    }
-    return () => {
-      if (currentLiveIdRef.current) {
-        storageService.decrementLiveViewers(currentLiveIdRef.current);
-      }
-    };
-  }, [selectedLive]);
-
   const handleStartLive = async () => {
     if (!currentUser) {
       onOpenAuth();
@@ -142,31 +101,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
     }
     try {
       setCameraError(null);
-      setVideoReady(false);
-
-      // Tenta diferentes configurações de câmera
-      let stream = null;
-      const configs = [
-        { video: { facingMode: 'user' }, audio: true },
-        { video: { facingMode: 'environment' }, audio: true },
-        { video: true, audio: true },
-        { video: { width: 640, height: 480 }, audio: true },
-        { video: true, audio: false }
-      ];
-
-      for (const config of configs) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia(config);
-          break;
-        } catch (e) {
-          console.warn('Configuração falhou:', config, e);
-        }
-      }
-
-      if (!stream) {
-        throw new Error('Nenhuma configuração de câmera funcionou');
-      }
-
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamRef.current = stream;
 
       const newLive = await storageService.startLive(currentUser.id, liveTitle, liveDescription || undefined);
@@ -197,17 +132,12 @@ export const LiveView: React.FC<LiveViewProps> = ({
       storageService.stopLive(currentLiveIdRef.current);
       storageService.decrementLiveViewers(currentLiveIdRef.current);
     }
-    if (viewerIntervalRef.current) {
-      clearInterval(viewerIntervalRef.current);
-      viewerIntervalRef.current = null;
-    }
     setIsStreaming(false);
     setIsMyLive(false);
     setSelectedLive(null);
     currentLiveIdRef.current = null;
     setViewerCount(0);
     setCameraError(null);
-    setVideoReady(false);
     setChatMessages([]);
     setLikes(0);
     setIsLiked(false);
@@ -253,30 +183,13 @@ export const LiveView: React.FC<LiveViewProps> = ({
     video.playsInline = true;
     video.autoPlay = true;
 
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    const tryPlay = () => {
-      attempts++;
-      video.play().then(() => {
-        setVideoReady(true);
-      }).catch((err) => {
-        if (attempts < maxAttempts) {
-          setTimeout(tryPlay, 800);
-        } else {
-          setCameraError('Navegador bloqueou reprodução automática. Toque na tela para ativar.');
-        }
-      });
+    const handlePlay = () => {
+      video.play().catch(() => {});
     };
 
-    video.onloadedmetadata = () => {
-      setVideoReady(true);
-      tryPlay();
-    };
-
+    video.onloadedmetadata = handlePlay;
     if (video.readyState >= 1) {
-      setVideoReady(true);
-      tryPlay();
+      handlePlay();
     }
 
     return () => {
@@ -319,41 +232,35 @@ export const LiveView: React.FC<LiveViewProps> = ({
             {/* Minha transmissão ao vivo */}
             {isMyLive && selectedLive && (
               <div className="mb-6 bg-[#102019] border border-[#263B30] rounded-3xl shadow-2xl overflow-hidden">
-                  <div className="relative w-full aspect-video bg-black cursor-pointer" onClick={() => videoRef.current?.play().catch(() => {})}>
-                    <video
-                      ref={videoRef}
-                      className={`w-full h-full object-cover ${videoReady ? 'opacity-100' : 'opacity-0'}`}
-                      autoPlay
-                      muted
-                      playsInline
-                    />
-                    {cameraError && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-[#07140F]/90">
-                        <div className="w-12 h-12 rounded-full bg-[#D94B4B]/20 border border-[#D94B4B]/50 flex items-center justify-center mb-3">
-                          <X className="w-6 h-6 text-[#D94B4B]" />
-                        </div>
-                        <p className="text-xs text-[#D94B4B] font-medium max-w-xs leading-tight">
-                          Câmera não disponível: {cameraError}
-                        </p>
-                        <button
-                          onClick={handleStartLive}
-                          className="mt-3 px-3 py-1.5 rounded-lg bg-[#D4AF37] text-[#07140F] text-xs font-bold hover:brightness-110 transition"
-                        >
-                          Tentar Novamente
-                        </button>
+                <div className="relative w-full aspect-video bg-black">
+                  <video
+                    ref={videoRef}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    muted
+                    playsInline
+                  />
+                  {cameraError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-[#07140F]/90">
+                      <div className="w-12 h-12 rounded-full bg-[#D94B4B]/20 border border-[#D94B4B]/50 flex items-center justify-center mb-3">
+                        <X className="w-6 h-6 text-[#D94B4B]" />
                       </div>
-                    )}
-                    {!cameraError && !videoReady && isStreaming && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-[#07140F]/80">
-                        <div className="w-8 h-8 rounded-full border-4 border-[#D4AF37]/30 border-t-[#D4AF37] animate-spin" />
-                        <p className="mt-2 text-xs text-[#A5B2A9]">Iniciando câmera...</p>
-                      </div>
-                    )}
-                    <div className="absolute top-4 left-4 flex items-center gap-2 bg-[#07140F]/80 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50">
-                      <div className="w-2 h-2 rounded-full bg-[#D94B4B] animate-pulse" />
-                      <span className="text-xs font-bold text-[#E8CC76]">AO VIVO</span>
+                      <p className="text-xs text-[#D94B4B] font-medium max-w-xs leading-tight">
+                        Câmera não disponível: {cameraError}
+                      </p>
+                      <button
+                        onClick={handleStartLive}
+                        className="mt-3 px-3 py-1.5 rounded-lg bg-[#D4AF37] text-[#07140F] text-xs font-bold hover:brightness-110 transition"
+                      >
+                        Tentar Novamente
+                      </button>
                     </div>
+                  )}
+                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-[#07140F]/80 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50">
+                    <div className="w-2 h-2 rounded-full bg-[#D94B4B] animate-pulse" />
+                    <span className="text-xs font-bold text-[#E8CC76]">AO VIVO</span>
                   </div>
+                </div>
 
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
