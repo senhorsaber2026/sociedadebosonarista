@@ -178,7 +178,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
   const handleSwitchCamera = () => setSelectedCamera(selectedCamera === 'front' ? 'back' : 'front');
 
   useEffect(() => {
-    if (!isStreaming || !streamRef.current) return;
+    if (!streamRef.current || !isMyLive) return;
 
     const video = videoRef.current;
     if (!video) return;
@@ -188,13 +188,19 @@ export const LiveView: React.FC<LiveViewProps> = ({
     video.playsInline = true;
     video.autoPlay = true;
 
-    const handlePlay = () => {
-      video.play().catch(() => {});
+    const playVideo = () => {
+      video.play().catch((err) => {
+        console.log('Autoplay bloqueado, tentando novamente:', err);
+        setTimeout(playVideo, 1000);
+      });
     };
 
-    video.onloadedmetadata = handlePlay;
+    video.onloadedmetadata = () => {
+      playVideo();
+    };
+
     if (video.readyState >= 1) {
-      handlePlay();
+      playVideo();
     }
 
     return () => {
@@ -202,7 +208,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
       video.onloadedmetadata = null;
       video.pause();
     };
-  }, [isStreaming]);
+  }, [streamRef.current, isMyLive]);
 
   return (
     <div className="min-h-screen bg-[#07140F] text-[#F5F5F0] flex flex-col">
@@ -237,7 +243,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
             {/* Minha transmissão ao vivo */}
             {isMyLive && selectedLive && (
               <div className="mb-6 bg-[#102019] border border-[#263B30] rounded-3xl shadow-2xl overflow-hidden">
-                <div className="relative w-full aspect-video bg-black">
+                <div className="relative w-full aspect-video bg-black cursor-pointer" onClick={() => videoRef.current?.play().catch(() => {})}>
                   <video
                     ref={videoRef}
                     className="w-full h-full object-cover"
