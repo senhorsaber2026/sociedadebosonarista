@@ -36,6 +36,8 @@ export const LiveView: React.FC<LiveViewProps> = ({
   [isMyLive];
   const [isStreaming, setIsStreaming] = useState(false);
   [isStreaming];
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
   const [liveTitle, setLiveTitle] = useState('');
   const [liveDescription, setLiveDescription] = useState('');
   const [activeLives, setActiveLives] = useState<LiveSession[]>([]);
@@ -139,12 +141,17 @@ export const LiveView: React.FC<LiveViewProps> = ({
       return;
     }
     try {
+      setCameraError(null);
+      setVideoReady(false);
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamRef.current = stream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
+        videoRef.current.onloadedmetadata = () => {
+          setVideoReady(true);
+          videoRef.current?.play().catch(() => {});
+        };
       }
 
       const newLive = await storageService.startLive(currentUser.id, liveTitle, liveDescription || undefined);
@@ -157,7 +164,8 @@ export const LiveView: React.FC<LiveViewProps> = ({
       setLikes(0);
       setIsLiked(false);
       showToast('Transmissão ao vivo iniciada!');
-    } catch (err) {
+    } catch (err: any) {
+      setCameraError(err?.message || 'Não foi possível acessar câmera/microfone.');
       showToast('Não foi possível acessar câmera/microfone.');
     }
   };
@@ -183,6 +191,8 @@ export const LiveView: React.FC<LiveViewProps> = ({
     setSelectedLive(null);
     currentLiveIdRef.current = null;
     setViewerCount(0);
+    setCameraError(null);
+    setVideoReady(false);
     setChatMessages([]);
     setLikes(0);
     setIsLiked(false);
@@ -259,11 +269,33 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   <div className="relative w-full aspect-video bg-black">
                     <video
                       ref={videoRef}
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full object-cover ${videoReady ? 'opacity-100' : 'opacity-0'}`}
                       autoPlay
                       muted
                       playsInline
                     />
+                    {cameraError && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-[#07140F]/90">
+                        <div className="w-12 h-12 rounded-full bg-[#D94B4B]/20 border border-[#D94B4B]/50 flex items-center justify-center mb-3">
+                          <X className="w-6 h-6 text-[#D94B4B]" />
+                        </div>
+                        <p className="text-xs text-[#D94B4B] font-medium max-w-xs leading-tight">
+                          Câmera não disponível: {cameraError}
+                        </p>
+                        <button
+                          onClick={handleStartLive}
+                          className="mt-3 px-3 py-1.5 rounded-lg bg-[#D4AF37] text-[#07140F] text-xs font-bold hover:brightness-110 transition"
+                        >
+                          Tentar Novamente
+                        </button>
+                      </div>
+                    )}
+                    {!cameraError && !videoReady && isStreaming && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-[#07140F]/80">
+                        <div className="w-8 h-8 rounded-full border-4 border-[#D4AF37]/30 border-t-[#D4AF37] animate-spin" />
+                        <p className="mt-2 text-xs text-[#A5B2A9]">Iniciando câmera...</p>
+                      </div>
+                    )}
                     <div className="absolute top-4 left-4 flex items-center gap-2 bg-[#07140F]/80 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50">
                       <div className="w-2 h-2 rounded-full bg-[#D94B4B] animate-pulse" />
                       <span className="text-xs font-bold text-[#E8CC76]">AO VIVO</span>
