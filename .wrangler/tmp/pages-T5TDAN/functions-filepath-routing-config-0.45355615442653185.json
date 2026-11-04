@@ -1,0 +1,29 @@
+{
+  "routes": [
+    {
+      "routePath": "/api/auth/social",
+      "mountPath": "/api/auth",
+      "method": "OPTIONS",
+      "module": [
+        "api/auth/social.js:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/auth/social",
+      "mountPath": "/api/auth",
+      "method": "POST",
+      "module": [
+        "api/auth/social.js:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/auth/check",
+      "mountPath": "/api/auth",
+      "method": "",
+      "module": [
+        "api/auth/check.js:onRequest"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}

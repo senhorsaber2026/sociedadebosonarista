@@ -143,7 +143,30 @@ export const LiveView: React.FC<LiveViewProps> = ({
     try {
       setCameraError(null);
       setVideoReady(false);
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+      // Tenta diferentes configurações de câmera
+      let stream = null;
+      const configs = [
+        { video: { facingMode: 'user' }, audio: true },
+        { video: { facingMode: 'environment' }, audio: true },
+        { video: true, audio: true },
+        { video: { width: 640, height: 480 }, audio: true },
+        { video: true, audio: false }
+      ];
+
+      for (const config of configs) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(config);
+          break;
+        } catch (e) {
+          console.warn('Configuração falhou:', config, e);
+        }
+      }
+
+      if (!stream) {
+        throw new Error('Nenhuma configuração de câmera funcionou');
+      }
+
       streamRef.current = stream;
 
       const newLive = await storageService.startLive(currentUser.id, liveTitle, liveDescription || undefined);
@@ -226,11 +249,23 @@ export const LiveView: React.FC<LiveViewProps> = ({
     if (!video) return;
 
     video.srcObject = streamRef.current;
+    video.muted = true;
+    video.playsInline = true;
+    video.autoPlay = true;
+
+    let attempts = 0;
+    const maxAttempts = 10;
 
     const tryPlay = () => {
-      video.play().catch((err) => {
-        console.warn('Autoplay bloqueado, tentando novamente:', err);
-        setTimeout(tryPlay, 500);
+      attempts++;
+      video.play().then(() => {
+        setVideoReady(true);
+      }).catch((err) => {
+        if (attempts < maxAttempts) {
+          setTimeout(tryPlay, 800);
+        } else {
+          setCameraError('Navegador bloqueou reprodução automática. Toque na tela para ativar.');
+        }
       });
     };
 
@@ -239,7 +274,6 @@ export const LiveView: React.FC<LiveViewProps> = ({
       tryPlay();
     };
 
-    // Se já tem metadata, tenta tocar imediatamente
     if (video.readyState >= 1) {
       setVideoReady(true);
       tryPlay();
@@ -248,6 +282,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
     return () => {
       video.srcObject = null;
       video.onloadedmetadata = null;
+      video.pause();
     };
   }, [isStreaming]);
 
@@ -284,7 +319,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
             {/* Minha transmissão ao vivo */}
             {isMyLive && selectedLive && (
               <div className="mb-6 bg-[#102019] border border-[#263B30] rounded-3xl shadow-2xl overflow-hidden">
-                  <div className="relative w-full aspect-video bg-black">
+                  <div className="relative w-full aspect-video bg-black cursor-pointer" onClick={() => videoRef.current?.play().catch(() => {})}>
                     <video
                       ref={videoRef}
                       className={`w-full h-full object-cover ${videoReady ? 'opacity-100' : 'opacity-0'}`}
