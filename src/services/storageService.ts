@@ -1773,17 +1773,22 @@ export const storageService = {
 
   // ---------------- LIVE STREAMS ----------------
   async getActiveLives(): Promise<LiveSession[]> {
+    const localLives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES).filter(l => l.isActive);
+
+    let apiLives: LiveSession[] = [];
     try {
       const response = await fetch('/api/lives');
       if (response.ok) {
-        const lives = await response.json();
-        return lives.sort((a: LiveSession, b: LiveSession) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+        apiLives = await response.json();
       }
     } catch (e) {
       console.error('Erro ao buscar lives:', e);
     }
-    const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
-    return lives.filter(l => l.isActive).sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+
+    const byId = new Map<string, LiveSession>();
+    [...localLives, ...apiLives].forEach(l => byId.set(l.id, l));
+
+    return [...byId.values()].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
   },
 
   getLiveSession(liveId: string): LiveSession | undefined {
@@ -1796,6 +1801,7 @@ export const storageService = {
     const user = users.find(u => u.id === userId);
     if (!user) throw new Error('Usuário não encontrado');
 
+    let apiLive: LiveSession | null = null;
     try {
       const response = await fetch('/api/lives', {
         method: 'POST',
@@ -1803,18 +1809,18 @@ export const storageService = {
         body: JSON.stringify({ userId, userName: user.name, userAvatar: user.avatar, title, description })
       });
       if (response.ok) {
-        return await response.json();
+        apiLive = await response.json();
       }
     } catch (e) {
       console.error('Erro ao iniciar live:', e);
     }
 
-    // Encerra lives ativas do mesmo usuário
+    // Encerra lives ativas do mesmo usuário (localStorage)
     const lives = getStorage<LiveSession[]>(STORAGE_KEYS.LIVES, DEFAULT_LIVES);
     lives.forEach(l => { if (l.userId === userId && l.isActive) { l.isActive = false; l.endedAt = new Date().toISOString(); } });
 
     const newLive: LiveSession = {
-      id: `live_${Date.now()}`,
+      id: apiLive?.id || `live_${Date.now()}`,
       userId,
       userName: user.name,
       userAvatar: user.avatar,
@@ -1825,8 +1831,9 @@ export const storageService = {
       startedAt: new Date().toISOString()
     };
 
-    lives.push(newLive);
-    setStorage(STORAGE_KEYS.LIVES, lives);
+    const filtered = lives.filter(l => l.id !== newLive.id);
+    filtered.push(newLive);
+    setStorage(STORAGE_KEYS.LIVES, filtered);
 
     // Notifica todos os usuários sobre a nova live
     const allUsers = users.filter(u => u.id !== userId);
@@ -1843,7 +1850,7 @@ export const storageService = {
       });
     });
 
-    return newLive;
+    return apiLive || newLive;
   },
 
   stopLive(liveId: string): void {
